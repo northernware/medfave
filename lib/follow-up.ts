@@ -19,7 +19,12 @@ export type FollowUpState =
   | "OVERDUE";
 
 /** Statuses that mean the booked follow-up is still going to happen. */
-const STILL_EXPECTED: AppointmentStatus[] = ["PENDING", "CONFIRMED", "CHECKED_IN"];
+const STILL_EXPECTED: AppointmentStatus[] = [
+  "PENDING",
+  "CONFIRMED",
+  "CHECKED_IN",
+  "IN_CONSULTATION",
+];
 
 export type FollowUpInput = {
   followUpDate: Date | null;

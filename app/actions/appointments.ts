@@ -314,6 +314,75 @@ export async function updateAppointment(
   redirect(`/appointments/${appointmentId}`);
 }
 
+/**
+ * The timestamps a move into the queue sets, given what is already recorded.
+ *
+ * Both are stamped once and then left alone: correcting a status later must not
+ * restart a clock that has already run. Arrival is implied by being in the
+ * room, so a patient taken straight into consultation gets an arrival time
+ * too — otherwise the visit would show no waiting time at all rather than none.
+ */
+type Instant = ReturnType<typeof instantToDb>;
+
+function queueStamps(
+  status: AppointmentStatus,
+  existing: { arrivedAt: unknown; consultationStartedAt: unknown },
+  now: Instant,
+) {
+  const stamps: { arrivedAt?: Instant; consultationStartedAt?: Instant } = {};
+  if ((status === "CHECKED_IN" || status === "IN_CONSULTATION") && !existing.arrivedAt) {
+    stamps.arrivedAt = now;
+  }
+  if (status === "IN_CONSULTATION" && !existing.consultationStartedAt) {
+    stamps.consultationStartedAt = now;
+  }
+  return stamps;
+}
+
+/**
+ * Takes the patient into the room and opens their notes in one move.
+ *
+ * Writing up a consultation used to leave the appointment sitting at "checked
+ * in", so the queue still showed someone as waiting while the doctor was with
+ * them. The state change and the notes are the same action now, because in the
+ * clinic they are the same act.
+ */
+export async function startConsultation(formData: FormData) {
+  const doctor = await requireDoctor();
+  const appointmentId = String(formData.get("appointmentId") ?? "");
+  if (!appointmentId) return;
+
+  const appointment = await orm.Appointment
+    .select("id", "patientId", "arrivedAt", "consultationStartedAt")
+    .include("medicalRecord", (r) => r.select("id"))
+    .where((a) => a.id.eq(appointmentId))
+    .where((a) => a.doctorId.eq(doctor.id))
+    .first();
+  if (!appointment) return;
+
+  const now = instantToDb(new Date());
+  await orm.Appointment
+    .where((a) => a.id.eq(appointmentId))
+    .where((a) => a.doctorId.eq(doctor.id))
+    .update({
+      status: "IN_CONSULTATION",
+      ...queueStamps("IN_CONSULTATION", appointment, now),
+      updatedAt: now,
+    });
+
+  revalidatePath("/appointments");
+  revalidatePath("/calendar");
+  revalidatePath("/");
+  revalidatePath(`/appointments/${appointmentId}`);
+
+  // Straight to the notes: an existing record is resumed rather than duplicated.
+  redirect(
+    appointment.medicalRecord
+      ? `/records/${appointment.medicalRecord.id}/edit`
+      : `/records/new?patientId=${appointment.patientId}&appointmentId=${appointmentId}`,
+  );
+}
+
 /** Quick status change from the detail page — no full form round-trip. */
 export async function setAppointmentStatus(formData: FormData) {
   const doctor = await requireDoctor();
@@ -325,10 +394,8 @@ export async function setAppointmentStatus(formData: FormData) {
   const now = instantToDb(new Date());
   const status = raw as AppointmentStatus;
 
-  // Arrival is stamped the first time someone is checked in and then left
-  // alone, so a correction elsewhere in the queue does not restart the clock.
   const existing = await orm.Appointment
-    .select("arrivedAt")
+    .select("arrivedAt", "consultationStartedAt")
     .where((a) => a.id.eq(appointmentId))
     .where((a) => a.doctorId.eq(doctor.id))
     .first();
@@ -337,11 +404,7 @@ export async function setAppointmentStatus(formData: FormData) {
   await orm.Appointment
     .where((a) => a.id.eq(appointmentId))
     .where((a) => a.doctorId.eq(doctor.id))
-    .update({
-      status,
-      ...(status === "CHECKED_IN" && !existing.arrivedAt ? { arrivedAt: now } : {}),
-      updatedAt: now,
-    });
+    .update({ status, ...queueStamps(status, existing, now), updatedAt: now });
 
   revalidatePath("/appointments");
   revalidatePath("/calendar");

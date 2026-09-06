@@ -1,0 +1,95 @@
+[
+  {
+    "id": "addNativeEnumValue.AppointmentStatus.IN_CONSULTATION",
+    "label": "Add value \"IN_CONSULTATION\" to enum type \"AppointmentStatus\"",
+    "summary": "Adds value \"IN_CONSULTATION\" to enum type \"AppointmentStatus\". A newly added enum value cannot be used until the transaction that adds it commits, so a migration that both appends a value and uses it in the same step will fail at apply.",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "type",
+        "name": "AppointmentStatus"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure enum type \"AppointmentStatus\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_type\" AS \"t\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"t\".\"typnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"t\".\"typname\" = $2 AND \"t\".\"typtype\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AppointmentStatus",
+          "e"
+        ]
+      },
+      {
+        "description": "ensure value \"IN_CONSULTATION\" is absent from enum type \"AppointmentStatus\"",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_enum\" AS \"e\" INNER JOIN \"pg_type\" AS \"t\" ON \"t\".\"oid\" = \"e\".\"enumtypid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"t\".\"typnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"t\".\"typname\" = $2 AND \"e\".\"enumlabel\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AppointmentStatus",
+          "IN_CONSULTATION"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add value \"IN_CONSULTATION\" to enum type \"AppointmentStatus\"",
+        "sql": "ALTER TYPE \"public\".\"AppointmentStatus\" ADD VALUE 'IN_CONSULTATION'"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify value \"IN_CONSULTATION\" exists on enum type \"AppointmentStatus\"",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_enum\" AS \"e\" INNER JOIN \"pg_type\" AS \"t\" ON \"t\".\"oid\" = \"e\".\"enumtypid\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"t\".\"typnamespace\" WHERE (\"n\".\"nspname\" = $1 AND \"t\".\"typname\" = $2 AND \"e\".\"enumlabel\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AppointmentStatus",
+          "IN_CONSULTATION"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Appointment.consultationStartedAt",
+    "label": "Add column \"consultationStartedAt\" to \"Appointment\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "consultationStartedAt",
+        "table": "Appointment"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"consultationStartedAt\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Appointment",
+          "consultationStartedAt"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"consultationStartedAt\"",
+        "sql": "ALTER TABLE \"public\".\"Appointment\" ADD COLUMN \"consultationStartedAt\" timestamp(3)"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"consultationStartedAt\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Appointment",
+          "consultationStartedAt"
+        ]
+      }
+    ]
+  }
+]

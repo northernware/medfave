@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { setAppointmentStatus } from "@/app/actions/appointments";
+import { setAppointmentStatus, startConsultation } from "@/app/actions/appointments";
 import { requireDoctor } from "@/lib/auth";
 import { orm } from "@/src/prisma/db";
 import { followUpsDue } from "@/lib/queries";
@@ -19,14 +19,15 @@ import {
   APPOINTMENT_STATUS_LABELS,
   APPOINTMENT_STATUS_TONE,
   fullName,
+  QUEUE_STATUSES,
   SERVICE_LABELS,
 } from "@/lib/domain";
 import { appointmentListQuery, toAppointmentListItem } from "@/lib/queries";
 import { Badge, Card, EmptyState, PageHeader, SectionTitle, Stat, StatStrip, buttonClass } from "@/components/ui";
 
-/** Whole minutes since arrival, floored — the number a receptionist reads. */
-function waitedMinutes(arrivedAt: Date, now: Date) {
-  return Math.max(0, Math.floor((now.getTime() - arrivedAt.getTime()) / 60_000));
+/** Whole minutes between two moments, floored — the number a receptionist reads. */
+function minutesBetween(from: Date, to: Date) {
+  return Math.max(0, Math.floor((to.getTime() - from.getTime()) / 60_000));
 }
 
 export default async function DashboardPage() {
@@ -42,13 +43,23 @@ export default async function DashboardPage() {
         .where((a) => a.scheduledAt.lt(instantToDb(today.end)))
         .orderBy((a) => a.scheduledAt.asc())
         .all(),
-      // The waiting room: checked in, wherever that appointment sits in time.
+      // The queue: everyone who is physically here, waiting or with the doctor,
+      // wherever their appointment sits in time.
       orm.Appointment
-        .select("id", "scheduledAt", "service", "reason", "arrivedAt", "source")
+        .select(
+          "id",
+          "scheduledAt",
+          "service",
+          "reason",
+          "arrivedAt",
+          "consultationStartedAt",
+          "source",
+          "status",
+        )
         .include("patient", (p) => p.select("id", "firstName", "middleName", "lastName"))
         .include("medicalRecord", (r) => r.select("id"))
         .where((a) => a.doctorId.eq(doctor.id))
-        .where((a) => a.status.eq("CHECKED_IN"))
+        .where((a) => a.status.in(QUEUE_STATUSES))
         .orderBy((a) => a.scheduledAt.asc())
         .all(),
       followUpsDue(doctor.id),
@@ -78,15 +89,22 @@ export default async function DashboardPage() {
   // Prisma 8 reads temporal columns as text; the UI works in `Date`, so each list
   // is converted once here rather than at every call site below.
   const todays = todaysRows.map(toAppointmentListItem);
-  const waiting = waitingRows
+  const queue = waitingRows
     .map((a) => ({
       ...a,
       scheduledAt: instantFromDb(a.scheduledAt),
       arrivedAt: a.arrivedAt ? instantFromDb(a.arrivedAt) : null,
+      consultationStartedAt: a.consultationStartedAt
+        ? instantFromDb(a.consultationStartedAt)
+        : null,
     }))
     // Ordered by arrival, not by scheduled time — a walk-in has no meaningful
     // scheduled time, and the queue is whoever got here first.
     .sort((a, b) => (a.arrivedAt?.getTime() ?? 0) - (b.arrivedAt?.getTime() ?? 0));
+  // Waiting means still waiting. Someone with the doctor has stopped waiting,
+  // and counting them as waiting is what made the number meaningless.
+  const waiting = queue.filter((a) => a.status === "CHECKED_IN");
+  const inConsultation = queue.filter((a) => a.status === "IN_CONSULTATION");
   const missed = missedRows.map((a) => ({ ...a, scheduledAt: instantFromDb(a.scheduledAt) }));
   const dueFollowUps = dueFollowUpRows.map((r) => ({
     ...r,
@@ -133,7 +151,13 @@ export default async function DashboardPage() {
           label="Waiting"
           value={waiting.length}
           tone={waiting.length > 0 ? "warn" : undefined}
-          hint={waiting.length > 0 ? "Checked in, not seen" : "Nobody checked in"}
+          hint={
+            inConsultation.length > 0
+              ? `${inConsultation.length} with the doctor`
+              : waiting.length > 0
+                ? "Checked in, not seen"
+                : "Nobody checked in"
+          }
         />
         <Stat
           label="Follow-ups due"
@@ -147,50 +171,78 @@ export default async function DashboardPage() {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Main column: what the doctor works through, in the order they work it. */}
         <div className="space-y-6 lg:col-span-2">
-          {waiting.length > 0 ? (
+          {queue.length > 0 ? (
             <section>
-              <SectionTitle title="Waiting room" hint="Checked in, not yet seen" />
+              <SectionTitle title="Waiting room" hint="Here now — waiting or with the doctor" />
               <Card raised className="border-warn/40 divide-y divide-border">
-                {waiting.map((a) => (
-                  <div key={a.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5">
-                    <span className="nums w-16 shrink-0 text-[13px] font-medium">
-                      {formatTime(a.arrivedAt ?? a.scheduledAt)}
-                      {a.arrivedAt ? (
-                        <span className="tabular block font-sans text-[11px] font-normal text-ink-muted">
-                          waiting {waitedMinutes(a.arrivedAt, now)}m
-                        </span>
-                      ) : null}
-                      {a.scheduledAt < today.start ? (
-                        <span className="tabular block font-sans text-[11px] font-normal text-warn-ink">
-                          {formatDate(a.scheduledAt)}
-                        </span>
-                      ) : null}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <Link
-                        href={`/patients/${a.patient.id}`}
-                        className="block truncate text-[13px] font-medium hover:underline"
-                      >
-                        {fullName(a.patient)}
-                      </Link>
-                      <span className="block truncate text-xs text-ink-muted">
-                        {SERVICE_LABELS[a.service]} · {a.reason}
+                {queue.map((a) => {
+                  const seeing = a.status === "IN_CONSULTATION";
+                  return (
+                    <div key={a.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5">
+                      {/* Arrival, and how long it has been — the two numbers the
+                          desk is asked about. The wait stops at the moment the
+                          doctor took them in, rather than climbing all visit. */}
+                      <span className="nums w-16 shrink-0 text-[13px] font-medium">
+                        {formatTime(a.arrivedAt ?? a.scheduledAt)}
+                        {a.arrivedAt ? (
+                          <span
+                            className={`tabular block font-sans text-[11px] font-normal ${
+                              seeing ? "text-ink-faint" : "text-ink-muted"
+                            }`}
+                          >
+                            {seeing
+                              ? `waited ${minutesBetween(a.arrivedAt, a.consultationStartedAt ?? now)}m`
+                              : `waiting ${minutesBetween(a.arrivedAt, now)}m`}
+                          </span>
+                        ) : null}
+                        {a.scheduledAt < today.start ? (
+                          <span className="tabular block font-sans text-[11px] font-normal text-warn-ink">
+                            {formatDate(a.scheduledAt)}
+                          </span>
+                        ) : null}
                       </span>
-                    </span>
-                    {a.medicalRecord ? (
-                      <Link href={`/records/${a.medicalRecord.id}`} className={buttonClass("secondary")}>
-                        View record
-                      </Link>
-                    ) : (
-                      <Link
-                        href={`/records/new?patientId=${a.patient.id}&appointmentId=${a.id}`}
-                        className={buttonClass("primary")}
-                      >
-                        Start consultation
-                      </Link>
-                    )}
-                  </div>
-                ))}
+                      <span className="min-w-0 flex-1">
+                        <Link
+                          href={`/patients/${a.patient.id}`}
+                          className="block truncate text-[13px] font-medium hover:underline"
+                        >
+                          {fullName(a.patient)}
+                        </Link>
+                        <span className="block truncate text-xs text-ink-muted">
+                          {SERVICE_LABELS[a.service]} · {a.reason}
+                          {/* Scheduled time stays visible next to the arrival
+                              time; they are different facts about the visit. */}
+                          {a.source !== "WALK_IN" ? ` · booked ${formatTime(a.scheduledAt)}` : ""}
+                        </span>
+                      </span>
+                      {seeing ? (
+                        <>
+                          <Badge dot tone="accent">
+                            In consultation
+                            {a.consultationStartedAt
+                              ? ` · ${minutesBetween(a.consultationStartedAt, now)}m`
+                              : ""}
+                          </Badge>
+                          <Link
+                            href={
+                              a.medicalRecord
+                                ? `/records/${a.medicalRecord.id}/edit`
+                                : `/records/new?patientId=${a.patient.id}&appointmentId=${a.id}`
+                            }
+                            className={buttonClass("secondary")}
+                          >
+                            {a.medicalRecord ? "Open notes" : "Write notes"}
+                          </Link>
+                        </>
+                      ) : (
+                        <form action={startConsultation}>
+                          <input type="hidden" name="appointmentId" value={a.id} />
+                          <button className={buttonClass("primary")}>Start consultation</button>
+                        </form>
+                      )}
+                    </div>
+                  );
+                })}
               </Card>
             </section>
           ) : null}
@@ -234,12 +286,17 @@ export default async function DashboardPage() {
                             <input type="hidden" name="status" value="CHECKED_IN" />
                             <button className={buttonClass("secondary")}>Check in</button>
                           </form>
-                        ) : a.status === "CHECKED_IN" && !a.medicalRecord ? (
+                        ) : a.status === "CHECKED_IN" ? (
+                          <form action={startConsultation}>
+                            <input type="hidden" name="appointmentId" value={a.id} />
+                            <button className={buttonClass("primary")}>Start consultation</button>
+                          </form>
+                        ) : a.status === "IN_CONSULTATION" && a.medicalRecord ? (
                           <Link
-                            href={`/records/new?patientId=${a.patient.id}&appointmentId=${a.id}`}
-                            className={buttonClass("primary")}
+                            href={`/records/${a.medicalRecord.id}/edit`}
+                            className={buttonClass("secondary")}
                           >
-                            Start consultation
+                            Open notes
                           </Link>
                         ) : null}
                       </span>

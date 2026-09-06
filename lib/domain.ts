@@ -41,6 +41,7 @@ export const APPOINTMENT_STATUS_LABELS: Record<AppointmentStatus, string> = {
   PENDING: "Pending",
   CONFIRMED: "Confirmed",
   CHECKED_IN: "Checked in",
+  IN_CONSULTATION: "In consultation",
   COMPLETED: "Completed",
   CANCELLED: "Cancelled",
   NO_SHOW: "No-show",
@@ -54,13 +55,25 @@ export const APPOINTMENT_STATUS_TONE: Record<
   PENDING: "warn",
   CONFIRMED: "accent",
   CHECKED_IN: "accent",
+  IN_CONSULTATION: "accent",
   COMPLETED: "ok",
   CANCELLED: "neutral",
   NO_SHOW: "warn",
 };
 
-/** Statuses that still expect the patient to turn up. */
-export const ACTIVE_STATUSES: AppointmentStatus[] = ["PENDING", "CONFIRMED", "CHECKED_IN"];
+/** Statuses that still expect the patient to turn up, or have them here. */
+export const ACTIVE_STATUSES: AppointmentStatus[] = [
+  "PENDING",
+  "CONFIRMED",
+  "CHECKED_IN",
+  "IN_CONSULTATION",
+];
+
+/**
+ * The queue, in the order it moves: arrived and waiting, then with the doctor.
+ * Anything else has either not got here or is finished.
+ */
+export const QUEUE_STATUSES: AppointmentStatus[] = ["CHECKED_IN", "IN_CONSULTATION"];
 
 export const APPOINTMENT_TYPE_LABELS: Record<AppointmentType, string> = {
   IN_PERSON: "In person",

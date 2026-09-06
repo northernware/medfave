@@ -26,9 +26,17 @@ import { Badge, buttonClass, Card, CardHeader, Detail, PageHeader, Prose } from 
 
 export const metadata: Metadata = { title: "Appointment" };
 
+/** "12 minutes early" / "5 minutes late" — the arrival, relative to the booking. */
+function describeArrival(scheduledAt: Date, arrivedAt: Date) {
+  const minutes = Math.round((arrivedAt.getTime() - scheduledAt.getTime()) / 60_000);
+  if (Math.abs(minutes) < 5) return "on time";
+  return minutes < 0 ? `${-minutes} minutes early` : `${minutes} minutes late`;
+}
+
 const STATUS_ACTIONS: { value: AppointmentStatus; label: string }[] = [
   { value: "CONFIRMED", label: "Confirm" },
   { value: "CHECKED_IN", label: "Check in" },
+  { value: "IN_CONSULTATION", label: "Start consultation" },
   { value: "COMPLETED", label: "Mark completed" },
   { value: "NO_SHOW", label: "Mark no-show" },
   { value: "CANCELLED", label: "Cancel" },
@@ -126,6 +134,48 @@ export default async function AppointmentPage({ params }: PageProps<"/appointmen
           />
           <Detail label="Reason for visit" value={appointment.reason} />
           <Detail label="Room" value={appointment.room} />
+          {/* When they were booked for and when they actually turned up are
+              different facts, so they are shown as different facts. */}
+          <Detail
+            label="Arrived"
+            value={
+              appointment.arrivedAt ? (
+                <>
+                  {formatDateTime(instantFromDb(appointment.arrivedAt))}
+                  <span className="mt-0.5 block text-xs text-ink-faint">
+                    {describeArrival(
+                      instantFromDb(appointment.scheduledAt),
+                      instantFromDb(appointment.arrivedAt),
+                    )}
+                  </span>
+                </>
+              ) : null
+            }
+          />
+          <Detail
+            label="Seen"
+            value={
+              appointment.consultationStartedAt ? (
+                <>
+                  {formatDateTime(instantFromDb(appointment.consultationStartedAt))}
+                  {appointment.arrivedAt ? (
+                    <span className="mt-0.5 block text-xs text-ink-faint">
+                      after waiting{" "}
+                      {Math.max(
+                        0,
+                        Math.floor(
+                          (instantFromDb(appointment.consultationStartedAt).getTime() -
+                            instantFromDb(appointment.arrivedAt).getTime()) /
+                            60_000,
+                        ),
+                      )}{" "}
+                      minutes
+                    </span>
+                  ) : null}
+                </>
+              ) : null
+            }
+          />
           <Detail
             label="Follows on from"
             value={

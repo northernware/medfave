@@ -121,6 +121,10 @@ namespace public {
     /// at the moment it is registered — the queue is ordered by it, not by the
     /// scheduled time, because a walk-in has no meaningful scheduled time.
     arrivedAt                  TimestampString(3)?
+    /// When the doctor actually started seeing them, stamped on the move into
+    /// IN_CONSULTATION. Waiting time is arrival to this, so it stops climbing
+    /// once the patient is in the room instead of running until check-out.
+    consultationStartedAt      TimestampString(3)?
     doctor                     Doctor                      @relation(fields: [doctorId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "Appointment_doctorId_fkey", index: false)
     patient                    Patient                     @relation(fields: [patientId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "Appointment_patientId_fkey")
     previousAppointment        Appointment?                @relation(name: "Appointment_previousAppointmentId_fkey", fields: [previousAppointmentId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "Appointment_previousAppointmentId_fkey")
@@ -365,6 +369,11 @@ namespace public {
     COMPLETED = "COMPLETED"
     CANCELLED = "CANCELLED"
     NO_SHOW = "NO_SHOW"
+    // Appended rather than slotted in after CHECKED_IN, where it belongs in the
+    // queue's order: Postgres native enums can only be added to, and Prisma
+    // Next refuses anything that would reorder existing values. The order staff
+    // see comes from APPOINTMENT_STATUS_LABELS, not from this declaration.
+    IN_CONSULTATION = "IN_CONSULTATION"
   }
 
   native_enum AppointmentType {

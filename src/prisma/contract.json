@@ -85,6 +85,16 @@
                   }
                 }
               },
+              "consultationStartedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
               "createdAt": {
                 "nullable": false,
                 "type": {
@@ -335,6 +345,9 @@
               "fields": {
                 "arrivedAt": {
                   "column": "arrivedAt"
+                },
+                "consultationStartedAt": {
+                  "column": "consultationStartedAt"
                 },
                 "createdAt": {
                   "column": "createdAt"
@@ -2459,7 +2472,8 @@
                 "CHECKED_IN",
                 "COMPLETED",
                 "CANCELLED",
-                "NO_SHOW"
+                "NO_SHOW",
+                "IN_CONSULTATION"
               ],
               "typeName": "AppointmentStatus"
             },
@@ -2572,6 +2586,14 @@
             "Appointment": {
               "columns": {
                 "arrivedAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "consultationStartedAt": {
                   "codecId": "pg/timestamp-string@1",
                   "nativeType": "timestamp",
                   "nullable": true,
@@ -4467,7 +4489,8 @@
                 "CHECKED_IN",
                 "COMPLETED",
                 "CANCELLED",
-                "NO_SHOW"
+                "NO_SHOW",
+                "IN_CONSULTATION"
               ]
             },
             "AppointmentType": {
@@ -4571,7 +4594,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "142b1021ecbc1dc68d2d50077fcab5a38ca3be6580f2614641a2b9c725a0c2bf"
+    "storageHash": "b324ebb59c9971d641a4677babf24e9aadc24efca858564483a9a17be7485b65"
   },
   "capabilities": {
     "postgres": {

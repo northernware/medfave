@@ -32,6 +32,7 @@ const DOT_TONE: Record<AppointmentStatus, string> = {
   PENDING: "bg-warn",
   CONFIRMED: "bg-accent",
   CHECKED_IN: "bg-accent",
+  IN_CONSULTATION: "bg-accent",
   COMPLETED: "bg-ok",
   NO_SHOW: "bg-warn",
   CANCELLED: "bg-border-strong",
