@@ -218,14 +218,23 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
     const now = instantToDb(new Date());
 
     // A walk-in is already standing at the desk, so it joins the queue on
-    // arrival rather than waiting for someone to check it in afterwards.
+    // arrival rather than waiting for someone to check it in afterwards. Only
+    // a status that means "has not turned up yet" is overridden: staff writing
+    // up a visit that already happened, or one the patient left before, said
+    // what they meant and it is not this action's place to argue.
     const walkIn = resolved.data.source === "WALK_IN";
+    const notYetArrived =
+      resolved.data.status === "PENDING" || resolved.data.status === "CONFIRMED";
+    const status = walkIn && notYetArrived ? ("CHECKED_IN" as const) : resolved.data.status;
 
     const created = await tx.orm.public.Appointment.select("id", "patientId").create({
       ...resolved.data,
       id: newId(),
       doctorId: doctor.id,
-      ...(walkIn ? { status: "CHECKED_IN" as const, arrivedAt: now } : {}),
+      status,
+      // Arrival is stamped whenever the visit starts out in the queue, however
+      // it got there — not only on the walk-in path.
+      ...(status === "CHECKED_IN" ? { arrivedAt: now } : {}),
       createdAt: now,
       updatedAt: now,
     });

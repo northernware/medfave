@@ -129,6 +129,10 @@ export async function bookingFormData(doctorId: string, excludeAppointmentId?: s
     window: { earliest, latest },
     // The same rules, with the lead time lifted — the patient is at the desk.
     walkInWindow: { earliest: walkInEarliest, latest },
+    // The clinic's own day and minute. The walk-in window includes today, so
+    // the form needs this to stop offering slots the day has already passed —
+    // and it must be the clinic's clock rather than the visitor's.
+    now: { key: walkInEarliest, minute: minuteOfDay(now) },
   };
 }
 

@@ -352,6 +352,16 @@ export async function createPatient(_prev: FormState, formData: FormData): Promi
       updatedAt: now,
     });
     await writeClinicalLists(tx.orm.public, created.id, parsed.lists);
+
+    // The first member of a household created here becomes its point of
+    // contact. Nobody else can be — the household has exactly this one person —
+    // and a household with no contact is not something staff would ever choose.
+    if (creatingHousehold) {
+      await tx.orm.public.Household
+        .where((h) => h.id.eq(householdId))
+        .update({ primaryContactId: created.id, updatedAt: now });
+    }
+
     return { ...created, householdId };
   });
 
@@ -370,12 +380,24 @@ export async function updatePatient(
   const parsed = parsePatientForm(formData);
   if (!parsed.ok) return parsed.error;
 
-  if (!(await assertOwnsHousehold(doctor.id, parsed.householdId))) {
+  // The form offers "＋ New household…" here too, so moving a patient into one
+  // typed on the spot has to work the same way it does on registration.
+  const creatingHousehold = parsed.householdId === NEW_HOUSEHOLD;
+  const newHouseholdName = String(formData.get("newHouseholdName") ?? "").trim();
+
+  if (creatingHousehold) {
+    if (!newHouseholdName) {
+      return {
+        message: "Name the new household.",
+        fieldErrors: { newHouseholdName: ["Required when creating a household"] },
+      };
+    }
+  } else if (!(await assertOwnsHousehold(doctor.id, parsed.householdId))) {
     return { message: "That household is not on your list." };
   }
 
   const owned = await orm.Patient
-    .select("id")
+    .select("id", "householdId")
     .where((p) => p.id.eq(patientId))
     .where((p) => p.household.some((h) => h.doctorId.eq(doctor.id)))
     .first();
@@ -387,20 +409,61 @@ export async function updatePatient(
 
   // The lists are edited as a whole, so they are replaced wholesale — the same
   // way prescriptions are handled on a record.
-  await db.transaction(async (tx) => {
+  const householdId = await db.transaction(async (tx) => {
     const t = tx.orm.public;
+    const t2 = tx.sql.public;
+    const now = instantToDb(new Date());
+
+    const target = creatingHousehold
+      ? (
+          await t.Household.select("id").create({
+            id: newId(),
+            doctorId: doctor.id,
+            name: newHouseholdName,
+            createdAt: now,
+            updatedAt: now,
+          })
+        ).id
+      : parsed.householdId;
+
+    // Somebody can be the point of contact only for the household they are in,
+    // and only for one — the column is uniquely indexed. Moving them out has to
+    // release that first, or the old household is left pointing at a person who
+    // has left and the index refuses the new link.
+    if (target !== owned.householdId) {
+      // Through the SQL lane, as the clinical lists are: the ORM's update is
+      // shaped for a predicate on the primary key, and this one is not.
+      const release = t2.Household
+        .update({ primaryContactId: null, updatedAt: now })
+        .where((f, fns) => fns.eq(f.primaryContactId, patientId))
+        .build();
+      await tx.execute(release as never);
+    }
+
     await t.Patient.where((p) => p.id.eq(patientId)).update({
       ...parsed.scalars,
-      householdId: parsed.householdId,
-      updatedAt: instantToDb(new Date()),
+      householdId: target,
+      updatedAt: now,
     });
     await clearClinicalLists(tx, patientId);
     await writeClinicalLists(t, patientId, parsed.lists);
+
+    // Same reasoning as on registration: the only member of a household made
+    // here is its point of contact.
+    if (creatingHousehold) {
+      await t.Household
+        .where((h) => h.id.eq(target))
+        .update({ primaryContactId: patientId, updatedAt: now });
+    }
+
+    return target;
   });
 
   revalidatePath("/patients");
+  revalidatePath("/households");
   revalidatePath(`/patients/${patientId}`);
-  revalidatePath(`/households/${parsed.householdId}`);
+  revalidatePath(`/households/${householdId}`);
+  revalidatePath(`/households/${owned.householdId}`);
   redirect(`/patients/${patientId}`);
 }
 

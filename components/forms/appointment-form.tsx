@@ -23,7 +23,7 @@ import type {
   PatientOption,
 } from "@/lib/form-defaults";
 import { slotsForDay } from "@/lib/scheduling";
-import { describeWeek } from "@/lib/availability";
+import { describeWeek, durationFor } from "@/lib/availability";
 import { fullDayClosure, hoursFor, type Schedule } from "@/lib/availability";
 import { EMPTY_FORM_STATE, type FormState } from "@/lib/validation";
 
@@ -36,6 +36,7 @@ export function AppointmentForm({
   schedule,
   window: bookingWindow,
   walkInWindow,
+  now,
   submitLabel,
   cancelHref,
   staffFields = false,
@@ -52,6 +53,8 @@ export function AppointmentForm({
   window: { earliest: string; latest: string };
   /** The same range with the lead time lifted, for walk-ins. */
   walkInWindow: { earliest: string; latest: string };
+  /** The clinic's current day and minute, so today's gone slots are not offered. */
+  now: { key: string; minute: number };
   submitLabel: string;
   cancelHref: string;
   /** Reveals status, source, room and internal notes. */
@@ -76,12 +79,20 @@ export function AppointmentForm({
   const [time, setTime] = useState(defaults.time);
 
   // Duration is the service's, not a question — the slot picker needs to know
-  // how much of the day each visit consumes.
-  const duration = SERVICE_MINUTES[service as ServiceType] ?? 30;
+  // how much of the day each visit consumes. It comes from the clinic's own
+  // settings first: reading the built-in length here while the server read the
+  // clinic's override drew a slot grid the server would then reject.
+  const lengthOf = (s: string) =>
+    durationFor(
+      schedule,
+      s as ServiceType,
+      SERVICE_MINUTES[s as ServiceType] ?? schedule.defaultDurationMinutes,
+    );
+  const duration = lengthOf(service);
 
   const slots = useMemo(
-    () => slotsForDay(date, duration, busyByDay[date] ?? [], activeWindow, schedule),
-    [date, duration, busyByDay, activeWindow, schedule],
+    () => slotsForDay(date, duration, busyByDay[date] ?? [], activeWindow, schedule, now),
+    [date, duration, busyByDay, activeWindow, schedule, now],
   );
 
   // When editing a visit that already sits outside the bookable window, its own
@@ -174,7 +185,7 @@ export function AppointmentForm({
             </option>
             {SERVICES.map((s) => (
               <option key={s.value} value={s.value}>
-                {s.label} · {s.minutes} min
+                {s.label} · {lengthOf(s.value)} min
               </option>
             ))}
           </Select>
@@ -279,7 +290,8 @@ export function AppointmentForm({
                 ))}
               </div>
               <p className="mt-2 text-xs text-ink-faint">
-                Greyed-out times are already booked or would overlap a {duration}-minute visit.
+                Greyed-out times are already booked or would overlap a {duration}-minute visit
+                {date === now.key ? ", or have already passed today" : ""}.
               </p>
             </>
           )}

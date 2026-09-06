@@ -1,5 +1,5 @@
 import type { ServiceType } from "@/lib/enums";
-import { addDays, overlaps, type BusyInterval } from "./scheduling";
+import { addDays, minuteOfDay, overlaps, type BusyInterval } from "./scheduling";
 import { dayKey } from "./datetime";
 
 /**
@@ -118,6 +118,11 @@ export function checkAvailability(
     }
   } else if (key < dayKey(now)) {
     return "That date has already passed.";
+  } else if (key === dayKey(now) && startMinute + durationMinutes <= minuteOfDay(now)) {
+    // Lifting the lead time opens today; it does not open this morning. A slot
+    // the clock has already run past cannot be where someone standing at the
+    // desk is seen. One still in progress is fine — that is where they are.
+    return `That slot ended at ${label(startMinute + durationMinutes)}. Choose a later one.`;
   }
 
   if (key > latestBookableDay(schedule, now)) {

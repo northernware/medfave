@@ -64,6 +64,14 @@ export function slotsForDay(
   busy: BusyInterval[],
   window: { earliest: string; latest: string },
   schedule: Schedule,
+  /**
+   * The clinic's current day and minute, from the server. Slots that have
+   * already run out on that day are shown taken rather than offered — the
+   * walk-in window opens today, which is the only case where "now" is inside
+   * the bookable range at all. The browser's own clock is not consulted: it is
+   * in the visitor's timezone, not the clinic's.
+   */
+  now?: { key: string; minute: number },
 ): Slot[] {
   if (key < window.earliest || key > window.latest) return [];
   if (fullDayClosure(schedule, key)) return [];
@@ -75,17 +83,20 @@ export function slotsForDay(
   // does, so they join the same busy list rather than being a separate case.
   const unavailable = [...busy, ...blockedIntervals(schedule, key)];
 
+  const passed = now && now.key === key ? now.minute : null;
+
   const slots: Slot[] = [];
   for (
     let m = hours.openMinute;
     m + durationMinutes <= hours.closeMinute;
     m += schedule.slotStepMinutes
   ) {
+    const gone = passed !== null && m + durationMinutes <= passed;
     slots.push({
       minute: m,
       value: `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`,
       label: labelForMinute(m),
-      free: !overlaps(m, durationMinutes, unavailable),
+      free: !gone && !overlaps(m, durationMinutes, unavailable),
     });
   }
   return slots;
