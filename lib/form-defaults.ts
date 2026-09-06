@@ -1,4 +1,5 @@
 import type { ClinicalItem } from "@/components/clinical-picker";
+import type { RecordStatus } from "@/lib/enums";
 
 /**
  * Shapes and blank values the forms are seeded with. These live outside the
@@ -114,6 +115,11 @@ export const BLANK_PRESCRIPTION: PrescriptionRow = {
 };
 
 export type RecordDefaults = {
+  /** Empty for a note that has not been saved once yet. */
+  recordId: string;
+  status: RecordStatus;
+  /** When it was last written, so the form can say so. */
+  savedAt: string | null;
   visitDate: string;
   appointmentId: string;
   chiefComplaint: string;
@@ -136,6 +142,9 @@ export type RecordDefaults = {
 
 export function blankRecord(visitDate: string): RecordDefaults {
   return {
+    recordId: "",
+    status: "DRAFT",
+    savedAt: null,
     visitDate,
     appointmentId: "",
     chiefComplaint: "",

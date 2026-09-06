@@ -3,6 +3,7 @@ import type {
   AppointmentType,
   BloodType,
   BookingSource,
+  RecordStatus,
   Relationship,
   ReminderPreference,
   ServiceType,
@@ -59,6 +60,18 @@ export const APPOINTMENT_STATUS_TONE: Record<
   COMPLETED: "ok",
   CANCELLED: "neutral",
   NO_SHOW: "warn",
+};
+
+export const RECORD_STATUS_LABELS: Record<RecordStatus, string> = {
+  DRAFT: "Draft",
+  FINALIZED: "Signed",
+  AMENDED: "Amended",
+};
+
+export const RECORD_STATUS_TONE: Record<RecordStatus, "accent" | "ok" | "neutral" | "warn"> = {
+  DRAFT: "warn",
+  FINALIZED: "ok",
+  AMENDED: "accent",
 };
 
 /** Statuses that still expect the patient to turn up, or have them here. */

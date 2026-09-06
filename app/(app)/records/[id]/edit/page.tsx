@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { updateMedicalRecord } from "@/app/actions/records";
+import { autosaveConsultation, saveMedicalRecord } from "@/app/actions/records";
 import { requireDoctor } from "@/lib/auth";
 import { orm } from "@/src/prisma/db";
 import { calendarDateFromDb, instantFromDb } from "@/lib/datetime";
@@ -34,10 +34,14 @@ export default async function EditRecordPage({ params }: PageProps<"/records/[id
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Edit record" subtitle={fullName(record.patient)} />
+      <PageHeader
+        title={record.status === "DRAFT" ? "Consultation notes" : "Edit record"}
+        subtitle={fullName(record.patient)}
+      />
       <Card className="p-5 sm:p-6">
         <RecordForm
-          action={updateMedicalRecord.bind(null, record.id)}
+          action={saveMedicalRecord}
+          autosave={autosaveConsultation}
           patientId={record.patientId}
           openAppointments={[]}
           lockedAppointment={
@@ -49,6 +53,9 @@ export default async function EditRecordPage({ params }: PageProps<"/records/[id
               : undefined
           }
           defaults={{
+            recordId: record.id,
+            status: record.status,
+            savedAt: instantFromDb(record.updatedAt).toISOString(),
             visitDate: toDateTimeLocalValue(instantFromDb(record.visitDate)),
             appointmentId: record.appointmentId ?? "",
             chiefComplaint: record.chiefComplaint,
@@ -74,7 +81,6 @@ export default async function EditRecordPage({ params }: PageProps<"/records/[id
               instructions: text(rx.instructions),
             })),
           }}
-          submitLabel="Save changes"
           cancelHref={`/records/${record.id}`}
         />
       </Card>

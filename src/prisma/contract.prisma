@@ -16,6 +16,9 @@ namespace public {
     households     Household[]
     medicalRecords MedicalRecord[] @relation(name: "MedicalRecord_doctorId_fkey")
     followUpsClosed MedicalRecord[] @relation(name: "MedicalRecord_followUpClosedById_fkey")
+    recordsFinalized MedicalRecord[] @relation(name: "MedicalRecord_finalizedById_fkey")
+    recordsArchived  MedicalRecord[] @relation(name: "MedicalRecord_archivedById_fkey")
+    recordVersions   MedicalRecordVersion[]
     scheduleSettings ScheduleSettings?
     clinicHours      ClinicHours[]
     clinicBreaks     ClinicBreak[]
@@ -164,6 +167,26 @@ namespace public {
     followUpAppointmentId   String?
     physicalExamination     String?
 
+    /// Where the note stands. A DRAFT is the doctor's working copy and can be
+    /// changed freely; FINALIZED means it has been signed, and after that every
+    /// change is an amendment that keeps the previous text (see
+    /// MedicalRecordVersion), which is what AMENDED marks.
+    ///
+    /// The default describes rows written before drafts existed: those notes
+    /// were finished and in use, so they are finalized. Every write path states
+    /// the status explicitly rather than relying on it.
+    status                  pg.enum(RecordStatus) @default("FINALIZED")
+    /// When it was signed, and by whom. Null while it is still a draft.
+    finalizedAt             TimestampString(3)?
+    finalizedById           String?
+
+    /// A clinical record is not deleted. Archiving hides it from the ordinary
+    /// lists while leaving it readable and restorable, and says who did it and
+    /// why — the parts a hard delete throws away.
+    archivedAt              TimestampString(3)?
+    archivedById            String?
+    archiveReason           String?
+
     // Closing a follow-up is a decision someone makes, so it is recorded rather
     // than inferred. Everything else about follow-up state is derived from the
     // linked appointment's status — see `followUpState` in lib/follow-up.ts.
@@ -172,6 +195,9 @@ namespace public {
     followUpClosedById      String?
 
     prescriptions           Prescription[]
+    versions                MedicalRecordVersion[]
+    finalizedBy             Doctor?        @relation(name: "MedicalRecord_finalizedById_fkey", fields: [finalizedById], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "MedicalRecord_finalizedById_fkey")
+    archivedBy              Doctor?        @relation(name: "MedicalRecord_archivedById_fkey", fields: [archivedById], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "MedicalRecord_archivedById_fkey")
     appointment             Appointment?   @relation(name: "MedicalRecord_appointmentId_fkey", fields: [appointmentId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "MedicalRecord_appointmentId_fkey")
     doctor                  Doctor         @relation(name: "MedicalRecord_doctorId_fkey", fields: [doctorId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "MedicalRecord_doctorId_fkey")
     followUpAppointment     Appointment?   @relation(name: "MedicalRecord_followUpAppointmentId_fkey", fields: [followUpAppointmentId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "MedicalRecord_followUpAppointmentId_fkey")
@@ -182,6 +208,8 @@ namespace public {
     @@unique([followUpAppointmentId], map: "MedicalRecord_followUpAppointmentId_key")
     @@index([doctorId], map: "MedicalRecord_doctorId_idx")
     @@index([followUpClosedById], map: "MedicalRecord_followUpClosedById_idx")
+    @@index([finalizedById], map: "MedicalRecord_finalizedById_idx")
+    @@index([archivedById], map: "MedicalRecord_archivedById_idx")
     @@index([patientId, visitDate], map: "MedicalRecord_patientId_visitDate_idx")
 
     @@map("MedicalRecord")
@@ -340,6 +368,34 @@ namespace public {
     @@map("ServiceDuration")
   }
 
+  /// One signed state of a record, kept forever.
+  ///
+  /// Version 1 is the text as first signed; every amendment writes the state it
+  /// replaced before the new text lands, so the trail answers "what did this
+  /// note say when the decision was made" — which is the question a clinical
+  /// record exists to answer.
+  model MedicalRecordVersion {
+    id              String        @id(map: "MedicalRecordVersion_pkey")
+    medicalRecordId String
+    /// 1 for the original signature, then upwards.
+    version         Int
+    /// The clinical fields as they stood, JSON-encoded. Held as text because it
+    /// is only ever read back whole, to show or compare one past version.
+    snapshot        String
+    /// Why the change was made. Null on the original signature — there is no
+    /// prior state to explain.
+    reason          String?
+    authorId        String
+    createdAt       TimestampString(3) @default(now())
+    medicalRecord   MedicalRecord @relation(fields: [medicalRecordId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "MedicalRecordVersion_medicalRecordId_fkey", index: false)
+    author          Doctor        @relation(fields: [authorId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "MedicalRecordVersion_authorId_fkey")
+
+    @@index([medicalRecordId, version], map: "MedicalRecordVersion_recordId_version_key", unique: true)
+    @@index([authorId], map: "MedicalRecordVersion_authorId_idx")
+
+    @@map("MedicalRecordVersion")
+  }
+
   model Prescription {
     id              String        @id(map: "Prescription_pkey")
     medicalRecordId String
@@ -405,6 +461,12 @@ namespace public {
     RECORDED = "RECORDED"
     NONE_KNOWN = "NONE_KNOWN"
     UNKNOWN = "UNKNOWN"
+  }
+
+  native_enum RecordStatus {
+    DRAFT = "DRAFT"
+    FINALIZED = "FINALIZED"
+    AMENDED = "AMENDED"
   }
 
   native_enum Relationship {

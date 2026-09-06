@@ -94,15 +94,26 @@ export function SubmitButton({
   pendingLabel,
   variant = "primary",
   className = "",
+  name,
+  value,
 }: {
   children: ReactNode;
   pendingLabel?: string;
   variant?: "primary" | "secondary" | "danger";
   className?: string;
+  /** Set on a form with more than one submit, to say which one was pressed. */
+  name?: string;
+  value?: string;
 }) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" disabled={pending} className={buttonClass(variant, className)}>
+    <button
+      type="submit"
+      name={name}
+      value={value}
+      disabled={pending}
+      className={buttonClass(variant, className)}
+    >
       {pending ? (pendingLabel ?? "Saving…") : children}
     </button>
   );

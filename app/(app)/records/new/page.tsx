@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { createMedicalRecord } from "@/app/actions/records";
+import { autosaveConsultation, saveMedicalRecord } from "@/app/actions/records";
 import { requireDoctor } from "@/lib/auth";
 import { orm } from "@/src/prisma/db";
 import { calendarDateFromDb, instantFromDb } from "@/lib/datetime";
@@ -70,12 +70,12 @@ export default async function NewRecordPage({ searchParams }: PageProps<"/record
 
       <Card className="p-5 sm:p-6">
         <RecordForm
-          action={createMedicalRecord}
+          action={saveMedicalRecord}
+          autosave={autosaveConsultation}
           patientId={patient.id}
           defaults={defaults}
           openAppointments={options}
           lockedAppointment={locked}
-          submitLabel="Save record"
           cancelHref={`/patients/${patient.id}`}
         />
       </Card>

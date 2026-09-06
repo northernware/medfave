@@ -8,6 +8,13 @@
  * stops assigning to its column's union and fails the typecheck.
  */
 
+export const RecordStatus = {
+  DRAFT: "DRAFT",
+  FINALIZED: "FINALIZED",
+  AMENDED: "AMENDED",
+} as const;
+export type RecordStatus = (typeof RecordStatus)[keyof typeof RecordStatus];
+
 export const Relationship = {
   HEAD: "HEAD",
   SPOUSE: "SPOUSE",

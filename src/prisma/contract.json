@@ -32,6 +32,10 @@
       "model": "MedicalRecord",
       "namespace": "public"
     },
+    "MedicalRecordVersion": {
+      "model": "MedicalRecordVersion",
+      "namespace": "public"
+    },
     "Patient": {
       "model": "Patient",
       "namespace": "public"
@@ -847,6 +851,51 @@
                   "namespace": "public"
                 }
               },
+              "recordVersions": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "authorId"
+                  ]
+                },
+                "to": {
+                  "model": "MedicalRecordVersion",
+                  "namespace": "public"
+                }
+              },
+              "recordsArchived": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "archivedById"
+                  ]
+                },
+                "to": {
+                  "model": "MedicalRecord",
+                  "namespace": "public"
+                }
+              },
+              "recordsFinalized": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "finalizedById"
+                  ]
+                },
+                "to": {
+                  "model": "MedicalRecord",
+                  "namespace": "public"
+                }
+              },
               "scheduleSettings": {
                 "cardinality": "1:1",
                 "on": {
@@ -1074,6 +1123,30 @@
                   "kind": "scalar"
                 }
               },
+              "archiveReason": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "archivedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "archivedById": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "assessment": {
                 "nullable": true,
                 "type": {
@@ -1107,6 +1180,23 @@
               },
               "doctorId": {
                 "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "finalizedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "finalizedById": {
+                "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -1213,6 +1303,16 @@
                   "kind": "scalar"
                 }
               },
+              "status": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/enum@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "typeName": "RecordStatus"
+                  }
+                }
+              },
               "systolic": {
                 "nullable": true,
                 "type": {
@@ -1278,11 +1378,41 @@
                   "namespace": "public"
                 }
               },
+              "archivedBy": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "archivedById"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Doctor",
+                  "namespace": "public"
+                }
+              },
               "doctor": {
                 "cardinality": "N:1",
                 "on": {
                   "localFields": [
                     "doctorId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Doctor",
+                  "namespace": "public"
+                }
+              },
+              "finalizedBy": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "finalizedById"
                   ],
                   "targetFields": [
                     "id"
@@ -1352,12 +1482,36 @@
                   "model": "Prescription",
                   "namespace": "public"
                 }
+              },
+              "versions": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "medicalRecordId"
+                  ]
+                },
+                "to": {
+                  "model": "MedicalRecordVersion",
+                  "namespace": "public"
+                }
               }
             },
             "storage": {
               "fields": {
                 "appointmentId": {
                   "column": "appointmentId"
+                },
+                "archiveReason": {
+                  "column": "archiveReason"
+                },
+                "archivedAt": {
+                  "column": "archivedAt"
+                },
+                "archivedById": {
+                  "column": "archivedById"
                 },
                 "assessment": {
                   "column": "assessment"
@@ -1373,6 +1527,12 @@
                 },
                 "doctorId": {
                   "column": "doctorId"
+                },
+                "finalizedAt": {
+                  "column": "finalizedAt"
+                },
+                "finalizedById": {
+                  "column": "finalizedById"
                 },
                 "followUpAppointmentId": {
                   "column": "followUpAppointmentId"
@@ -1416,6 +1576,9 @@
                 "respiratoryRate": {
                   "column": "respiratoryRate"
                 },
+                "status": {
+                  "column": "status"
+                },
                 "systolic": {
                   "column": "systolic"
                 },
@@ -1437,6 +1600,121 @@
               },
               "namespaceId": "public",
               "table": "MedicalRecord"
+            }
+          },
+          "MedicalRecordVersion": {
+            "fields": {
+              "authorId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "medicalRecordId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "reason": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "snapshot": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "version": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "author": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "authorId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Doctor",
+                  "namespace": "public"
+                }
+              },
+              "medicalRecord": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "medicalRecordId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "MedicalRecord",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "authorId": {
+                  "column": "authorId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "medicalRecordId": {
+                  "column": "medicalRecordId"
+                },
+                "reason": {
+                  "column": "reason"
+                },
+                "snapshot": {
+                  "column": "snapshot"
+                },
+                "version": {
+                  "column": "version"
+                }
+              },
+              "namespaceId": "public",
+              "table": "MedicalRecordVersion"
             }
           },
           "Patient": {
@@ -2520,6 +2798,15 @@
               ],
               "typeName": "ClinicalListStatus"
             },
+            "RecordStatus": {
+              "kind": "postgres-enum",
+              "members": [
+                "DRAFT",
+                "FINALIZED",
+                "AMENDED"
+              ],
+              "typeName": "RecordStatus"
+            },
             "Relationship": {
               "kind": "postgres-enum",
               "members": [
@@ -3322,6 +3609,24 @@
                   "nativeType": "text",
                   "nullable": true
                 },
+                "archiveReason": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "archivedAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "archivedById": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "assessment": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -3353,6 +3658,19 @@
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": false
+                },
+                "finalizedAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "finalizedById": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 },
                 "followUpAppointmentId": {
                   "codecId": "pg/text@1",
@@ -3427,6 +3745,24 @@
                   "nativeType": "int4",
                   "nullable": true
                 },
+                "status": {
+                  "codecId": "pg/enum@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "FINALIZED"
+                  },
+                  "nativeType": "RecordStatus",
+                  "nullable": false,
+                  "typeParams": {
+                    "typeName": "RecordStatus"
+                  },
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "RecordStatus",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
                 "systolic": {
                   "codecId": "pg/int4@1",
                   "nativeType": "int4",
@@ -3469,6 +3805,44 @@
                 }
               },
               "foreignKeys": [
+                {
+                  "name": "MedicalRecord_finalizedById_fkey",
+                  "onDelete": "setNull",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "finalizedById"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "MedicalRecord"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Doctor"
+                  }
+                },
+                {
+                  "name": "MedicalRecord_archivedById_fkey",
+                  "onDelete": "setNull",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "archivedById"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "MedicalRecord"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Doctor"
+                  }
+                },
                 {
                   "name": "MedicalRecord_appointmentId_fkey",
                   "onDelete": "setNull",
@@ -3568,9 +3942,23 @@
               "indexes": [
                 {
                   "columns": [
+                    "archivedById"
+                  ],
+                  "name": "MedicalRecord_archivedById_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
                     "doctorId"
                   ],
                   "name": "MedicalRecord_doctorId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "finalizedById"
+                  ],
+                  "name": "MedicalRecord_finalizedById_idx",
                   "unique": false
                 },
                 {
@@ -3609,6 +3997,116 @@
                   "name": "MedicalRecord_followUpAppointmentId_key"
                 }
               ]
+            },
+            "MedicalRecordVersion": {
+              "columns": {
+                "authorId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamp",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "medicalRecordId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "reason": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "snapshot": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "version": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "name": "MedicalRecordVersion_medicalRecordId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "medicalRecordId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "MedicalRecordVersion"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "MedicalRecord"
+                  }
+                },
+                {
+                  "name": "MedicalRecordVersion_authorId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "authorId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "MedicalRecordVersion"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Doctor"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "authorId"
+                  ],
+                  "name": "MedicalRecordVersion_authorId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "medicalRecordId",
+                    "version"
+                  ],
+                  "name": "MedicalRecordVersion_recordId_version_key",
+                  "unique": true
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ],
+                "name": "MedicalRecordVersion_pkey"
+              },
+              "uniques": []
             },
             "Patient": {
               "columns": {
@@ -4532,6 +5030,14 @@
                 "UNKNOWN"
               ]
             },
+            "RecordStatus": {
+              "kind": "valueSet",
+              "values": [
+                "DRAFT",
+                "FINALIZED",
+                "AMENDED"
+              ]
+            },
             "Relationship": {
               "kind": "valueSet",
               "values": [
@@ -4594,7 +5100,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "b324ebb59c9971d641a4677babf24e9aadc24efca858564483a9a17be7485b65"
+    "storageHash": "1b83f2d143e2e769cdd1d33191ec2805ace819c0def909b8f7954a9bf4473f14"
   },
   "capabilities": {
     "postgres": {

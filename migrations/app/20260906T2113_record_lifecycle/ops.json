@@ -1,0 +1,639 @@
+[
+  {
+    "id": "createNativeEnumType.RecordStatus",
+    "label": "Create enum type \"RecordStatus\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "type",
+        "name": "RecordStatus"
+      }
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "create enum type \"RecordStatus\"",
+        "sql": "CREATE TYPE \"public\".\"RecordStatus\" AS ENUM ('DRAFT', 'FINALIZED', 'AMENDED')",
+        "params": []
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "table.MedicalRecordVersion",
+    "label": "Create table \"MedicalRecordVersion\"",
+    "summary": "Creates table \"MedicalRecordVersion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "MedicalRecordVersion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"MedicalRecordVersion\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"MedicalRecordVersion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"MedicalRecordVersion\"",
+        "sql": "CREATE TABLE \"public\".\"MedicalRecordVersion\" (\n  \"authorId\" text NOT NULL,\n  \"createdAt\" timestamp(3) DEFAULT (now()) NOT NULL,\n  \"id\" text NOT NULL,\n  \"medicalRecordId\" text NOT NULL,\n  \"reason\" text,\n  \"snapshot\" text NOT NULL,\n  \"version\" int4 NOT NULL,\n  CONSTRAINT \"MedicalRecordVersion_pkey\" PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"MedicalRecordVersion\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"MedicalRecordVersion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.MedicalRecord.archiveReason",
+    "label": "Add column \"archiveReason\" to \"MedicalRecord\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "archiveReason",
+        "table": "MedicalRecord"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"archiveReason\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "MedicalRecord",
+          "archiveReason"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"archiveReason\"",
+        "sql": "ALTER TABLE \"public\".\"MedicalRecord\" ADD COLUMN \"archiveReason\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"archiveReason\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "MedicalRecord",
+          "archiveReason"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.MedicalRecord.archivedAt",
+    "label": "Add column \"archivedAt\" to \"MedicalRecord\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "archivedAt",
+        "table": "MedicalRecord"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"archivedAt\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "MedicalRecord",
+          "archivedAt"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"archivedAt\"",
+        "sql": "ALTER TABLE \"public\".\"MedicalRecord\" ADD COLUMN \"archivedAt\" timestamp(3)"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"archivedAt\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "MedicalRecord",
+          "archivedAt"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.MedicalRecord.archivedById",
+    "label": "Add column \"archivedById\" to \"MedicalRecord\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "archivedById",
+        "table": "MedicalRecord"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"archivedById\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "MedicalRecord",
+          "archivedById"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"archivedById\"",
+        "sql": "ALTER TABLE \"public\".\"MedicalRecord\" ADD COLUMN \"archivedById\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"archivedById\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "MedicalRecord",
+          "archivedById"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.MedicalRecord.finalizedAt",
+    "label": "Add column \"finalizedAt\" to \"MedicalRecord\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "finalizedAt",
+        "table": "MedicalRecord"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"finalizedAt\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "MedicalRecord",
+          "finalizedAt"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"finalizedAt\"",
+        "sql": "ALTER TABLE \"public\".\"MedicalRecord\" ADD COLUMN \"finalizedAt\" timestamp(3)"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"finalizedAt\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "MedicalRecord",
+          "finalizedAt"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.MedicalRecord.finalizedById",
+    "label": "Add column \"finalizedById\" to \"MedicalRecord\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "finalizedById",
+        "table": "MedicalRecord"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"finalizedById\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "MedicalRecord",
+          "finalizedById"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"finalizedById\"",
+        "sql": "ALTER TABLE \"public\".\"MedicalRecord\" ADD COLUMN \"finalizedById\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"finalizedById\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "MedicalRecord",
+          "finalizedById"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.MedicalRecord.status",
+    "label": "Add column \"status\" to \"MedicalRecord\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "status",
+        "table": "MedicalRecord"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"status\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "MedicalRecord",
+          "status"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"status\"",
+        "sql": "ALTER TABLE \"public\".\"MedicalRecord\" ADD COLUMN \"status\" \"RecordStatus\" DEFAULT 'FINALIZED'::\"RecordStatus\" NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"status\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "MedicalRecord",
+          "status"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.MedicalRecord.MedicalRecord_archivedById_idx",
+    "label": "Create index \"MedicalRecord_archivedById_idx\" on \"MedicalRecord\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "MedicalRecord_archivedById_idx",
+        "table": "MedicalRecord"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"MedicalRecord_archivedById_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"MedicalRecord_archivedById_idx\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"MedicalRecord_archivedById_idx\"",
+        "sql": "CREATE INDEX \"MedicalRecord_archivedById_idx\" ON \"public\".\"MedicalRecord\" (\"archivedById\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"MedicalRecord_archivedById_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"MedicalRecord_archivedById_idx\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.MedicalRecord.MedicalRecord_finalizedById_idx",
+    "label": "Create index \"MedicalRecord_finalizedById_idx\" on \"MedicalRecord\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "MedicalRecord_finalizedById_idx",
+        "table": "MedicalRecord"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"MedicalRecord_finalizedById_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"MedicalRecord_finalizedById_idx\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"MedicalRecord_finalizedById_idx\"",
+        "sql": "CREATE INDEX \"MedicalRecord_finalizedById_idx\" ON \"public\".\"MedicalRecord\" (\"finalizedById\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"MedicalRecord_finalizedById_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"MedicalRecord_finalizedById_idx\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.MedicalRecordVersion.MedicalRecordVersion_authorId_idx",
+    "label": "Create index \"MedicalRecordVersion_authorId_idx\" on \"MedicalRecordVersion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "MedicalRecordVersion_authorId_idx",
+        "table": "MedicalRecordVersion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"MedicalRecordVersion_authorId_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"MedicalRecordVersion_authorId_idx\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"MedicalRecordVersion_authorId_idx\"",
+        "sql": "CREATE INDEX \"MedicalRecordVersion_authorId_idx\" ON \"public\".\"MedicalRecordVersion\" (\"authorId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"MedicalRecordVersion_authorId_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"MedicalRecordVersion_authorId_idx\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.MedicalRecordVersion.MedicalRecordVersion_recordId_version_key",
+    "label": "Create index \"MedicalRecordVersion_recordId_version_key\" on \"MedicalRecordVersion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "MedicalRecordVersion_recordId_version_key",
+        "table": "MedicalRecordVersion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"MedicalRecordVersion_recordId_version_key\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"MedicalRecordVersion_recordId_version_key\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"MedicalRecordVersion_recordId_version_key\"",
+        "sql": "CREATE UNIQUE INDEX \"MedicalRecordVersion_recordId_version_key\" ON \"public\".\"MedicalRecordVersion\" (\"medicalRecordId\", \"version\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"MedicalRecordVersion_recordId_version_key\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"MedicalRecordVersion_recordId_version_key\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.MedicalRecord.MedicalRecord_archivedById_fkey",
+    "label": "Add foreign key \"MedicalRecord_archivedById_fkey\" on \"MedicalRecord\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "MedicalRecord_archivedById_fkey",
+        "table": "MedicalRecord"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"MedicalRecord_archivedById_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "MedicalRecord_archivedById_fkey",
+          "public",
+          "\"public\".\"MedicalRecord\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"MedicalRecord_archivedById_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"MedicalRecord\"\nADD CONSTRAINT \"MedicalRecord_archivedById_fkey\"\nFOREIGN KEY (\"archivedById\")\nREFERENCES \"public\".\"Doctor\" (\"id\")\nON DELETE SET NULL\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"MedicalRecord_archivedById_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "MedicalRecord_archivedById_fkey",
+          "public",
+          "\"public\".\"MedicalRecord\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.MedicalRecord.MedicalRecord_finalizedById_fkey",
+    "label": "Add foreign key \"MedicalRecord_finalizedById_fkey\" on \"MedicalRecord\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "MedicalRecord_finalizedById_fkey",
+        "table": "MedicalRecord"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"MedicalRecord_finalizedById_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "MedicalRecord_finalizedById_fkey",
+          "public",
+          "\"public\".\"MedicalRecord\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"MedicalRecord_finalizedById_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"MedicalRecord\"\nADD CONSTRAINT \"MedicalRecord_finalizedById_fkey\"\nFOREIGN KEY (\"finalizedById\")\nREFERENCES \"public\".\"Doctor\" (\"id\")\nON DELETE SET NULL\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"MedicalRecord_finalizedById_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "MedicalRecord_finalizedById_fkey",
+          "public",
+          "\"public\".\"MedicalRecord\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.MedicalRecordVersion.MedicalRecordVersion_medicalRecordId_fkey",
+    "label": "Add foreign key \"MedicalRecordVersion_medicalRecordId_fkey\" on \"MedicalRecordVersion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "MedicalRecordVersion_medicalRecordId_fkey",
+        "table": "MedicalRecordVersion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"MedicalRecordVersion_medicalRecordId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "MedicalRecordVersion_medicalRecordId_fkey",
+          "public",
+          "\"public\".\"MedicalRecordVersion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"MedicalRecordVersion_medicalRecordId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"MedicalRecordVersion\"\nADD CONSTRAINT \"MedicalRecordVersion_medicalRecordId_fkey\"\nFOREIGN KEY (\"medicalRecordId\")\nREFERENCES \"public\".\"MedicalRecord\" (\"id\")\nON DELETE CASCADE\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"MedicalRecordVersion_medicalRecordId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "MedicalRecordVersion_medicalRecordId_fkey",
+          "public",
+          "\"public\".\"MedicalRecordVersion\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.MedicalRecordVersion.MedicalRecordVersion_authorId_fkey",
+    "label": "Add foreign key \"MedicalRecordVersion_authorId_fkey\" on \"MedicalRecordVersion\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "MedicalRecordVersion_authorId_fkey",
+        "table": "MedicalRecordVersion"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"MedicalRecordVersion_authorId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "MedicalRecordVersion_authorId_fkey",
+          "public",
+          "\"public\".\"MedicalRecordVersion\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"MedicalRecordVersion_authorId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"MedicalRecordVersion\"\nADD CONSTRAINT \"MedicalRecordVersion_authorId_fkey\"\nFOREIGN KEY (\"authorId\")\nREFERENCES \"public\".\"Doctor\" (\"id\")\nON DELETE CASCADE\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"MedicalRecordVersion_authorId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "MedicalRecordVersion_authorId_fkey",
+          "public",
+          "\"public\".\"MedicalRecordVersion\""
+        ]
+      }
+    ]
+  }
+]

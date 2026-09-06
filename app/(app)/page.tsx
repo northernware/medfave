@@ -35,7 +35,16 @@ export default async function DashboardPage() {
   const now = new Date();
   const today = clinicDayRange(now);
 
-  const [todaysRows, waitingRows, dueFollowUpRows, missedRows, upcomingCount, householdCount, patientCount] =
+  const [
+    todaysRows,
+    waitingRows,
+    dueFollowUpRows,
+    draftRows,
+    missedRows,
+    upcomingCount,
+    householdCount,
+    patientCount,
+  ] =
     await Promise.all([
       appointmentListQuery()
         .where((a) => a.doctorId.eq(doctor.id))
@@ -63,6 +72,17 @@ export default async function DashboardPage() {
         .orderBy((a) => a.scheduledAt.asc())
         .all(),
       followUpsDue(doctor.id),
+      // Notes started and not finished. These are the doctor's own unfinished
+      // work, so they belong on the doctor's own first screen rather than
+      // waiting to be stumbled on from a patient's chart.
+      orm.MedicalRecord
+        .select("id", "chiefComplaint", "visitDate", "updatedAt")
+        .include("patient", (p) => p.select("id", "firstName", "middleName", "lastName"))
+        .where((r) => r.doctorId.eq(doctor.id))
+        .where((r) => r.status.eq("DRAFT"))
+        .orderBy((r) => r.updatedAt.desc())
+        .limit(10)
+        .all(),
       orm.Appointment
         .select("id", "scheduledAt", "status", "reason")
         .include("patient", (p) => p.select("id", "firstName", "middleName", "lastName"))
@@ -106,6 +126,11 @@ export default async function DashboardPage() {
   const waiting = queue.filter((a) => a.status === "CHECKED_IN");
   const inConsultation = queue.filter((a) => a.status === "IN_CONSULTATION");
   const missed = missedRows.map((a) => ({ ...a, scheduledAt: instantFromDb(a.scheduledAt) }));
+  const drafts = draftRows.map((r) => ({
+    ...r,
+    visitDate: instantFromDb(r.visitDate),
+    updatedAt: instantFromDb(r.updatedAt),
+  }));
   const dueFollowUps = dueFollowUpRows.map((r) => ({
     ...r,
     visitDate: instantFromDb(r.visitDate),
@@ -306,6 +331,30 @@ export default async function DashboardPage() {
               )}
             </Card>
           </section>
+
+          {drafts.length > 0 ? (
+            <section>
+              <SectionTitle title="Unfinished notes" hint="Saved, not yet signed" />
+              <Card className="divide-y divide-border">
+                {drafts.map((r) => (
+                  <div key={r.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5">
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-[13px] font-medium">
+                        {r.chiefComplaint || "Untitled draft"}
+                      </span>
+                      <span className="block truncate text-xs text-ink-muted">
+                        {fullName(r.patient)} · visit {formatDate(r.visitDate)} · last saved{" "}
+                        {formatTime(r.updatedAt)}
+                      </span>
+                    </span>
+                    <Link href={`/records/${r.id}/edit`} className={buttonClass("secondary")}>
+                      Continue
+                    </Link>
+                  </div>
+                ))}
+              </Card>
+            </section>
+          ) : null}
 
           <section>
             <SectionTitle title="Follow-ups due" hint="Asked for by a visit, never booked" />

@@ -1,11 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useId, useState } from "react";
+import { useActionState, useEffect, useId, useRef, useState } from "react";
 import { Field, FieldGrid, FormError, Select, SubmitButton, TextArea, TextInput } from "@/components/form";
 import { buttonClass } from "@/components/ui";
+import { formatTime } from "@/lib/datetime";
 import { BLANK_PRESCRIPTION, type PrescriptionRow, type RecordDefaults } from "@/lib/form-defaults";
+import type { AutosaveResult } from "@/app/actions/records";
 import { EMPTY_FORM_STATE, type FormState } from "@/lib/validation";
+
+/**
+ * How often the open note is written back.
+ *
+ * Long enough that ordinary typing does not generate a request per word, short
+ * enough that a browser closing mid-consultation costs a sentence rather than
+ * the visit. It only fires when something has actually changed.
+ */
+const AUTOSAVE_INTERVAL_MS = 10_000;
 
 const VITALS = [
   { name: "temperatureC", label: "Temp", unit: "°C", step: "0.1", placeholder: "36.8" },
@@ -20,18 +31,19 @@ const VITALS = [
 
 export function RecordForm({
   action,
+  autosave,
   defaults,
   patientId,
   openAppointments,
-  submitLabel,
   cancelHref,
   lockedAppointment,
 }: {
   action: (state: FormState, formData: FormData) => Promise<FormState>;
+  /** Writes the open note in the background; returns the id it was written to. */
+  autosave: (formData: FormData) => Promise<AutosaveResult>;
   defaults: RecordDefaults;
   patientId: string;
   openAppointments: { id: string; label: string }[];
-  submitLabel: string;
   cancelHref: string;
   /** Set when documenting a specific booking — the link is fixed, not chosen. */
   lockedAppointment?: { id: string; label: string };
@@ -41,14 +53,68 @@ export function RecordForm({
   const err = state.fieldErrors;
   const rxId = useId();
 
+  // A note that has been signed is changed deliberately, with a reason — never
+  // by a timer. Autosave belongs to drafts only.
+  const drafting = defaults.status === "DRAFT";
+
+  const formRef = useRef<HTMLFormElement>(null);
+  const [recordId, setRecordId] = useState(defaults.recordId);
+  const [savedAt, setSavedAt] = useState<Date | null>(
+    defaults.savedAt ? new Date(defaults.savedAt) : null,
+  );
+  const [saveError, setSaveError] = useState<string | null>(null);
+  // Refs, not state: these coordinate the timer and must not re-render the form
+  // under the doctor's cursor.
+  const unsaved = useRef(false);
+  const inFlight = useRef(false);
+
+  useEffect(() => {
+    if (!drafting) return;
+    const timer = setInterval(async () => {
+      if (!unsaved.current || inFlight.current || !formRef.current) return;
+      inFlight.current = true;
+      unsaved.current = false;
+      try {
+        const body = new FormData(formRef.current);
+        // The first save of a new note is what gives it an id; every save after
+        // that has to land on the same row.
+        body.set("recordId", recordId);
+        const result = await autosave(body);
+        if (result.ok) {
+          setRecordId(result.recordId);
+          setSavedAt(new Date(result.savedAt));
+          setSaveError(null);
+        } else {
+          setSaveError(result.message);
+          unsaved.current = true;
+        }
+      } catch {
+        setSaveError("Could not reach the server — your last edits are not saved yet.");
+        unsaved.current = true;
+      } finally {
+        inFlight.current = false;
+      }
+    }, AUTOSAVE_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, [drafting, recordId, autosave]);
+
   function updateRx(index: number, patch: Partial<PrescriptionRow>) {
+    unsaved.current = true;
     setRx((rows) => rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
   }
 
   return (
-    <form action={formAction} className="space-y-7">
+    <form
+      ref={formRef}
+      action={formAction}
+      onInput={() => {
+        unsaved.current = true;
+      }}
+      className="space-y-7"
+    >
       <FormError message={state.message} />
       <input type="hidden" name="patientId" value={patientId} />
+      <input type="hidden" name="recordId" value={recordId} />
 
       <section className="space-y-4">
         <FieldGrid>
@@ -257,11 +323,39 @@ export function RecordForm({
         </Field>
       </section>
 
-      <div className="flex gap-2">
-        <SubmitButton>{submitLabel}</SubmitButton>
+      <div className="flex flex-wrap items-center gap-2 border-t border-border pt-6">
+        {drafting ? (
+          <>
+            {/* Two buttons, because they are two different decisions. Saving
+                keeps the note open and the visit open with it; finishing is
+                what signs the note and completes the appointment. */}
+            <SubmitButton name="intent" value="finish">
+              Finish consultation
+            </SubmitButton>
+            <button name="intent" value="draft" className={buttonClass("secondary")}>
+              Save draft
+            </button>
+          </>
+        ) : (
+          <SubmitButton name="intent" value="finish">
+            Save changes
+          </SubmitButton>
+        )}
         <Link href={cancelHref} className={buttonClass("secondary")}>
           Cancel
         </Link>
+
+        {drafting ? (
+          <span className="ml-auto text-xs" aria-live="polite">
+            {saveError ? (
+              <span className="text-danger-ink">{saveError}</span>
+            ) : savedAt ? (
+              <span className="text-ink-faint">Draft saved {formatTime(savedAt)}</span>
+            ) : (
+              <span className="text-ink-faint">Not saved yet — saves as you write</span>
+            )}
+          </span>
+        ) : null}
       </div>
     </form>
   );

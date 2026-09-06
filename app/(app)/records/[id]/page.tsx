@@ -14,7 +14,15 @@ import { requireDoctor } from "@/lib/auth";
 import { orm } from "@/src/prisma/db";
 import { calendarDateFromDb, formatDate, instantFromDb } from "@/lib/datetime";
 import { formatCalendarDate, formatDateTime, toDateInputValue } from "@/lib/datetime";
-import { ageFrom, bloodPressure, bmi, fullName, SEX_LABELS } from "@/lib/domain";
+import {
+  ageFrom,
+  bloodPressure,
+  bmi,
+  fullName,
+  RECORD_STATUS_LABELS,
+  RECORD_STATUS_TONE,
+  SEX_LABELS,
+} from "@/lib/domain";
 import { AlertBanner, AllergyBanner } from "@/components/allergy-banner";
 import { DangerZone } from "@/components/danger-zone";
 import { Badge, Card, CardHeader, Detail, PageHeader, Prose, buttonClass } from "@/components/ui";
@@ -34,6 +42,7 @@ export default async function RecordPage({ params }: PageProps<"/records/[id]">)
         .include("household", (h) => h.select("id", "name")),
     )
     .include("appointment", (a) => a.select("id", "scheduledAt", "reason"))
+    .include("finalizedBy", (d) => d.select("id", "fullName"))
     .include("followUpAppointment", (a) => a.select("id", "scheduledAt", "status"))
     .include("prescriptions", (rx) =>
       rx
@@ -46,6 +55,7 @@ export default async function RecordPage({ params }: PageProps<"/records/[id]">)
   if (!record) notFound();
 
   const { patient } = record;
+  const draft = record.status === "DRAFT";
 
   // Derived on read from the linked appointment's status — never stored.
   const followUp = followUpState({
@@ -68,7 +78,7 @@ export default async function RecordPage({ params }: PageProps<"/records/[id]">)
   return (
     <div className="space-y-6">
       <PageHeader
-        title={record.chiefComplaint}
+        title={record.chiefComplaint || "Untitled draft"}
         subtitle={
           <>
             <Link href={`/patients/${patient.id}`} className="text-accent-ink hover:underline">
@@ -80,11 +90,37 @@ export default async function RecordPage({ params }: PageProps<"/records/[id]">)
           </>
         }
         actions={
-          <Link href={`/records/${record.id}/edit`} className={buttonClass("secondary")}>
-            Edit record
+          <Link
+            href={`/records/${record.id}/edit`}
+            className={buttonClass(draft ? "primary" : "secondary")}
+          >
+            {draft ? "Continue writing" : "Edit record"}
           </Link>
         }
       />
+
+      {/* An unfinished note is not the record of the visit yet, and reading it
+          as though it were is the mistake worth preventing. */}
+      {draft ? (
+        <div className="rounded-lg border border-warn/40 bg-warn-tint px-4 py-3 text-[13px]">
+          <p className="font-medium text-warn-ink">This consultation is still a draft.</p>
+          <p className="mt-0.5 text-ink-muted">
+            It saves as it is written and can be picked up again. The visit stays open until it is
+            finished, and nothing here is signed.
+          </p>
+        </div>
+      ) : record.finalizedAt ? (
+        <p className="text-xs text-ink-faint">
+          Signed {formatDateTime(instantFromDb(record.finalizedAt))}
+          {record.finalizedBy ? ` by ${record.finalizedBy.fullName}` : ""}.
+        </p>
+      ) : null}
+
+      <div>
+        <Badge dot tone={RECORD_STATUS_TONE[record.status]}>
+          {RECORD_STATUS_LABELS[record.status]}
+        </Badge>
+      </div>
 
       <AlertBanner alerts={patient.alerts} />
       <AllergyBanner status={patient.allergyStatus} allergies={patient.allergies} />

@@ -170,6 +170,11 @@ export const appointmentSchema = z.object({
 
 // --- Medical records --------------------------------------------------------
 
+/**
+ * A finished consultation. Every field a signed note must have is required
+ * here, because signing is the point at which the note becomes the clinical
+ * record and has to stand on its own.
+ */
 export const medicalRecordSchema = z.object({
   patientId: requiredText("Patient", 40),
   appointmentId: optionalText(40),
@@ -213,6 +218,20 @@ export const clinicalItemSchema = z.object({
     .nullable()
     .refine((v) => v === null || v in AllergySeverity, { message: "Pick a severity" }),
   notes: optionalText(400),
+});
+
+/**
+ * A consultation still being written.
+ *
+ * The chief complaint is the one field a finished note cannot do without, and
+ * it is exactly the field a doctor has not typed yet two minutes into the
+ * visit. A draft that refused to save until the note was complete would defeat
+ * the point of drafts, so that requirement moves to the moment of signing.
+ * Everything else — the ranges on vitals, the shape of a date — still applies:
+ * those catch typing mistakes, and a mistake is no more welcome in a draft.
+ */
+export const medicalRecordDraftSchema = medicalRecordSchema.extend({
+  chiefComplaint: optionalText(300).transform((v) => v ?? ""),
 });
 
 export const prescriptionSchema = z.object({
