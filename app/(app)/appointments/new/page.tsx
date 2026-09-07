@@ -60,6 +60,10 @@ export default async function NewAppointmentPage({ searchParams }: PageProps<"/a
   }
 
   const preselected = typeof patientId === "string" && patients.some((p) => p.id === patientId);
+  // A walk-in is judged against the walk-in window, which includes today.
+  // Checking it against the scheduled window meant arriving here with today's
+  // date threw it away and left the form empty.
+  const walkIn = source === "WALK_IN";
 
   return (
     <div className="space-y-6">
@@ -77,7 +81,7 @@ export default async function NewAppointmentPage({ searchParams }: PageProps<"/a
           staffFields
           defaults={{
             patientId: preselected ? (patientId as string) : "",
-            date: usableDate(date, window, schedule),
+            date: usableDate(date, walkIn ? walkInWindow : window, schedule),
             time: "",
             service:
               typeof service === "string" && service in ServiceType

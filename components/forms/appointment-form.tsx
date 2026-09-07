@@ -95,6 +95,8 @@ export function AppointmentForm({
     [date, duration, busyByDay, activeWindow, schedule, now],
   );
 
+  const freeSlots = slots.filter((s) => s.free).length;
+
   // When editing a visit that already sits outside the bookable window, its own
   // time still has to be selectable or the form could not be saved at all.
   const keepsOriginalSlot =
@@ -265,6 +267,15 @@ export function AppointmentForm({
           ) : slots.length === 0 && !keepsOriginalSlot ? (
             <p className="rounded-lg border border-border bg-surface-muted px-3 py-3 text-sm text-ink-muted">
               That date is outside the booking window.
+            </p>
+          ) : freeSlots === 0 && !keepsOriginalSlot ? (
+            /* A grid of struck-through times says "nothing here" only if you
+               read all of it. Say it once, in words, and say which of the two
+               reasons it is. */
+            <p className="rounded-lg border border-border bg-surface-muted px-3 py-3 text-sm text-ink-muted">
+              {date === now.key
+                ? "Nothing left today — every remaining time is taken or has already passed."
+                : "That day is fully booked. Choose another date."}
             </p>
           ) : (
             <>
