@@ -24,7 +24,18 @@ import type { BusyByDay, FollowUpOptions, PatientOption } from "./form-defaults"
  */
 export function appointmentListQuery() {
   return orm.Appointment
-    .select("id", "scheduledAt", "durationMinutes", "service", "reason", "status")
+    .select(
+      "id",
+      "scheduledAt",
+      "durationMinutes",
+      "service",
+      "reason",
+      "status",
+      // Both are already on the row and both change how a visit is prepared for,
+      // so a list that hides them makes the reader open each one to find out.
+      "priority",
+      "visitType",
+    )
     .include("patient", (p) =>
       p
         .select("id", "firstName", "middleName", "lastName")

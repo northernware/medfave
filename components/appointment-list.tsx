@@ -1,11 +1,19 @@
 import Link from "next/link";
-import type { AppointmentStatus, ServiceType } from "@/lib/enums";
-import { formatDayHeading, formatTime } from "@/lib/datetime";
+import type {
+  AppointmentStatus,
+  AppointmentType,
+  ServiceType,
+  VisitPriority,
+} from "@/lib/enums";
+import { dayKey, formatTime } from "@/lib/datetime";
 import {
   APPOINTMENT_STATUS_LABELS,
   APPOINTMENT_STATUS_TONE,
+  APPOINTMENT_TYPE_LABELS,
   fullName,
   SERVICE_LABELS,
+  VISIT_PRIORITY_LABELS,
+  VISIT_PRIORITY_TONE,
 } from "@/lib/domain";
 import { Badge, EmptyState } from "@/components/ui";
 
@@ -16,6 +24,8 @@ export type AppointmentListItem = {
   service: ServiceType;
   reason: string;
   status: AppointmentStatus;
+  priority: VisitPriority;
+  visitType: AppointmentType;
   patient: {
     id: string;
     firstName: string;
@@ -26,16 +36,69 @@ export type AppointmentListItem = {
   medicalRecord: { id: string } | null;
 };
 
+/** A visit that will not happen no longer competes for attention. */
+function isDropped(status: AppointmentStatus) {
+  return status === "CANCELLED" || status === "NO_SHOW";
+}
+
+/**
+ * The status stripe down the left of each row.
+ *
+ * Status is on the row twice on purpose: as a word, for certainty, and as a
+ * colour, so a day can be read at a glance without reading any of it.
+ */
+const STRIPE_CLASS: Record<AppointmentStatus, string> = {
+  PENDING: "bg-warn",
+  CONFIRMED: "bg-accent",
+  CHECKED_IN: "bg-accent",
+  IN_CONSULTATION: "bg-accent",
+  COMPLETED: "bg-ok",
+  CANCELLED: "bg-border-strong",
+  NO_SHOW: "bg-warn",
+};
+
 /** Prisma hands back a flat ordered list; the UI reads better cut into days. */
 function groupByDay(items: AppointmentListItem[]) {
-  const groups: { heading: string; items: AppointmentListItem[] }[] = [];
+  const groups: { key: string; items: AppointmentListItem[] }[] = [];
   for (const item of items) {
-    const heading = formatDayHeading(item.scheduledAt);
+    const key = dayKey(item.scheduledAt);
     const last = groups.at(-1);
-    if (last?.heading === heading) last.items.push(item);
-    else groups.push({ heading, items: [item] });
+    if (last?.key === key) last.items.push(item);
+    else groups.push({ key, items: [item] });
   }
   return groups;
+}
+
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+/**
+ * A day heading built from the key rather than the instant.
+ *
+ * The key is already in clinic time, so this cannot drift into the previous day
+ * the way re-deriving it from a `Date` in another zone would.
+ */
+function describeDay(key: string, todayKey: string) {
+  const [y, m, d] = key.split("-").map(Number);
+  const weekday = WEEKDAYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+  const date = `${d} ${MONTHS[m - 1]} ${y}`;
+
+  const diff = Math.round(
+    (Date.UTC(y, m - 1, d) -
+      Date.UTC(
+        Number(todayKey.slice(0, 4)),
+        Number(todayKey.slice(5, 7)) - 1,
+        Number(todayKey.slice(8, 10)),
+      )) /
+      86_400_000,
+  );
+  const relative =
+    diff === 0 ? "Today" : diff === 1 ? "Tomorrow" : diff === -1 ? "Yesterday" : null;
+
+  return { weekday, date, relative, isToday: diff === 0 };
 }
 
 export function AppointmentList({
@@ -54,54 +117,129 @@ export function AppointmentList({
   }
 
   if (!showDayHeadings) {
-    return <ul className="divide-y divide-border">{appointments.map(renderRow)}</ul>;
+    return (
+      <ul className="divide-y divide-border">
+        {appointments.map((a) => (
+          <AppointmentRow key={a.id} appointment={a} />
+        ))}
+      </ul>
+    );
   }
+
+  const todayKey = dayKey(new Date());
 
   return (
     <div>
-      {groupByDay(appointments).map((group) => (
-        <section key={group.heading}>
-          <h3 className="border-b border-border bg-surface-muted px-5 py-2 text-xs font-semibold tracking-wide text-ink-muted uppercase">
-            {group.heading}
-          </h3>
-          <ul className="divide-y divide-border">{group.items.map(renderRow)}</ul>
-        </section>
-      ))}
+      {groupByDay(appointments).map((group) => {
+        const day = describeDay(group.key, todayKey);
+        const live = group.items.filter((a) => !isDropped(a.status)).length;
+        const dropped = group.items.length - live;
+
+        return (
+          <section key={group.key}>
+            {/* The day's own summary sits in its heading, so scrolling past a
+                day still tells you what was in it. */}
+            <h3
+              className={[
+                "flex flex-wrap items-baseline gap-x-2.5 gap-y-1 border-b border-border px-4 py-2",
+                day.isToday ? "bg-accent-tint" : "bg-surface-muted",
+              ].join(" ")}
+            >
+              <span className="text-[13px] font-semibold tracking-tight">{day.weekday}</span>
+              <span className="text-xs text-ink-muted">{day.date}</span>
+              {day.relative ? (
+                <Badge tone={day.isToday ? "accent" : "neutral"}>{day.relative}</Badge>
+              ) : null}
+              <span className="tabular ml-auto text-xs text-ink-muted">
+                {/* A day whose visits all fell through is described by what
+                    happened to it, not as "0 visits" with a footnote. */}
+                {live === 0
+                  ? `${dropped} cancelled`
+                  : `${live} ${live === 1 ? "visit" : "visits"}${dropped > 0 ? ` · ${dropped} cancelled` : ""}`}
+              </span>
+            </h3>
+            <ul className="divide-y divide-border">
+              {group.items.map((a) => (
+                <AppointmentRow key={a.id} appointment={a} />
+              ))}
+            </ul>
+          </section>
+        );
+      })}
     </div>
   );
 }
 
-function renderRow(appointment: AppointmentListItem) {
-  return <AppointmentRow key={appointment.id} appointment={appointment} />;
-}
-
 function AppointmentRow({ appointment }: { appointment: AppointmentListItem }) {
   const { patient } = appointment;
+  const dropped = isDropped(appointment.status);
+  const urgent = appointment.priority !== "ROUTINE";
+  const remote = appointment.visitType !== "IN_PERSON";
+
   return (
     <li className="transition-colors hover:bg-surface-muted">
-      <Link href={`/appointments/${appointment.id}`} className="flex items-baseline gap-4 px-5 py-3.5">
-        <span className="tabular w-20 shrink-0 text-sm font-medium">
-          {formatTime(appointment.scheduledAt)}
+      <Link
+        href={`/appointments/${appointment.id}`}
+        className={[
+          "flex items-stretch gap-3 px-4 py-3",
+          // A cancelled visit stays on the list — it is part of the record — but
+          // it stops competing with the ones that are still going to happen.
+          dropped ? "opacity-55" : "",
+        ].join(" ")}
+      >
+        <span
+          aria-hidden
+          className={`w-0.5 shrink-0 rounded-full ${STRIPE_CLASS[appointment.status]}`}
+        />
+
+        {/* When it starts and how long it runs — the second of those was on the
+            row's data all along and never shown, so every list read as though
+            every visit were the same length. */}
+        <span className="w-[4.5rem] shrink-0">
+          <span
+            className={[
+              "tabular block text-sm font-medium",
+              dropped ? "line-through decoration-1" : "",
+            ].join(" ")}
+          >
+            {formatTime(appointment.scheduledAt)}
+          </span>
+          <span className="tabular block text-[11px] text-ink-faint">
+            {appointment.durationMinutes} min
+          </span>
         </span>
+
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-medium">
-            {fullName(patient)}
-            <span className="ml-2 text-xs font-normal text-ink-faint">
-              {SERVICE_LABELS[appointment.service]}
-            </span>
+          <span className="block truncate text-sm font-medium">{fullName(patient)}</span>
+          <span className="block truncate text-[13px] text-ink-muted">
+            {SERVICE_LABELS[appointment.service]} · {appointment.reason}
           </span>
-          <span className="block truncate text-sm text-ink-muted">
-            {patient.household.name} · {appointment.reason}
+          <span className="block truncate text-xs text-ink-faint">
+            {patient.household.name} household
           </span>
         </span>
-        <span className="flex shrink-0 items-center gap-2">
-          {appointment.medicalRecord ? <Badge tone="neutral">Documented</Badge> : null}
-          <Badge tone={APPOINTMENT_STATUS_TONE[appointment.status]}>
+
+        <span className="flex shrink-0 flex-col items-end justify-center gap-1">
+          <Badge dot tone={APPOINTMENT_STATUS_TONE[appointment.status]}>
             {APPOINTMENT_STATUS_LABELS[appointment.status]}
           </Badge>
+          {/* Only the exceptions are labelled. A badge on every row for the
+              ordinary case is a badge nobody reads. */}
+          {urgent || remote || appointment.medicalRecord ? (
+            <span className="flex flex-wrap justify-end gap-1">
+              {urgent ? (
+                <Badge tone={VISIT_PRIORITY_TONE[appointment.priority]}>
+                  {VISIT_PRIORITY_LABELS[appointment.priority]}
+                </Badge>
+              ) : null}
+              {remote ? (
+                <Badge tone="neutral">{APPOINTMENT_TYPE_LABELS[appointment.visitType]}</Badge>
+              ) : null}
+              {appointment.medicalRecord ? <Badge tone="neutral">Documented</Badge> : null}
+            </span>
+          ) : null}
         </span>
       </Link>
     </li>
   );
 }
-
