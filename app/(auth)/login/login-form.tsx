@@ -1,12 +1,12 @@
 "use client";
 
 import { useActionState } from "react";
-import { loginDoctor } from "@/app/actions/auth";
+import { login } from "@/app/actions/auth";
 import { Field, FormError, SubmitButton, TextInput } from "@/components/form";
 import { EMPTY_FORM_STATE } from "@/lib/validation";
 
 export function LoginForm() {
-  const [state, action] = useActionState(loginDoctor, EMPTY_FORM_STATE);
+  const [state, action] = useActionState(login, EMPTY_FORM_STATE);
 
   return (
     <form action={action} className="mt-6 space-y-4">

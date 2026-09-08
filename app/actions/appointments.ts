@@ -40,6 +40,9 @@ type AppointmentScalars = Omit<
   | "followUps"
   | "medicalRecord"
   | "followUpForRecord"
+  | "clinic"
+  | "bookedBy"
+  | "appointmentRequests"
 >;
 
 /**

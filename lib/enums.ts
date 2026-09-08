@@ -8,6 +8,22 @@
  * stops assigning to its column's union and fails the typecheck.
  */
 
+export const ClinicRole = {
+  DOCTOR: "DOCTOR",
+  SECRETARY: "SECRETARY",
+  ADMIN: "ADMIN",
+} as const;
+export type ClinicRole = (typeof ClinicRole)[keyof typeof ClinicRole];
+
+export const AppointmentRequestStatus = {
+  PENDING: "PENDING",
+  ACCEPTED: "ACCEPTED",
+  DECLINED: "DECLINED",
+  WITHDRAWN: "WITHDRAWN",
+} as const;
+export type AppointmentRequestStatus =
+  (typeof AppointmentRequestStatus)[keyof typeof AppointmentRequestStatus];
+
 export const DocumentType = {
   MEDICAL_CERTIFICATE: "MEDICAL_CERTIFICATE",
   MEDICAL_ABSTRACT: "MEDICAL_ABSTRACT",

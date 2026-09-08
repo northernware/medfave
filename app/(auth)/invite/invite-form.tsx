@@ -1,25 +1,19 @@
 "use client";
 
 import { useActionState } from "react";
-import { activatePatientAccount } from "@/app/actions/auth";
+import { acceptStaffInvite } from "@/app/actions/auth";
 import { Field, FormError, SubmitButton, TextInput } from "@/components/form";
 import { EMPTY_FORM_STATE } from "@/lib/validation";
 
-export function RegisterForm({ code = "" }: { code?: string }) {
-  const [state, action] = useActionState(activatePatientAccount, EMPTY_FORM_STATE);
+export function InviteForm({ code = "" }: { code?: string }) {
+  const [state, action] = useActionState(acceptStaffInvite, EMPTY_FORM_STATE);
   const err = state.fieldErrors;
 
   return (
     <form action={action} className="mt-6 space-y-4">
       <FormError message={state.message} />
 
-      <Field
-        label="Activation code"
-        htmlFor="code"
-        error={err?.code}
-        hint="Given to you by the clinic. It is what ties this login to your records."
-        required
-      >
+      <Field label="Invitation code" htmlFor="code" error={err?.code} required>
         <TextInput
           id="code"
           name="code"
@@ -36,23 +30,14 @@ export function RegisterForm({ code = "" }: { code?: string }) {
           id="fullName"
           name="fullName"
           required
-          placeholder="Ramon Dela Cruz"
+          placeholder="Maria Santos"
           invalid={Boolean(err?.fullName)}
         />
       </Field>
 
-      <Field label="Email" htmlFor="email" error={err?.email} required>
-        <TextInput
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="username"
-          required
-          placeholder="you@example.com"
-          invalid={Boolean(err?.email)}
-        />
-      </Field>
-
+      {/* The address is not asked for: it is the one the invitation was sent
+          to, and letting it be typed here would make the invitation a blank
+          pass for whoever holds the code. */}
       <Field label="Password" htmlFor="password" error={err?.password} hint="At least 10 characters." required>
         <TextInput
           id="password"
@@ -75,7 +60,7 @@ export function RegisterForm({ code = "" }: { code?: string }) {
         />
       </Field>
 
-      <SubmitButton className="w-full">Activate my account</SubmitButton>
+      <SubmitButton className="w-full">Join the clinic</SubmitButton>
     </form>
   );
 }

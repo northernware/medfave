@@ -1,0 +1,125 @@
+[
+  {
+    "id": "dropColumn.Doctor.passwordHash",
+    "label": "Drop column \"passwordHash\" from \"Doctor\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "passwordHash",
+        "table": "Doctor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"passwordHash\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Doctor",
+          "passwordHash"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop column \"passwordHash\"",
+        "sql": "ALTER TABLE \"public\".\"Doctor\" DROP COLUMN \"passwordHash\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"passwordHash\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Doctor",
+          "passwordHash"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dropIndex.Doctor.Doctor_email_key",
+    "label": "Drop index \"Doctor_email_key\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "Doctor_email_key",
+        "table": "Doctor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"Doctor_email_key\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Doctor_email_key\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop index \"Doctor_email_key\"",
+        "sql": "DROP INDEX \"public\".\"Doctor_email_key\"",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"Doctor_email_key\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Doctor_email_key\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "dropColumn.Doctor.email",
+    "label": "Drop column \"email\" from \"Doctor\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "email",
+        "table": "Doctor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"email\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Doctor",
+          "email"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop column \"email\"",
+        "sql": "ALTER TABLE \"public\".\"Doctor\" DROP COLUMN \"email\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"email\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Doctor",
+          "email"
+        ]
+      }
+    ]
+  }
+]

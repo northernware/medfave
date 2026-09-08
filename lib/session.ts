@@ -11,9 +11,17 @@ function signingKey() {
   return new TextEncoder().encode(secret);
 }
 
-export async function createSession(doctorId: string) {
+/**
+ * The cookie says who is signed in and nothing else.
+ *
+ * Not what they may do: roles and clinic membership are read from the database
+ * on every request. A permission baked into a token keeps working for as long
+ * as the token lives, which means revoking somebody's access would not take
+ * effect until they happened to sign out.
+ */
+export async function createSession(accountId: string) {
   const expiresAt = new Date(Date.now() + MAX_AGE_SECONDS * 1000);
-  const token = await new SignJWT({ doctorId })
+  const token = await new SignJWT({ accountId })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(expiresAt)
@@ -29,12 +37,12 @@ export async function createSession(doctorId: string) {
   });
 }
 
-export async function readSession(): Promise<{ doctorId: string } | null> {
+export async function readSession(): Promise<{ accountId: string } | null> {
   const token = (await cookies()).get(COOKIE_NAME)?.value;
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, signingKey(), { algorithms: ["HS256"] });
-    return typeof payload.doctorId === "string" ? { doctorId: payload.doctorId } : null;
+    return typeof payload.accountId === "string" ? { accountId: payload.accountId } : null;
   } catch {
     // Expired or tampered with — treat as signed out.
     return null;

@@ -4,8 +4,12 @@
 namespace public {
   model Doctor {
     id             String          @id(map: "Doctor_pkey")
-    email          String
-    passwordHash   String
+    /// The practice this clinician works in. Everything they own is the
+    /// clinic's; this is what a secretary's access is scoped by.
+    clinicId       String?
+    /// Their login. Nullable only so the column could be added to populated
+    /// rows — every clinician has one after the backfill.
+    accountId      String?
     fullName       String
     specialty      String?
     licenseNumber  String?
@@ -21,19 +25,26 @@ namespace public {
     recordVersions   MedicalRecordVersion[]
     documentRequests DocumentRequest[]      @relation(name: "DocumentRequest_doctorId_fkey")
     documentsReleased DocumentRequest[]     @relation(name: "DocumentRequest_releasedById_fkey")
+    clinic         Clinic?         @relation(fields: [clinicId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "Doctor_clinicId_fkey")
+    account        Account?        @relation(fields: [accountId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "Doctor_accountId_fkey")
+    appointmentRequests AppointmentRequest[]
     scheduleSettings ScheduleSettings?
     clinicHours      ClinicHours[]
     clinicBreaks     ClinicBreak[]
     clinicClosures   ClinicClosure[]
     serviceDurations ServiceDuration[]
 
-    @@index([email], map: "Doctor_email_key", unique: true)
+    @@unique([accountId], map: "Doctor_accountId_key")
+    @@index([clinicId], map: "Doctor_clinicId_idx")
 
     @@map("Doctor")
   }
 
   model Household {
     id            String       @id(map: "Household_pkey")
+    /// Who owns this record. `doctorId` still says which clinician it was
+    /// entered under; this is the boundary every query is scoped by.
+    clinicId      String?
     doctorId      String
     name          String
     address       String?
@@ -47,8 +58,10 @@ namespace public {
     patients      Patient[]
     primaryContact Patient?    @relation("HouseholdPrimaryContact", fields: [primaryContactId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "Household_primaryContactId_fkey")
     doctor        Doctor       @relation(fields: [doctorId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "Household_doctorId_fkey")
+    clinic        Clinic?      @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "Household_clinicId_fkey")
 
     @@index([doctorId], map: "Household_doctorId_idx")
+    @@index([clinicId], map: "Household_clinicId_idx")
     @@index([doctorId, name], map: "Household_doctorId_name_key", unique: true)
     @@index([primaryContactId], map: "Household_primaryContactId_key", unique: true)
 
@@ -57,6 +70,14 @@ namespace public {
 
   model Patient {
     id                String                      @id(map: "Patient_pkey")
+    /// Who holds this chart. Reachable through the household as well, but a
+    /// person's own clinic is asked for on nearly every request the portal
+    /// makes, and a join for it every time is a join too many.
+    clinicId          String?
+    /// The login that belongs to this person, once they have activated one.
+    /// Null is ordinary and permanent for most patients: a chart does not need
+    /// a login to be a chart.
+    accountId         String?
 
     // Human-readable identity, e.g. MK-2026-000123. Unique and searchable, and
     // never reused — it is what staff and printed documents quote. The primary
@@ -94,11 +115,17 @@ namespace public {
     medications       PatientMedication[]
     alerts            PatientAlert[]
     documentRequests  DocumentRequest[]
+    activations       PatientActivation[]
+    appointmentRequests AppointmentRequest[]
+    account           Account?                    @relation(fields: [accountId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "Patient_accountId_fkey")
+    clinic            Clinic?                     @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "Patient_clinicId_fkey")
     primaryContactFor Household[]                 @relation("HouseholdPrimaryContact")
     household         Household                   @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "Patient_householdId_fkey")
 
     @@index([patientNumber], map: "Patient_patientNumber_key", unique: true)
+    @@unique([accountId], map: "Patient_accountId_key")
     @@index([householdId], map: "Patient_householdId_idx")
+    @@index([clinicId], map: "Patient_clinicId_idx")
     @@index([lastName, firstName], map: "Patient_lastName_firstName_idx")
 
     @@map("Patient")
@@ -106,8 +133,14 @@ namespace public {
 
   model Appointment {
     id                         String                      @id(map: "Appointment_pkey")
+    clinicId                   String?
     patientId                  String
+    /// The clinician the visit is with — not necessarily whoever booked it.
     doctorId                   String
+    /// Who made the booking. Kept apart from `doctorId` on purpose: a
+    /// secretary books, a doctor is booked, and the record of a consultation
+    /// should never be attributed to the person who answered the phone.
+    bookedById                 String?
     scheduledAt                TimestampString(3)
     durationMinutes            Int                         @default(30)
     reason                     String
@@ -138,6 +171,9 @@ namespace public {
     /// once the patient is in the room instead of running until check-out.
     consultationStartedAt      TimestampString(3)?
     doctor                     Doctor                      @relation(fields: [doctorId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "Appointment_doctorId_fkey", index: false)
+    clinic                     Clinic?                     @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "Appointment_clinicId_fkey")
+    bookedBy                   Account?                    @relation(name: "Appointment_bookedById_fkey", fields: [bookedById], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "Appointment_bookedById_fkey")
+    appointmentRequests        AppointmentRequest[]
     patient                    Patient                     @relation(fields: [patientId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "Appointment_patientId_fkey")
     previousAppointment        Appointment?                @relation(name: "Appointment_previousAppointmentId_fkey", fields: [previousAppointmentId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "Appointment_previousAppointmentId_fkey")
     followUps                  Appointment[]               @relation(name: "Appointment_previousAppointmentId_fkey")
@@ -146,6 +182,8 @@ namespace public {
 
     @@index([doctorId, scheduledAt], map: "Appointment_doctorId_scheduledAt_idx")
     @@index([patientId], map: "Appointment_patientId_idx")
+    @@index([clinicId, scheduledAt], map: "Appointment_clinicId_scheduledAt_idx")
+    @@index([bookedById], map: "Appointment_bookedById_idx")
     @@index([previousAppointmentId], map: "Appointment_previousAppointmentId_idx")
 
     @@map("Appointment")
@@ -153,7 +191,9 @@ namespace public {
 
   model MedicalRecord {
     id                      String         @id(map: "MedicalRecord_pkey")
+    clinicId                String?
     patientId               String
+    /// The clinician who wrote it. Authorship, never a permission check.
     doctorId                String
     appointmentId           String?
     visitDate               TimestampString(3)   @default(now())
@@ -205,6 +245,7 @@ namespace public {
 
     prescriptions           Prescription[]
     versions                MedicalRecordVersion[]
+    clinic                  Clinic?        @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "MedicalRecord_clinicId_fkey")
     documentRequests        DocumentRequest[]
     finalizedBy             Doctor?        @relation(name: "MedicalRecord_finalizedById_fkey", fields: [finalizedById], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "MedicalRecord_finalizedById_fkey")
     archivedBy              Doctor?        @relation(name: "MedicalRecord_archivedById_fkey", fields: [archivedById], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "MedicalRecord_archivedById_fkey")
@@ -217,6 +258,7 @@ namespace public {
     @@unique([appointmentId], map: "MedicalRecord_appointmentId_key")
     @@unique([followUpAppointmentId], map: "MedicalRecord_followUpAppointmentId_key")
     @@index([doctorId], map: "MedicalRecord_doctorId_idx")
+    @@index([clinicId], map: "MedicalRecord_clinicId_idx")
     @@index([followUpClosedById], map: "MedicalRecord_followUpClosedById_idx")
     @@index([finalizedById], map: "MedicalRecord_finalizedById_idx")
     @@index([archivedById], map: "MedicalRecord_archivedById_idx")
@@ -418,6 +460,7 @@ namespace public {
   /// much a part of the record as the document it produces.
   model DocumentRequest {
     id               String  @id(map: "DocumentRequest_pkey")
+    clinicId         String?
     doctorId         String
     patientId        String
     /// The visit the document draws on, where it draws on one.
@@ -435,6 +478,10 @@ namespace public {
     /// field across five documents would be mostly nulls.
     details          String?
     notes            String?
+    /// Set when the doctor chose to show this to the patient in their own
+    /// portal. Releasing a document at the desk and publishing it to a login
+    /// are different acts, so they are different fields.
+    sharedWithPatientAt TimestampString(3)?
     /// Set when the document was handed over, and to whom it was handed.
     releasedAt       TimestampString(3)?
     releasedById     String?
@@ -443,16 +490,195 @@ namespace public {
     createdAt        TimestampString(3) @default(now())
     updatedAt        TimestampString(3)
     doctor           Doctor        @relation(name: "DocumentRequest_doctorId_fkey", fields: [doctorId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "DocumentRequest_doctorId_fkey")
+    clinic           Clinic?       @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "DocumentRequest_clinicId_fkey")
     releasedBy       Doctor?       @relation(name: "DocumentRequest_releasedById_fkey", fields: [releasedById], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "DocumentRequest_releasedById_fkey")
     patient          Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "DocumentRequest_patientId_fkey")
     medicalRecord    MedicalRecord? @relation(fields: [medicalRecordId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "DocumentRequest_medicalRecordId_fkey")
 
     @@index([doctorId, status], map: "DocumentRequest_doctorId_status_idx")
     @@index([patientId], map: "DocumentRequest_patientId_idx")
+    @@index([clinicId, status], map: "DocumentRequest_clinicId_status_idx")
     @@index([medicalRecordId], map: "DocumentRequest_medicalRecordId_idx")
     @@index([releasedById], map: "DocumentRequest_releasedById_idx")
 
     @@map("DocumentRequest")
+  }
+
+
+  /// The practice itself: what owns the records, rather than any one person.
+  ///
+  /// Everything clinical used to hang off a single Doctor row, which was also
+  /// the login. That works until somebody else has to answer the phone. A
+  /// clinic owns the charts; people are members of it with a role, and the
+  /// clinician who wrote a note stays recorded on the note.
+  model Clinic {
+    id            String @id(map: "Clinic_pkey")
+    name          String
+    address       String?
+    contactNumber String?
+    createdAt     TimestampString(3) @default(now())
+    updatedAt     TimestampString(3)
+    members       ClinicMember[]
+    doctors       Doctor[]
+    households    Household[]
+    appointments  Appointment[]
+    medicalRecords MedicalRecord[]
+    documentRequests DocumentRequest[]
+    staffInvites  StaffInvite[]
+    patientActivations PatientActivation[]
+    appointmentRequests AppointmentRequest[]
+    patients      Patient[]
+
+    @@map("Clinic")
+  }
+
+  /// Somebody who can sign in — a doctor, a secretary, or a patient.
+  ///
+  /// Deliberately not the same thing as a Patient. A patient exists in the
+  /// chart whether or not they ever log in, and a person who logs in is not
+  /// automatically anybody's patient; conflating the two is how a login ends up
+  /// granting access to a record it was never meant to reach.
+  model Account {
+    id           String @id(map: "Account_pkey")
+    email        String
+    passwordHash String
+    fullName     String
+    createdAt    TimestampString(3) @default(now())
+    updatedAt    TimestampString(3)
+    memberships  ClinicMember[]
+    doctorProfile Doctor?
+    patientProfile Patient?
+    invitesSent  StaffInvite[]       @relation(name: "StaffInvite_invitedById_fkey")
+    invitesAccepted StaffInvite[]    @relation(name: "StaffInvite_acceptedById_fkey")
+    activationsIssued PatientActivation[]
+    bookingsMade Appointment[]       @relation(name: "Appointment_bookedById_fkey")
+    requestsMade AppointmentRequest[] @relation(name: "AppointmentRequest_requestedById_fkey")
+    requestsDecided AppointmentRequest[] @relation(name: "AppointmentRequest_decidedById_fkey")
+
+    @@index([email], map: "Account_email_key", unique: true)
+
+    @@map("Account")
+  }
+
+  /// What one account may do in one clinic.
+  ///
+  /// Membership is the permission. An account with no membership in a clinic
+  /// has no way to reach anything of that clinic's, whatever else it may be
+  /// elsewhere.
+  model ClinicMember {
+    id        String @id(map: "ClinicMember_pkey")
+    clinicId  String
+    accountId String
+    role      pg.enum(ClinicRole)
+    createdAt TimestampString(3) @default(now())
+    updatedAt TimestampString(3)
+    clinic    Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "ClinicMember_clinicId_fkey", index: false)
+    account   Account @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "ClinicMember_accountId_fkey")
+
+    @@index([clinicId, accountId], map: "ClinicMember_clinicId_accountId_key", unique: true)
+    @@index([accountId], map: "ClinicMember_accountId_idx")
+
+    @@map("ClinicMember")
+  }
+
+  /// An invitation for somebody to join a clinic as staff.
+  ///
+  /// The token is stored hashed and handed out once, so the row cannot be read
+  /// out of the database and used. Staff exist only because an existing member
+  /// asked for them — there is no way to sign up as staff from outside.
+  model StaffInvite {
+    id            String @id(map: "StaffInvite_pkey")
+    clinicId      String
+    email         String
+    role          pg.enum(ClinicRole)
+    tokenHash     String
+    invitedById   String
+    expiresAt     TimestampString(3)
+    acceptedAt    TimestampString(3)?
+    acceptedById  String?
+    revokedAt     TimestampString(3)?
+    createdAt     TimestampString(3) @default(now())
+    clinic        Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "StaffInvite_clinicId_fkey", index: false)
+    invitedBy     Account @relation(name: "StaffInvite_invitedById_fkey", fields: [invitedById], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "StaffInvite_invitedById_fkey")
+    acceptedBy    Account? @relation(name: "StaffInvite_acceptedById_fkey", fields: [acceptedById], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "StaffInvite_acceptedById_fkey")
+
+    @@index([tokenHash], map: "StaffInvite_tokenHash_key", unique: true)
+    @@index([clinicId], map: "StaffInvite_clinicId_idx")
+    @@index([invitedById], map: "StaffInvite_invitedById_idx")
+    @@index([acceptedById], map: "StaffInvite_acceptedById_idx")
+
+    @@map("StaffInvite")
+  }
+
+  /// A one-time code that ties a new login to one existing patient record.
+  ///
+  /// This is the only way a login becomes a patient's own. A name and an email
+  /// are not evidence of identity — two people share both often enough — so the
+  /// clinic issues a code to somebody it has identified at the desk, and the
+  /// code says which chart it opens.
+  model PatientActivation {
+    id           String @id(map: "PatientActivation_pkey")
+    clinicId     String
+    patientId    String
+    tokenHash    String
+    issuedById   String
+    expiresAt    TimestampString(3)
+    usedAt       TimestampString(3)?
+    revokedAt    TimestampString(3)?
+    createdAt    TimestampString(3) @default(now())
+    clinic       Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "PatientActivation_clinicId_fkey", index: false)
+    patient      Patient @relation(fields: [patientId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "PatientActivation_patientId_fkey")
+    issuedBy     Account @relation(fields: [issuedById], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "PatientActivation_issuedById_fkey")
+
+    @@index([tokenHash], map: "PatientActivation_tokenHash_key", unique: true)
+    @@index([patientId], map: "PatientActivation_patientId_idx")
+    @@index([clinicId], map: "PatientActivation_clinicId_idx")
+    @@index([issuedById], map: "PatientActivation_issuedById_idx")
+
+    @@map("PatientActivation")
+  }
+
+  /// A patient asking for a time, which staff then accept or decline.
+  ///
+  /// Deliberately not an Appointment. A request holds no slot: it is a wish,
+  /// and letting a wish block the calendar would let anybody empty it. The slot
+  /// is taken at the moment staff accept, through the same booking lock and
+  /// overlap check as any other booking — so an accepted request can still fail
+  /// because the time went, and says so.
+  model AppointmentRequest {
+    id                String @id(map: "AppointmentRequest_pkey")
+    clinicId          String
+    patientId         String
+    doctorId          String
+    requestedById     String
+    preferredDate     DateString
+    /// "HH:MM" in clinic time, or null for "any time that day".
+    preferredTime     String?
+    service           pg.enum(ServiceType)
+    reason            String
+    status            pg.enum(AppointmentRequestStatus) @default("PENDING")
+    /// Set when accepting produced a booking.
+    appointmentId     String?
+    decisionNote      String?
+    decidedById       String?
+    decidedAt         TimestampString(3)?
+    createdAt         TimestampString(3) @default(now())
+    updatedAt         TimestampString(3)
+    clinic            Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "AppointmentRequest_clinicId_fkey", index: false)
+    patient           Patient @relation(fields: [patientId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "AppointmentRequest_patientId_fkey")
+    doctor            Doctor  @relation(fields: [doctorId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "AppointmentRequest_doctorId_fkey")
+    requestedBy       Account @relation(name: "AppointmentRequest_requestedById_fkey", fields: [requestedById], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "AppointmentRequest_requestedById_fkey")
+    decidedBy         Account? @relation(name: "AppointmentRequest_decidedById_fkey", fields: [decidedById], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "AppointmentRequest_decidedById_fkey")
+    appointment       Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "AppointmentRequest_appointmentId_fkey")
+
+    @@index([clinicId, status], map: "AppointmentRequest_clinicId_status_idx")
+    @@index([patientId], map: "AppointmentRequest_patientId_idx")
+    @@index([doctorId], map: "AppointmentRequest_doctorId_idx")
+    @@index([requestedById], map: "AppointmentRequest_requestedById_idx")
+    @@index([decidedById], map: "AppointmentRequest_decidedById_idx")
+    @@index([appointmentId], map: "AppointmentRequest_appointmentId_idx")
+
+    @@map("AppointmentRequest")
   }
 
   model Prescription {
@@ -536,6 +762,20 @@ namespace public {
     READY = "READY"
     RELEASED = "RELEASED"
     DECLINED = "DECLINED"
+  }
+
+
+  native_enum ClinicRole {
+    DOCTOR = "DOCTOR"
+    SECRETARY = "SECRETARY"
+    ADMIN = "ADMIN"
+  }
+
+  native_enum AppointmentRequestStatus {
+    PENDING = "PENDING"
+    ACCEPTED = "ACCEPTED"
+    DECLINED = "DECLINED"
+    WITHDRAWN = "WITHDRAWN"
   }
 
   native_enum RecordStatus {

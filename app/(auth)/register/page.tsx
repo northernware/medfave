@@ -2,23 +2,30 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { RegisterForm } from "./register-form";
 
-export const metadata: Metadata = { title: "Register" };
+export const metadata: Metadata = { title: "Activate your account" };
 
-export default function RegisterPage() {
+export default async function RegisterPage({ searchParams }: PageProps<"/register">) {
+  const { code } = await searchParams;
+
   return (
     <div className="rounded-xl border border-border bg-surface p-6 shadow-card sm:p-8">
-      <h1 className="text-xl font-semibold tracking-tight">Register your practice</h1>
+      <h1 className="text-xl font-semibold tracking-tight">Activate your account</h1>
       <p className="mt-1 text-sm text-ink-muted">
-        Households, patients and records you create stay visible only to this account.
+        For patients of the clinic. Your activation code is what connects this login to your own
+        records — the clinic gives it to you once they have identified you.
       </p>
 
-      <RegisterForm />
+      <RegisterForm code={typeof code === "string" ? code : ""} />
 
       <p className="mt-6 text-sm text-ink-muted">
-        Already registered?{" "}
+        Already have an account?{" "}
         <Link href="/login" className="font-medium text-accent-ink hover:underline">
           Sign in
         </Link>
+      </p>
+      <p className="mt-2 text-sm text-ink-muted">
+        Clinic staff do not sign up here. A doctor invites you, and the invitation carries your
+        role.
       </p>
     </div>
   );

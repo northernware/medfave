@@ -4,8 +4,20 @@
   "target": "postgres",
   "profileHash": "3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2",
   "roots": {
+    "Account": {
+      "model": "Account",
+      "namespace": "public"
+    },
     "Appointment": {
       "model": "Appointment",
+      "namespace": "public"
+    },
+    "AppointmentRequest": {
+      "model": "AppointmentRequest",
+      "namespace": "public"
+    },
+    "Clinic": {
+      "model": "Clinic",
       "namespace": "public"
     },
     "ClinicBreak": {
@@ -18,6 +30,10 @@
     },
     "ClinicHours": {
       "model": "ClinicHours",
+      "namespace": "public"
+    },
+    "ClinicMember": {
+      "model": "ClinicMember",
       "namespace": "public"
     },
     "Doctor": {
@@ -42,6 +58,10 @@
     },
     "Patient": {
       "model": "Patient",
+      "namespace": "public"
+    },
+    "PatientActivation": {
+      "model": "PatientActivation",
       "namespace": "public"
     },
     "PatientAlert": {
@@ -75,12 +95,229 @@
     "ServiceDuration": {
       "model": "ServiceDuration",
       "namespace": "public"
+    },
+    "StaffInvite": {
+      "model": "StaffInvite",
+      "namespace": "public"
     }
   },
   "domain": {
     "namespaces": {
       "public": {
         "models": {
+          "Account": {
+            "fields": {
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "email": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "fullName": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "passwordHash": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              }
+            },
+            "relations": {
+              "activationsIssued": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "issuedById"
+                  ]
+                },
+                "to": {
+                  "model": "PatientActivation",
+                  "namespace": "public"
+                }
+              },
+              "bookingsMade": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "bookedById"
+                  ]
+                },
+                "to": {
+                  "model": "Appointment",
+                  "namespace": "public"
+                }
+              },
+              "doctorProfile": {
+                "cardinality": "1:1",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "accountId"
+                  ]
+                },
+                "to": {
+                  "model": "Doctor",
+                  "namespace": "public"
+                }
+              },
+              "invitesAccepted": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "acceptedById"
+                  ]
+                },
+                "to": {
+                  "model": "StaffInvite",
+                  "namespace": "public"
+                }
+              },
+              "invitesSent": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "invitedById"
+                  ]
+                },
+                "to": {
+                  "model": "StaffInvite",
+                  "namespace": "public"
+                }
+              },
+              "memberships": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "accountId"
+                  ]
+                },
+                "to": {
+                  "model": "ClinicMember",
+                  "namespace": "public"
+                }
+              },
+              "patientProfile": {
+                "cardinality": "1:1",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "accountId"
+                  ]
+                },
+                "to": {
+                  "model": "Patient",
+                  "namespace": "public"
+                }
+              },
+              "requestsDecided": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "decidedById"
+                  ]
+                },
+                "to": {
+                  "model": "AppointmentRequest",
+                  "namespace": "public"
+                }
+              },
+              "requestsMade": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "requestedById"
+                  ]
+                },
+                "to": {
+                  "model": "AppointmentRequest",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "email": {
+                  "column": "email"
+                },
+                "fullName": {
+                  "column": "fullName"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "passwordHash": {
+                  "column": "passwordHash"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                }
+              },
+              "namespaceId": "public",
+              "table": "Account"
+            }
+          },
           "Appointment": {
             "fields": {
               "arrivedAt": {
@@ -101,6 +338,20 @@
                   "typeParams": {
                     "precision": 3
                   }
+                }
+              },
+              "bookedById": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "clinicId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
                 }
               },
               "consultationStartedAt": {
@@ -268,6 +519,51 @@
               }
             },
             "relations": {
+              "appointmentRequests": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "appointmentId"
+                  ]
+                },
+                "to": {
+                  "model": "AppointmentRequest",
+                  "namespace": "public"
+                }
+              },
+              "bookedBy": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "bookedById"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Account",
+                  "namespace": "public"
+                }
+              },
+              "clinic": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "clinicId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Clinic",
+                  "namespace": "public"
+                }
+              },
               "doctor": {
                 "cardinality": "N:1",
                 "on": {
@@ -367,6 +663,12 @@
                 "autoNoShowAt": {
                   "column": "autoNoShowAt"
                 },
+                "bookedById": {
+                  "column": "bookedById"
+                },
+                "clinicId": {
+                  "column": "clinicId"
+                },
                 "consultationStartedAt": {
                   "column": "consultationStartedAt"
                 },
@@ -427,6 +729,511 @@
               },
               "namespaceId": "public",
               "table": "Appointment"
+            }
+          },
+          "AppointmentRequest": {
+            "fields": {
+              "appointmentId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "clinicId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "decidedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "decidedById": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "decisionNote": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "doctorId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "patientId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "preferredDate": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/date-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "preferredTime": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "reason": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "requestedById": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "service": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/enum@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "typeName": "ServiceType"
+                  }
+                }
+              },
+              "status": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/enum@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "typeName": "AppointmentRequestStatus"
+                  }
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              }
+            },
+            "relations": {
+              "appointment": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "appointmentId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Appointment",
+                  "namespace": "public"
+                }
+              },
+              "clinic": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "clinicId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Clinic",
+                  "namespace": "public"
+                }
+              },
+              "decidedBy": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "decidedById"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Account",
+                  "namespace": "public"
+                }
+              },
+              "doctor": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "doctorId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Doctor",
+                  "namespace": "public"
+                }
+              },
+              "patient": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "patientId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Patient",
+                  "namespace": "public"
+                }
+              },
+              "requestedBy": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "requestedById"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Account",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "appointmentId": {
+                  "column": "appointmentId"
+                },
+                "clinicId": {
+                  "column": "clinicId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "decidedAt": {
+                  "column": "decidedAt"
+                },
+                "decidedById": {
+                  "column": "decidedById"
+                },
+                "decisionNote": {
+                  "column": "decisionNote"
+                },
+                "doctorId": {
+                  "column": "doctorId"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "patientId": {
+                  "column": "patientId"
+                },
+                "preferredDate": {
+                  "column": "preferredDate"
+                },
+                "preferredTime": {
+                  "column": "preferredTime"
+                },
+                "reason": {
+                  "column": "reason"
+                },
+                "requestedById": {
+                  "column": "requestedById"
+                },
+                "service": {
+                  "column": "service"
+                },
+                "status": {
+                  "column": "status"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                }
+              },
+              "namespaceId": "public",
+              "table": "AppointmentRequest"
+            }
+          },
+          "Clinic": {
+            "fields": {
+              "address": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "contactNumber": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "name": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              }
+            },
+            "relations": {
+              "appointmentRequests": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "clinicId"
+                  ]
+                },
+                "to": {
+                  "model": "AppointmentRequest",
+                  "namespace": "public"
+                }
+              },
+              "appointments": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "clinicId"
+                  ]
+                },
+                "to": {
+                  "model": "Appointment",
+                  "namespace": "public"
+                }
+              },
+              "doctors": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "clinicId"
+                  ]
+                },
+                "to": {
+                  "model": "Doctor",
+                  "namespace": "public"
+                }
+              },
+              "documentRequests": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "clinicId"
+                  ]
+                },
+                "to": {
+                  "model": "DocumentRequest",
+                  "namespace": "public"
+                }
+              },
+              "households": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "clinicId"
+                  ]
+                },
+                "to": {
+                  "model": "Household",
+                  "namespace": "public"
+                }
+              },
+              "medicalRecords": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "clinicId"
+                  ]
+                },
+                "to": {
+                  "model": "MedicalRecord",
+                  "namespace": "public"
+                }
+              },
+              "members": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "clinicId"
+                  ]
+                },
+                "to": {
+                  "model": "ClinicMember",
+                  "namespace": "public"
+                }
+              },
+              "patientActivations": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "clinicId"
+                  ]
+                },
+                "to": {
+                  "model": "PatientActivation",
+                  "namespace": "public"
+                }
+              },
+              "patients": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "clinicId"
+                  ]
+                },
+                "to": {
+                  "model": "Patient",
+                  "namespace": "public"
+                }
+              },
+              "staffInvites": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "clinicId"
+                  ]
+                },
+                "to": {
+                  "model": "StaffInvite",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "address": {
+                  "column": "address"
+                },
+                "contactNumber": {
+                  "column": "contactNumber"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "name": {
+                  "column": "name"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                }
+              },
+              "namespaceId": "public",
+              "table": "Clinic"
             }
           },
           "ClinicBreak": {
@@ -690,10 +1497,17 @@
               "table": "ClinicHours"
             }
           },
-          "Doctor": {
+          "ClinicMember": {
             "fields": {
-              "clinicName": {
-                "nullable": true,
+              "accountId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "clinicId": {
+                "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -709,11 +1523,122 @@
                   }
                 }
               },
-              "email": {
+              "id": {
                 "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
+                }
+              },
+              "role": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/enum@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "typeName": "ClinicRole"
+                  }
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              }
+            },
+            "relations": {
+              "account": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "accountId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Account",
+                  "namespace": "public"
+                }
+              },
+              "clinic": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "clinicId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Clinic",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "accountId": {
+                  "column": "accountId"
+                },
+                "clinicId": {
+                  "column": "clinicId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "role": {
+                  "column": "role"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                }
+              },
+              "namespaceId": "public",
+              "table": "ClinicMember"
+            }
+          },
+          "Doctor": {
+            "fields": {
+              "accountId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "clinicId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "clinicName": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               },
               "fullName": {
@@ -732,13 +1657,6 @@
               },
               "licenseNumber": {
                 "nullable": true,
-                "type": {
-                  "codecId": "pg/text@1",
-                  "kind": "scalar"
-                }
-              },
-              "passwordHash": {
-                "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -763,6 +1681,36 @@
               }
             },
             "relations": {
+              "account": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "accountId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Account",
+                  "namespace": "public"
+                }
+              },
+              "appointmentRequests": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "doctorId"
+                  ]
+                },
+                "to": {
+                  "model": "AppointmentRequest",
+                  "namespace": "public"
+                }
+              },
               "appointments": {
                 "cardinality": "1:N",
                 "on": {
@@ -775,6 +1723,21 @@
                 },
                 "to": {
                   "model": "Appointment",
+                  "namespace": "public"
+                }
+              },
+              "clinic": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "clinicId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Clinic",
                   "namespace": "public"
                 }
               },
@@ -976,14 +1939,17 @@
             },
             "storage": {
               "fields": {
+                "accountId": {
+                  "column": "accountId"
+                },
+                "clinicId": {
+                  "column": "clinicId"
+                },
                 "clinicName": {
                   "column": "clinicName"
                 },
                 "createdAt": {
                   "column": "createdAt"
-                },
-                "email": {
-                  "column": "email"
                 },
                 "fullName": {
                   "column": "fullName"
@@ -993,9 +1959,6 @@
                 },
                 "licenseNumber": {
                   "column": "licenseNumber"
-                },
-                "passwordHash": {
-                  "column": "passwordHash"
                 },
                 "specialty": {
                   "column": "specialty"
@@ -1010,6 +1973,13 @@
           },
           "DocumentRequest": {
             "fields": {
+              "clinicId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "createdAt": {
                 "nullable": false,
                 "type": {
@@ -1114,6 +2084,16 @@
                   "kind": "scalar"
                 }
               },
+              "sharedWithPatientAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
               "status": {
                 "nullable": false,
                 "type": {
@@ -1146,6 +2126,21 @@
               }
             },
             "relations": {
+              "clinic": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "clinicId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Clinic",
+                  "namespace": "public"
+                }
+              },
               "doctor": {
                 "cardinality": "N:1",
                 "on": {
@@ -1209,6 +2204,9 @@
             },
             "storage": {
               "fields": {
+                "clinicId": {
+                  "column": "clinicId"
+                },
                 "createdAt": {
                   "column": "createdAt"
                 },
@@ -1251,6 +2249,9 @@
                 "requesterRelation": {
                   "column": "requesterRelation"
                 },
+                "sharedWithPatientAt": {
+                  "column": "sharedWithPatientAt"
+                },
                 "status": {
                   "column": "status"
                 },
@@ -1268,6 +2269,13 @@
           "Household": {
             "fields": {
               "address": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "clinicId": {
                 "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
@@ -1338,6 +2346,21 @@
               }
             },
             "relations": {
+              "clinic": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "clinicId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Clinic",
+                  "namespace": "public"
+                }
+              },
               "doctor": {
                 "cardinality": "N:1",
                 "on": {
@@ -1388,6 +2411,9 @@
               "fields": {
                 "address": {
                   "column": "address"
+                },
+                "clinicId": {
+                  "column": "clinicId"
                 },
                 "contactNumber": {
                   "column": "contactNumber"
@@ -1460,6 +2486,13 @@
               },
               "chiefComplaint": {
                 "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "clinicId": {
+                "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -1697,6 +2730,21 @@
                   "namespace": "public"
                 }
               },
+              "clinic": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "clinicId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Clinic",
+                  "namespace": "public"
+                }
+              },
               "doctor": {
                 "cardinality": "N:1",
                 "on": {
@@ -1837,6 +2885,9 @@
                 },
                 "chiefComplaint": {
                   "column": "chiefComplaint"
+                },
+                "clinicId": {
+                  "column": "clinicId"
                 },
                 "createdAt": {
                   "column": "createdAt"
@@ -2038,6 +3089,13 @@
           },
           "Patient": {
             "fields": {
+              "accountId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "allergyStatus": {
                 "nullable": false,
                 "type": {
@@ -2056,6 +3114,13 @@
                   "typeParams": {
                     "typeName": "BloodType"
                   }
+                }
+              },
+              "clinicId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
                 }
               },
               "conditionStatus": {
@@ -2204,6 +3269,36 @@
               }
             },
             "relations": {
+              "account": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "accountId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Account",
+                  "namespace": "public"
+                }
+              },
+              "activations": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "patientId"
+                  ]
+                },
+                "to": {
+                  "model": "PatientActivation",
+                  "namespace": "public"
+                }
+              },
               "alerts": {
                 "cardinality": "1:N",
                 "on": {
@@ -2234,6 +3329,21 @@
                   "namespace": "public"
                 }
               },
+              "appointmentRequests": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "patientId"
+                  ]
+                },
+                "to": {
+                  "model": "AppointmentRequest",
+                  "namespace": "public"
+                }
+              },
               "appointments": {
                 "cardinality": "1:N",
                 "on": {
@@ -2246,6 +3356,21 @@
                 },
                 "to": {
                   "model": "Appointment",
+                  "namespace": "public"
+                }
+              },
+              "clinic": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "clinicId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Clinic",
                   "namespace": "public"
                 }
               },
@@ -2342,11 +3467,17 @@
             },
             "storage": {
               "fields": {
+                "accountId": {
+                  "column": "accountId"
+                },
                 "allergyStatus": {
                   "column": "allergyStatus"
                 },
                 "bloodType": {
                   "column": "bloodType"
+                },
+                "clinicId": {
+                  "column": "clinicId"
                 },
                 "conditionStatus": {
                   "column": "conditionStatus"
@@ -2405,6 +3536,165 @@
               },
               "namespaceId": "public",
               "table": "Patient"
+            }
+          },
+          "PatientActivation": {
+            "fields": {
+              "clinicId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "expiresAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "issuedById": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "patientId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "revokedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "tokenHash": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "usedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              }
+            },
+            "relations": {
+              "clinic": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "clinicId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Clinic",
+                  "namespace": "public"
+                }
+              },
+              "issuedBy": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "issuedById"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Account",
+                  "namespace": "public"
+                }
+              },
+              "patient": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "patientId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Patient",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "clinicId": {
+                  "column": "clinicId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "expiresAt": {
+                  "column": "expiresAt"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "issuedById": {
+                  "column": "issuedById"
+                },
+                "patientId": {
+                  "column": "patientId"
+                },
+                "revokedAt": {
+                  "column": "revokedAt"
+                },
+                "tokenHash": {
+                  "column": "tokenHash"
+                },
+                "usedAt": {
+                  "column": "usedAt"
+                }
+              },
+              "namespaceId": "public",
+              "table": "PatientActivation"
             }
           },
           "PatientAlert": {
@@ -3057,6 +4347,188 @@
               "namespaceId": "public",
               "table": "ServiceDuration"
             }
+          },
+          "StaffInvite": {
+            "fields": {
+              "acceptedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "acceptedById": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "clinicId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "email": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "expiresAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "invitedById": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "revokedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "role": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/enum@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "typeName": "ClinicRole"
+                  }
+                }
+              },
+              "tokenHash": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "acceptedBy": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "acceptedById"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Account",
+                  "namespace": "public"
+                }
+              },
+              "clinic": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "clinicId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Clinic",
+                  "namespace": "public"
+                }
+              },
+              "invitedBy": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "invitedById"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Account",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "acceptedAt": {
+                  "column": "acceptedAt"
+                },
+                "acceptedById": {
+                  "column": "acceptedById"
+                },
+                "clinicId": {
+                  "column": "clinicId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "email": {
+                  "column": "email"
+                },
+                "expiresAt": {
+                  "column": "expiresAt"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "invitedById": {
+                  "column": "invitedById"
+                },
+                "revokedAt": {
+                  "column": "revokedAt"
+                },
+                "role": {
+                  "column": "role"
+                },
+                "tokenHash": {
+                  "column": "tokenHash"
+                }
+              },
+              "namespaceId": "public",
+              "table": "StaffInvite"
+            }
           }
         }
       }
@@ -3075,6 +4547,16 @@
                 "SEVERE"
               ],
               "typeName": "AllergySeverity"
+            },
+            "AppointmentRequestStatus": {
+              "kind": "postgres-enum",
+              "members": [
+                "PENDING",
+                "ACCEPTED",
+                "DECLINED",
+                "WITHDRAWN"
+              ],
+              "typeName": "AppointmentRequestStatus"
             },
             "AppointmentStatus": {
               "kind": "postgres-enum",
@@ -3122,6 +4604,15 @@
                 "PATIENT_PORTAL"
               ],
               "typeName": "BookingSource"
+            },
+            "ClinicRole": {
+              "kind": "postgres-enum",
+              "members": [
+                "DOCTOR",
+                "SECRETARY",
+                "ADMIN"
+              ],
+              "typeName": "ClinicRole"
             },
             "ClinicalListStatus": {
               "kind": "postgres-enum",
@@ -3225,6 +4716,67 @@
             }
           },
           "table": {
+            "Account": {
+              "columns": {
+                "createdAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamp",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "email": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "fullName": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "passwordHash": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [
+                {
+                  "columns": [
+                    "email"
+                  ],
+                  "name": "Account_email_key",
+                  "unique": true
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ],
+                "name": "Account_pkey"
+              },
+              "uniques": []
+            },
             "Appointment": {
               "columns": {
                 "arrivedAt": {
@@ -3242,6 +4794,16 @@
                   "typeParams": {
                     "precision": 3
                   }
+                },
+                "bookedById": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "clinicId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 },
                 "consultationStartedAt": {
                   "codecId": "pg/timestamp-string@1",
@@ -3458,6 +5020,44 @@
                   }
                 },
                 {
+                  "name": "Appointment_clinicId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "clinicId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Appointment"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Clinic"
+                  }
+                },
+                {
+                  "name": "Appointment_bookedById_fkey",
+                  "onDelete": "setNull",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "bookedById"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Appointment"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Account"
+                  }
+                },
+                {
                   "name": "Appointment_patientId_fkey",
                   "onDelete": "cascade",
                   "onUpdate": "cascade",
@@ -3499,6 +5099,29 @@
               "indexes": [
                 {
                   "columns": [
+                    "bookedById"
+                  ],
+                  "name": "Appointment_bookedById_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "clinicId"
+                  ],
+                  "name": "Appointment_clinicId_idx_8f933800",
+                  "prefix": "Appointment_clinicId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "clinicId",
+                    "scheduledAt"
+                  ],
+                  "name": "Appointment_clinicId_scheduledAt_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
                     "doctorId",
                     "scheduledAt"
                   ],
@@ -3525,6 +5148,346 @@
                   "id"
                 ],
                 "name": "Appointment_pkey"
+              },
+              "uniques": []
+            },
+            "AppointmentRequest": {
+              "columns": {
+                "appointmentId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "clinicId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamp",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "decidedAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "decidedById": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "decisionNote": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "doctorId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "patientId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "preferredDate": {
+                  "codecId": "pg/date-string@1",
+                  "nativeType": "date",
+                  "nullable": false
+                },
+                "preferredTime": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "reason": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "requestedById": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "service": {
+                  "codecId": "pg/enum@1",
+                  "nativeType": "ServiceType",
+                  "nullable": false,
+                  "typeParams": {
+                    "typeName": "ServiceType"
+                  },
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "ServiceType",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "status": {
+                  "codecId": "pg/enum@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "PENDING"
+                  },
+                  "nativeType": "AppointmentRequestStatus",
+                  "nullable": false,
+                  "typeParams": {
+                    "typeName": "AppointmentRequestStatus"
+                  },
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "AppointmentRequestStatus",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "foreignKeys": [
+                {
+                  "name": "AppointmentRequest_clinicId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "clinicId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "AppointmentRequest"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Clinic"
+                  }
+                },
+                {
+                  "name": "AppointmentRequest_patientId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "patientId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "AppointmentRequest"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Patient"
+                  }
+                },
+                {
+                  "name": "AppointmentRequest_doctorId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "doctorId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "AppointmentRequest"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Doctor"
+                  }
+                },
+                {
+                  "name": "AppointmentRequest_requestedById_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "requestedById"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "AppointmentRequest"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Account"
+                  }
+                },
+                {
+                  "name": "AppointmentRequest_decidedById_fkey",
+                  "onDelete": "setNull",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "decidedById"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "AppointmentRequest"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Account"
+                  }
+                },
+                {
+                  "name": "AppointmentRequest_appointmentId_fkey",
+                  "onDelete": "setNull",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "appointmentId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "AppointmentRequest"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Appointment"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "appointmentId"
+                  ],
+                  "name": "AppointmentRequest_appointmentId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "clinicId",
+                    "status"
+                  ],
+                  "name": "AppointmentRequest_clinicId_status_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "decidedById"
+                  ],
+                  "name": "AppointmentRequest_decidedById_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "doctorId"
+                  ],
+                  "name": "AppointmentRequest_doctorId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "patientId"
+                  ],
+                  "name": "AppointmentRequest_patientId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "requestedById"
+                  ],
+                  "name": "AppointmentRequest_requestedById_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ],
+                "name": "AppointmentRequest_pkey"
+              },
+              "uniques": []
+            },
+            "Clinic": {
+              "columns": {
+                "address": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "contactNumber": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamp",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "name": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ],
+                "name": "Clinic_pkey"
               },
               "uniques": []
             },
@@ -3759,8 +5722,135 @@
               },
               "uniques": []
             },
+            "ClinicMember": {
+              "columns": {
+                "accountId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "clinicId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamp",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "role": {
+                  "codecId": "pg/enum@1",
+                  "nativeType": "ClinicRole",
+                  "nullable": false,
+                  "typeParams": {
+                    "typeName": "ClinicRole"
+                  },
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "ClinicRole",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "foreignKeys": [
+                {
+                  "name": "ClinicMember_clinicId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "clinicId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "ClinicMember"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Clinic"
+                  }
+                },
+                {
+                  "name": "ClinicMember_accountId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "accountId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "ClinicMember"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Account"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "accountId"
+                  ],
+                  "name": "ClinicMember_accountId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "clinicId",
+                    "accountId"
+                  ],
+                  "name": "ClinicMember_clinicId_accountId_key",
+                  "unique": true
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ],
+                "name": "ClinicMember_pkey"
+              },
+              "uniques": []
+            },
             "Doctor": {
               "columns": {
+                "accountId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "clinicId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "clinicName": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -3778,11 +5868,6 @@
                     "precision": 3
                   }
                 },
-                "email": {
-                  "codecId": "pg/text@1",
-                  "nativeType": "text",
-                  "nullable": false
-                },
                 "fullName": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -3798,11 +5883,6 @@
                   "nativeType": "text",
                   "nullable": true
                 },
-                "passwordHash": {
-                  "codecId": "pg/text@1",
-                  "nativeType": "text",
-                  "nullable": false
-                },
                 "specialty": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -3817,14 +5897,53 @@
                   }
                 }
               },
-              "foreignKeys": [],
+              "foreignKeys": [
+                {
+                  "name": "Doctor_clinicId_fkey",
+                  "onDelete": "setNull",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "clinicId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Doctor"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Clinic"
+                  }
+                },
+                {
+                  "name": "Doctor_accountId_fkey",
+                  "onDelete": "setNull",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "accountId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Doctor"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Account"
+                  }
+                }
+              ],
               "indexes": [
                 {
                   "columns": [
-                    "email"
+                    "clinicId"
                   ],
-                  "name": "Doctor_email_key",
-                  "unique": true
+                  "name": "Doctor_clinicId_idx",
+                  "unique": false
                 }
               ],
               "primaryKey": {
@@ -3833,10 +5952,22 @@
                 ],
                 "name": "Doctor_pkey"
               },
-              "uniques": []
+              "uniques": [
+                {
+                  "columns": [
+                    "accountId"
+                  ],
+                  "name": "Doctor_accountId_key"
+                }
+              ]
             },
             "DocumentRequest": {
               "columns": {
+                "clinicId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "createdAt": {
                   "codecId": "pg/timestamp-string@1",
                   "default": {
@@ -3917,6 +6048,14 @@
                   "nativeType": "text",
                   "nullable": false
                 },
+                "sharedWithPatientAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
                 "status": {
                   "codecId": "pg/enum@1",
                   "default": {
@@ -3976,6 +6115,25 @@
                     ],
                     "namespaceId": "public",
                     "tableName": "Doctor"
+                  }
+                },
+                {
+                  "name": "DocumentRequest_clinicId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "clinicId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "DocumentRequest"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Clinic"
                   }
                 },
                 {
@@ -4039,6 +6197,22 @@
               "indexes": [
                 {
                   "columns": [
+                    "clinicId"
+                  ],
+                  "name": "DocumentRequest_clinicId_idx_8f933800",
+                  "prefix": "DocumentRequest_clinicId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "clinicId",
+                    "status"
+                  ],
+                  "name": "DocumentRequest_clinicId_status_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
                     "doctorId"
                   ],
                   "name": "DocumentRequest_doctorId_idx_04369053",
@@ -4086,6 +6260,11 @@
             "Household": {
               "columns": {
                 "address": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "clinicId": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": true
@@ -4179,9 +6358,35 @@
                     "namespaceId": "public",
                     "tableName": "Doctor"
                   }
+                },
+                {
+                  "name": "Household_clinicId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "clinicId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Household"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Clinic"
+                  }
                 }
               ],
               "indexes": [
+                {
+                  "columns": [
+                    "clinicId"
+                  ],
+                  "name": "Household_clinicId_idx",
+                  "unique": false
+                },
                 {
                   "columns": [
                     "doctorId"
@@ -4247,6 +6452,11 @@
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": false
+                },
+                "clinicId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 },
                 "createdAt": {
                   "codecId": "pg/timestamp-string@1",
@@ -4417,6 +6627,25 @@
               },
               "foreignKeys": [
                 {
+                  "name": "MedicalRecord_clinicId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "clinicId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "MedicalRecord"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Clinic"
+                  }
+                },
+                {
                   "name": "MedicalRecord_finalizedById_fkey",
                   "onDelete": "setNull",
                   "onUpdate": "cascade",
@@ -4556,6 +6785,13 @@
                     "archivedById"
                   ],
                   "name": "MedicalRecord_archivedById_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "clinicId"
+                  ],
+                  "name": "MedicalRecord_clinicId_idx",
                   "unique": false
                 },
                 {
@@ -4721,6 +6957,11 @@
             },
             "Patient": {
               "columns": {
+                "accountId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "allergyStatus": {
                   "codecId": "pg/enum@1",
                   "default": {
@@ -4756,6 +6997,11 @@
                     "namespaceId": "public",
                     "plane": "storage"
                   }
+                },
+                "clinicId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 },
                 "conditionStatus": {
                   "codecId": "pg/enum@1",
@@ -4908,6 +7154,44 @@
               },
               "foreignKeys": [
                 {
+                  "name": "Patient_accountId_fkey",
+                  "onDelete": "setNull",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "accountId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Patient"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Account"
+                  }
+                },
+                {
+                  "name": "Patient_clinicId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "clinicId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Patient"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Clinic"
+                  }
+                },
+                {
                   "name": "Patient_householdId_fkey",
                   "onDelete": "cascade",
                   "onUpdate": "cascade",
@@ -4928,6 +7212,13 @@
                 }
               ],
               "indexes": [
+                {
+                  "columns": [
+                    "clinicId"
+                  ],
+                  "name": "Patient_clinicId_idx",
+                  "unique": false
+                },
                 {
                   "columns": [
                     "householdId"
@@ -4956,6 +7247,174 @@
                   "id"
                 ],
                 "name": "Patient_pkey"
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "accountId"
+                  ],
+                  "name": "Patient_accountId_key"
+                }
+              ]
+            },
+            "PatientActivation": {
+              "columns": {
+                "clinicId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamp",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "expiresAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "issuedById": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "patientId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "revokedAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "tokenHash": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "usedAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "foreignKeys": [
+                {
+                  "name": "PatientActivation_clinicId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "clinicId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "PatientActivation"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Clinic"
+                  }
+                },
+                {
+                  "name": "PatientActivation_patientId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "patientId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "PatientActivation"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Patient"
+                  }
+                },
+                {
+                  "name": "PatientActivation_issuedById_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "issuedById"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "PatientActivation"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Account"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "clinicId"
+                  ],
+                  "name": "PatientActivation_clinicId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "issuedById"
+                  ],
+                  "name": "PatientActivation_issuedById_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "patientId"
+                  ],
+                  "name": "PatientActivation_patientId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "tokenHash"
+                  ],
+                  "name": "PatientActivation_tokenHash_key",
+                  "unique": true
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ],
+                "name": "PatientActivation_pkey"
               },
               "uniques": []
             },
@@ -5579,6 +8038,186 @@
                 "name": "ServiceDuration_pkey"
               },
               "uniques": []
+            },
+            "StaffInvite": {
+              "columns": {
+                "acceptedAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "acceptedById": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "clinicId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamp",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "email": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "expiresAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "invitedById": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "revokedAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "role": {
+                  "codecId": "pg/enum@1",
+                  "nativeType": "ClinicRole",
+                  "nullable": false,
+                  "typeParams": {
+                    "typeName": "ClinicRole"
+                  },
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "ClinicRole",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "tokenHash": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "name": "StaffInvite_clinicId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "clinicId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "StaffInvite"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Clinic"
+                  }
+                },
+                {
+                  "name": "StaffInvite_invitedById_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "invitedById"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "StaffInvite"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Account"
+                  }
+                },
+                {
+                  "name": "StaffInvite_acceptedById_fkey",
+                  "onDelete": "setNull",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "acceptedById"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "StaffInvite"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Account"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "acceptedById"
+                  ],
+                  "name": "StaffInvite_acceptedById_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "clinicId"
+                  ],
+                  "name": "StaffInvite_clinicId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "invitedById"
+                  ],
+                  "name": "StaffInvite_invitedById_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "tokenHash"
+                  ],
+                  "name": "StaffInvite_tokenHash_key",
+                  "unique": true
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ],
+                "name": "StaffInvite_pkey"
+              },
+              "uniques": []
             }
           },
           "valueSet": {
@@ -5588,6 +8227,15 @@
                 "MILD",
                 "MODERATE",
                 "SEVERE"
+              ]
+            },
+            "AppointmentRequestStatus": {
+              "kind": "valueSet",
+              "values": [
+                "PENDING",
+                "ACCEPTED",
+                "DECLINED",
+                "WITHDRAWN"
               ]
             },
             "AppointmentStatus": {
@@ -5631,6 +8279,14 @@
                 "WALK_IN",
                 "PHONE",
                 "PATIENT_PORTAL"
+              ]
+            },
+            "ClinicRole": {
+              "kind": "valueSet",
+              "values": [
+                "DOCTOR",
+                "SECRETARY",
+                "ADMIN"
               ]
             },
             "ClinicalListStatus": {
@@ -5730,7 +8386,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "a6409fc0ac810c5dcc352f6d4851cff6a1763e0b303f1ea7c371282fc14634dd"
+    "storageHash": "2e49b045bcc02cd7edd66eeba3dd8496713e77369e239480b253c5ccd52f86fe"
   },
   "capabilities": {
     "postgres": {

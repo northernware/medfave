@@ -94,6 +94,39 @@ export const registerSchema = z
     path: ["confirmPassword"],
   });
 
+/**
+ * Activating a patient login.
+ *
+ * The code is the whole of the identity check — the name and email here are
+ * for the account being made, and are never used to find a chart to attach it
+ * to. See `activatePatientAccount`.
+ */
+export const activationSchema = z
+  .object({
+    code: z.string().trim().min(4, "Enter the code the clinic gave you").max(40),
+    fullName: requiredText("Full name", 120),
+    email: z.string().trim().toLowerCase().pipe(z.email("Enter a valid email address")),
+    password: z.string().min(10, "Use at least 10 characters").max(200),
+    confirmPassword: z.string(),
+  })
+  .refine((v) => v.password === v.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
+/** Accepting a staff invitation. The role comes from the invitation, not here. */
+export const inviteAcceptSchema = z
+  .object({
+    code: z.string().trim().min(4, "Enter the invitation code").max(40),
+    fullName: requiredText("Full name", 120),
+    password: z.string().min(10, "Use at least 10 characters").max(200),
+    confirmPassword: z.string(),
+  })
+  .refine((v) => v.password === v.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
+
 export const loginSchema = z.object({
   email: z.string().trim().toLowerCase().min(1, "Email is required"),
   password: z.string().min(1, "Password is required"),

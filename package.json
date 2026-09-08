@@ -16,7 +16,8 @@
     "db:verify": "prisma db verify",
     "db:seed": "tsx src/prisma/seed.ts",
     "postinstall": "prisma skills sync",
-    "db:backfill-numbers": "tsx src/prisma/backfill-patient-numbers.ts"
+    "db:backfill-numbers": "tsx src/prisma/backfill-patient-numbers.ts",
+    "db:backfill": "tsx src/prisma/backfill-accounts.ts"
   },
   "dependencies": {
     "@prisma/orm-postgres": "^8.0.0-rc.8",

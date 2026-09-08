@@ -199,6 +199,10 @@ type PatientScalars = Omit<
   | "alerts"
   | "primaryContactFor"
   | "documentRequests"
+  | "clinic"
+  | "account"
+  | "activations"
+  | "appointmentRequests"
 >;
 
 type ParsedPatient =

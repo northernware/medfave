@@ -2,30 +2,180 @@ import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { orm } from "@/src/prisma/db";
+import type { ClinicRole } from "@/lib/enums";
 import { readSession } from "./session";
 
+/**
+ * Who is signed in, and what that lets them reach.
+ *
+ * Assembled from the database on every request rather than carried in the
+ * cookie. Three separate things can be true of one account and none of them
+ * imply the others: it may be staff somewhere, it may be a clinician, and it
+ * may belong to a patient. Each is checked on its own.
+ */
+export type Viewer = {
+  accountId: string;
+  email: string;
+  fullName: string;
+  /** Staff standing in one clinic. Null for a patient-only account. */
+  staff: { clinicId: string; clinicName: string; role: ClinicRole } | null;
+  /** The clinician profile, when this account is one. */
+  doctorId: string | null;
+  /** The chart this login belongs to, when it has been activated against one. */
+  patient: { id: string; clinicId: string } | null;
+};
+
+/** Cached per request, so a layout and its pages share one lookup. */
+export const getViewer = cache(async (): Promise<Viewer | null> => {
+  const session = await readSession();
+  if (!session) return null;
+
+  const account = await orm.Account
+    .select("id", "email", "fullName")
+    .include("memberships", (m) =>
+      m.select("clinicId", "role").include("clinic", (c) => c.select("name")),
+    )
+    .include("doctorProfile", (d) => d.select("id"))
+    .include("patientProfile", (p) => p.select("id", "clinicId"))
+    .where((a) => a.id.eq(session.accountId))
+    .first();
+  if (!account) return null;
+
+  // One clinic per account for now. The model allows more, and when it is used
+  // the clinic will have to be chosen rather than assumed — this is the single
+  // place that would change.
+  const membership = account.memberships[0] ?? null;
+
+  return {
+    accountId: account.id,
+    email: account.email,
+    fullName: account.fullName,
+    staff: membership
+      ? {
+          clinicId: membership.clinicId,
+          clinicName: membership.clinic.name,
+          role: membership.role,
+        }
+      : null,
+    doctorId: account.doctorProfile?.id ?? null,
+    patient: account.patientProfile
+      ? { id: account.patientProfile.id, clinicId: account.patientProfile.clinicId ?? "" }
+      : null,
+  };
+});
+
+export async function requireViewer(): Promise<Viewer> {
+  const viewer = await getViewer();
+  if (!viewer) redirect("/login");
+  return viewer;
+}
+
+/** Where an account belongs when it lands on the wrong door. */
+export function homeFor(viewer: Viewer) {
+  if (viewer.staff?.role === "SECRETARY") return "/desk";
+  if (viewer.staff) return "/";
+  if (viewer.patient) return "/portal";
+  return "/no-access";
+}
+
 export type CurrentDoctor = {
+  /** The clinician profile's id — what authorship on a note points at. */
   id: string;
+  accountId: string;
+  clinicId: string;
+  clinicName: string | null;
   email: string;
   fullName: string;
   specialty: string | null;
-  clinicName: string | null;
   licenseNumber: string | null;
+  role: ClinicRole;
 };
 
-/// Cached per request, so a layout and its pages share one lookup.
-export const getCurrentDoctor = cache(async (): Promise<CurrentDoctor | null> => {
-  const session = await readSession();
-  if (!session) return null;
-  return orm.Doctor
-    .select("id", "email", "fullName", "specialty", "clinicName", "licenseNumber")
-    .first({ id: session.doctorId });
-});
-
-/// The gate every page, query and server action goes through. Server Actions are
-/// reachable by direct POST, so checking in a layout alone is not enough.
+/**
+ * The gate on everything clinical.
+ *
+ * Server Actions are reachable by direct POST, so a check in a layout protects
+ * nothing on its own — every action and every query goes through one of these.
+ */
 export async function requireDoctor(): Promise<CurrentDoctor> {
-  const doctor = await getCurrentDoctor();
-  if (!doctor) redirect("/login");
-  return doctor;
+  const viewer = await requireViewer();
+  if (!viewer.staff || viewer.staff.role === "SECRETARY" || !viewer.doctorId) {
+    redirect(homeFor(viewer));
+  }
+
+  const doctor = await orm.Doctor
+    .select("id", "fullName", "specialty", "licenseNumber", "clinicName", "clinicId")
+    .where((d) => d.id.eq(viewer.doctorId!))
+    .first();
+  // A clinician profile that has lost its clinic cannot be scoped, so it cannot
+  // be used.
+  if (!doctor?.clinicId || doctor.clinicId !== viewer.staff.clinicId) {
+    redirect(homeFor(viewer));
+  }
+
+  return {
+    id: doctor.id,
+    accountId: viewer.accountId,
+    clinicId: doctor.clinicId,
+    clinicName: doctor.clinicName ?? viewer.staff.clinicName,
+    email: viewer.email,
+    fullName: doctor.fullName,
+    specialty: doctor.specialty,
+    licenseNumber: doctor.licenseNumber,
+    role: viewer.staff.role,
+  };
+}
+
+export type CurrentStaff = {
+  accountId: string;
+  clinicId: string;
+  clinicName: string;
+  role: ClinicRole;
+  fullName: string;
+  email: string;
+  /** Set when this staff member is also a clinician. */
+  doctorId: string | null;
+};
+
+/**
+ * Anybody who works at the clinic: the desk as well as the consulting room.
+ *
+ * This is the gate for the things a secretary is meant to do — registering
+ * people, booking, checking in. It is never the gate for anything clinical.
+ */
+export async function requireStaff(): Promise<CurrentStaff> {
+  const viewer = await requireViewer();
+  if (!viewer.staff) redirect(homeFor(viewer));
+
+  return {
+    accountId: viewer.accountId,
+    clinicId: viewer.staff.clinicId,
+    clinicName: viewer.staff.clinicName,
+    role: viewer.staff.role,
+    fullName: viewer.fullName,
+    email: viewer.email,
+    doctorId: viewer.doctorId,
+  };
+}
+
+export type CurrentPatient = {
+  accountId: string;
+  patientId: string;
+  clinicId: string;
+  fullName: string;
+  email: string;
+};
+
+/** The gate on the patient portal: one login, one chart, and only that one. */
+export async function requirePatientAccount(): Promise<CurrentPatient> {
+  const viewer = await requireViewer();
+  if (!viewer.patient || !viewer.patient.clinicId) redirect(homeFor(viewer));
+
+  return {
+    accountId: viewer.accountId,
+    patientId: viewer.patient.id,
+    clinicId: viewer.patient.clinicId,
+    fullName: viewer.fullName,
+    email: viewer.email,
+  };
 }

@@ -1,5 +1,6 @@
 import "dotenv/config";
 import bcrypt from "bcryptjs";
+import { backfillAccountsAndClinics } from "./backfill-accounts";
 import { db, orm } from "./db";
 import {
   calendarDateToDb,
@@ -24,6 +25,9 @@ import {
 
 const DEMO_EMAIL = "doctor@medikonek.com";
 const DEMO_PASSWORD = "password";
+const SECRETARY_EMAIL = "desk@medikonek.com";
+const PATIENT_EMAIL = "patient@medikonek.com";
+const CLINIC_NAME = "Northern Family Clinic";
 
 const DAY_MS = 86_400_000;
 
@@ -202,19 +206,85 @@ async function seedRecord(
 }
 
 async function main() {
-  // Re-runnable: wipe the demo doctor and everything cascading from them.
-  await orm.Doctor.where((d) => d.email.eq(DEMO_EMAIL)).delete();
+  // Re-runnable: wipe the demo clinic and everything cascading from it, then
+  // the accounts that belonged to it.
+  // Clinicians first. Deleting the clinic would only orphan them — a doctor's
+  // clinic link is SetNull so that losing a practice never silently destroys
+  // charts — and everything clinical cascades from the doctor row, so this is
+  // what actually clears the previous run.
+  for (;;) {
+    const stale = await orm.Doctor
+      .select("id")
+      .where((d) => d.clinicName.eq(CLINIC_NAME))
+      .first();
+    if (!stale) break;
+    await orm.Doctor.where((d) => d.id.eq(stale.id)).delete();
+  }
+  for (;;) {
+    const stale = await orm.Clinic.select("id").where((c) => c.name.eq(CLINIC_NAME)).first();
+    if (!stale) break;
+    await orm.Clinic.where((c) => c.id.eq(stale.id)).delete();
+  }
+  for (const email of [DEMO_EMAIL, SECRETARY_EMAIL, PATIENT_EMAIL]) {
+    await orm.Account.where((a) => a.email.eq(email)).delete();
+  }
 
   const seededAt = instantToDb(new Date());
+
+  // The practice owns the records; people are members of it.
+  const clinic = await orm.Clinic.select("id").create({
+    id: newId(),
+    name: CLINIC_NAME,
+    address: "2F Northgate Arcade, Tuguegarao",
+    contactNumber: "(078) 844 1180",
+    createdAt: seededAt,
+    updatedAt: seededAt,
+  });
+
+  const doctorAccount = await orm.Account.select("id").create({
+    id: newId(),
+    email: DEMO_EMAIL,
+    passwordHash: await bcrypt.hash(DEMO_PASSWORD, 12),
+    fullName: "Dr. Ana Reyes",
+    createdAt: seededAt,
+    updatedAt: seededAt,
+  });
+  await orm.ClinicMember.create({
+    id: newId(),
+    clinicId: clinic.id,
+    accountId: doctorAccount.id,
+    role: "DOCTOR",
+    createdAt: seededAt,
+    updatedAt: seededAt,
+  });
+
+  // A secretary, so the desk can be looked at without inventing one first.
+  const secretaryAccount = await orm.Account.select("id").create({
+    id: newId(),
+    email: SECRETARY_EMAIL,
+    passwordHash: await bcrypt.hash(DEMO_PASSWORD, 12),
+    fullName: "Maria Santos",
+    createdAt: seededAt,
+    updatedAt: seededAt,
+  });
+  await orm.ClinicMember.create({
+    id: newId(),
+    clinicId: clinic.id,
+    accountId: secretaryAccount.id,
+    role: "SECRETARY",
+    createdAt: seededAt,
+    updatedAt: seededAt,
+  });
+
   const doctor = await orm.Doctor.create({
       id: newId(),
       createdAt: seededAt,
       updatedAt: seededAt,
-      email: DEMO_EMAIL,
-      passwordHash: await bcrypt.hash(DEMO_PASSWORD, 12),
+      clinicId: clinic.id,
+      accountId: doctorAccount.id,
       fullName: "Dr. Ana Reyes",
       specialty: "Family Medicine",
-      clinicName: "Northern Family Clinic",
+      clinicName: CLINIC_NAME,
       licenseNumber: "PRC-0114532",
   });
 
@@ -631,7 +701,42 @@ async function main() {
     
   });
 
-  console.log(`Seeded demo practice.\n  email:    ${DEMO_EMAIL}\n  password: ${DEMO_PASSWORD}`);
+  // Everything above is created with a doctorId, as it always was. The same
+  // step the migration uses then gives each row its clinic, which keeps one
+  // rule about ownership rather than two that could drift apart.
+  await backfillAccountsAndClinics();
+
+  // One patient with a login, so the portal has somebody to be. Linked here
+  // directly because the seed is not a public path; outside it, the only way a
+  // login reaches a chart is an activation code issued at the desk.
+  const portalPatient = await orm.Patient
+    .select("id")
+    .where((p) => p.lastName.eq("Dela Cruz"))
+    .where((p) => p.firstName.eq("Ramon"))
+    .first();
+  if (portalPatient) {
+    const patientAccount = await orm.Account.select("id").create({
+      id: newId(),
+      email: PATIENT_EMAIL,
+      passwordHash: await bcrypt.hash(DEMO_PASSWORD, 12),
+      fullName: "Ramon Dela Cruz",
+      createdAt: seededAt,
+      updatedAt: seededAt,
+    });
+    await orm.Patient.where((p) => p.id.eq(portalPatient.id)).update({
+      accountId: patientAccount.id,
+      updatedAt: seededAt,
+    });
+  }
+
+  console.log(
+    [
+      "Seeded demo practice. Password for all three: " + DEMO_PASSWORD,
+      "  doctor:    " + DEMO_EMAIL,
+      "  secretary: " + SECRETARY_EMAIL,
+      "  patient:   " + PATIENT_EMAIL,
+    ].join("\n"),
+  );
 }
 
 main()

@@ -1,10 +1,13 @@
 import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
-import { getCurrentDoctor } from "@/lib/auth";
+import { getViewer, homeFor } from "@/lib/auth";
 import { Brand } from "@/components/brand";
 
 export default async function AuthLayout({ children }: { children: ReactNode }) {
-  if (await getCurrentDoctor()) redirect("/");
+  // Somebody already signed in has no business on the sign-in page, and where
+  // they belong depends on what they are.
+  const viewer = await getViewer();
+  if (viewer) redirect(homeFor(viewer));
 
   return (
     <div className="flex min-h-dvh flex-col">
