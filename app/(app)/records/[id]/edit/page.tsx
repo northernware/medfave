@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { autosaveConsultation, saveMedicalRecord } from "@/app/actions/records";
 import { requireDoctor } from "@/lib/auth";
 import { orm } from "@/src/prisma/db";
@@ -31,12 +31,19 @@ export default async function EditRecordPage({ params }: PageProps<"/records/[id
     .where((r) => r.doctorId.eq(doctor.id))
     .first();
   if (!record) notFound();
+  // An archived record is out of the chart; the record page is where it says so
+  // and offers to put it back.
+  if (record.archivedAt) redirect(`/records/${record.id}`);
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title={record.status === "DRAFT" ? "Consultation notes" : "Edit record"}
-        subtitle={fullName(record.patient)}
+        title={record.status === "DRAFT" ? "Consultation notes" : "Amend record"}
+        subtitle={
+          record.status === "DRAFT"
+            ? fullName(record.patient)
+            : `${fullName(record.patient)} · the previous text is kept`
+        }
       />
       <Card className="p-5 sm:p-6">
         <RecordForm

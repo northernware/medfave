@@ -51,6 +51,8 @@ export default async function PatientPage({ params }: PageProps<"/patients/[id]"
       r
         .select(
           "id",
+          "status",
+          "archivedAt",
           "visitDate",
           "chiefComplaint",
           "assessment",
@@ -75,6 +77,12 @@ export default async function PatientPage({ params }: PageProps<"/patients/[id]"
       .limit(8)
       .all()
   ).map(toAppointmentListItem);
+
+  // An archived visit is out of the chart but not gone; it is listed apart,
+  // below, so the history reads as what actually counts without pretending the
+  // rest never happened.
+  const visits = patient.medicalRecords.filter((r) => r.archivedAt === null);
+  const archivedVisits = patient.medicalRecords.filter((r) => r.archivedAt !== null);
 
   return (
     <div className="space-y-6">
@@ -111,7 +119,13 @@ export default async function PatientPage({ params }: PageProps<"/patients/[id]"
       <section>
         <SectionTitle
           title="Visit history"
-          hint={patient.medicalRecords.length > 0 ? `${patient.medicalRecords.length} recorded` : undefined}
+          hint={
+            visits.length > 0
+              ? `${visits.length} recorded${archivedVisits.length > 0 ? ` · ${archivedVisits.length} archived` : ""}`
+              : archivedVisits.length > 0
+                ? `${archivedVisits.length} archived`
+                : undefined
+          }
           action={
             <Link
               href={`/records/new?patientId=${patient.id}`}
@@ -122,7 +136,7 @@ export default async function PatientPage({ params }: PageProps<"/patients/[id]"
           }
         />
         <Card>
-        {patient.medicalRecords.length === 0 ? (
+        {visits.length === 0 ? (
           <EmptyState
             title="No visits recorded"
             description="Document a consultation and it will build this patient's history."
@@ -134,7 +148,7 @@ export default async function PatientPage({ params }: PageProps<"/patients/[id]"
           />
         ) : (
           <ul className="divide-y divide-border">
-            {patient.medicalRecords.map((record) => {
+            {visits.map((record) => {
               const bp = bloodPressure(record.systolic, record.diastolic);
               const vitals = [
                 bp ? `BP ${bp}` : null,
@@ -173,6 +187,36 @@ export default async function PatientPage({ params }: PageProps<"/patients/[id]"
           </ul>
         )}
         </Card>
+
+        {/* Kept visible, and kept apart. Hiding archived visits entirely would
+            make the chart quietly incomplete; mixing them in would make it
+            wrong. */}
+        {archivedVisits.length > 0 ? (
+          <details className="mt-3 rounded-lg border border-border bg-surface">
+            <summary className="cursor-pointer list-none px-4 py-2.5 text-[13px] font-medium text-ink-muted">
+              {archivedVisits.length} archived{" "}
+              {archivedVisits.length === 1 ? "visit" : "visits"}
+            </summary>
+            <ul className="divide-y divide-border border-t border-border">
+              {archivedVisits.map((record) => (
+                <li key={record.id} className="transition-colors hover:bg-surface-muted">
+                  <Link
+                    href={`/records/${record.id}`}
+                    className="flex items-baseline gap-4 px-4 py-2.5 opacity-70"
+                  >
+                    <span className="tabular w-24 shrink-0 text-[13px] text-ink-muted">
+                      {formatDate(instantFromDb(record.visitDate))}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate text-[13px]">
+                      {record.chiefComplaint || "Untitled draft"}
+                    </span>
+                    <Badge tone="neutral">Archived</Badge>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </details>
+        ) : null}
       </section>
 
       <section>
@@ -249,7 +293,7 @@ export default async function PatientPage({ params }: PageProps<"/patients/[id]"
               )
             }
           />
-          <Detail label="Visits recorded" value={patient.medicalRecords.length} />
+          <Detail label="Visits recorded" value={visits.length} />
           <Detail
             className="col-span-2"
             label="Chronic conditions"

@@ -11,6 +11,8 @@ export function DangerZone({
   summary,
   warning,
   confirmLabel,
+  variant = "danger",
+  children,
 }: {
   action: (formData: FormData) => Promise<void>;
   fieldName: string;
@@ -18,6 +20,10 @@ export function DangerZone({
   summary: string;
   warning: string;
   confirmLabel: string;
+  /** Archiving is reversible, so it does not have to look like deletion. */
+  variant?: "danger" | "secondary";
+  /** Extra fields the action needs — a reason, most often. */
+  children?: React.ReactNode;
 }) {
   return (
     <details className="group rounded-xl border border-border bg-surface">
@@ -29,9 +35,10 @@ export function DangerZone({
       </summary>
       <div className="border-t border-border px-5 py-4">
         <p className="text-sm text-pretty text-ink-muted">{warning}</p>
-        <form action={action} className="mt-3">
+        <form action={action} className="mt-3 space-y-3">
           <input type="hidden" name={fieldName} value={fieldValue} />
-          <button className={buttonClass("danger")}>{confirmLabel}</button>
+          {children}
+          <button className={buttonClass(variant)}>{confirmLabel}</button>
         </form>
       </div>
     </details>

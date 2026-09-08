@@ -5,8 +5,9 @@ import { redirect } from "next/navigation";
 import { AppointmentStatus } from "@/lib/enums";
 import { requireDoctor } from "@/lib/auth";
 import { db, orm } from "@/src/prisma/db";
-import { calendarDateToDb, instantToDb } from "@/lib/datetime";
+import { calendarDateFromDb, calendarDateToDb, instantFromDb, instantToDb } from "@/lib/datetime";
 import { newId } from "@/lib/ids";
+import type { RecordSnapshot } from "@/lib/record-versions";
 import { fromDateInputValue, fromDateTimeLocalValue } from "@/lib/datetime";
 import {
   medicalRecordDraftSchema,
@@ -74,6 +75,85 @@ async function writePrescriptions(
 /** What the doctor pressed: still writing, or done. */
 type Intent = "draft" | "finish";
 
+/** A transaction context, as `db.transaction` hands it over. */
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/**
+ * Makes sure a note has a version standing for the text it already held.
+ *
+ * Notes signed before this trail existed have no version rows, and neither
+ * does a note whose baseline somehow went missing. Amending one of those would
+ * write the new text as version 1 and leave nothing saying what it replaced —
+ * exactly the loss the trail is here to prevent. So the state on the row is
+ * captured first, attributed to whoever signed it and dated to when they did.
+ */
+async function ensureBaselineVersion(tx: Tx, recordId: string, fallbackAuthorId: string) {
+  const t = tx.orm.public;
+
+  const existing = await t.MedicalRecordVersion
+    .select("id")
+    .where((v) => v.medicalRecordId.eq(recordId))
+    .first();
+  if (existing) return;
+
+  const record = await t.MedicalRecord
+    .include("prescriptions", (p) =>
+      p
+        .select("drugName", "dosage", "frequency", "duration", "instructions")
+        .orderBy((x) => x.createdAt.asc()),
+    )
+    .where((r) => r.id.eq(recordId))
+    .first();
+  if (!record) return;
+
+  const snapshot: RecordSnapshot = {
+    visitDate: instantFromDb(record.visitDate).toISOString(),
+    chiefComplaint: record.chiefComplaint,
+    historyOfPresentIllness: record.historyOfPresentIllness,
+    physicalExamination: record.physicalExamination,
+    temperatureC: record.temperatureC,
+    heartRate: record.heartRate,
+    respiratoryRate: record.respiratoryRate,
+    systolic: record.systolic,
+    diastolic: record.diastolic,
+    weightKg: record.weightKg,
+    heightCm: record.heightCm,
+    oxygenSaturation: record.oxygenSaturation,
+    assessment: record.assessment,
+    treatmentPlan: record.treatmentPlan,
+    followUpDate: record.followUpDate
+      ? calendarDateFromDb(record.followUpDate).toISOString().slice(0, 10)
+      : null,
+    notes: record.notes,
+    prescriptions: record.prescriptions.map((rx) => ({ ...rx })),
+  };
+
+  await t.MedicalRecordVersion.create({
+    id: newId(),
+    medicalRecordId: recordId,
+    version: 1,
+    snapshot: JSON.stringify(snapshot),
+    reason: null,
+    authorId: record.finalizedById ?? fallbackAuthorId,
+    createdAt: record.finalizedAt ?? record.updatedAt,
+  });
+}
+
+/**
+ * Holds one record still for the length of a transaction.
+ *
+ * Version numbers are read and then written, which two concurrent amendments
+ * would both do against the same value; the second would lose to the unique
+ * index on (record, version) and take the whole save down with it. The lock
+ * makes the second wait and read the number the first just used.
+ */
+async function lockRecord(tx: Tx, recordId: string) {
+  const plan = db.raw.sql`SELECT id FROM "MedicalRecord" WHERE id = ${recordId} FOR UPDATE`
+    .affectedCount()
+    .build();
+  await tx.execute(plan as never);
+}
+
 type WriteOutcome =
   | { error: FormState }
   | { recordId: string; patientId: string; savedAt: Date };
@@ -108,7 +188,7 @@ async function writeConsultation(
 
   const existing = recordId
     ? await orm.MedicalRecord
-        .select("id", "patientId", "status", "appointmentId")
+        .select("id", "patientId", "status", "appointmentId", "archivedAt")
         .where((r) => r.id.eq(recordId))
         .where((r) => r.doctorId.eq(doctorId))
         .first()
@@ -119,6 +199,32 @@ async function writeConsultation(
   // is a deliberate act with its own trail; drafting is not it.
   if (existing && existing.status !== "DRAFT" && intent === "draft") {
     return { error: { message: "This note has been signed — it cannot be saved as a draft." } };
+  }
+
+  if (existing?.archivedAt) {
+    return { error: { message: "This record is archived. Restore it before making changes." } };
+  }
+
+  // Changing a note that has been signed is an amendment, and an amendment
+  // without a reason is indistinguishable from a note that was always this
+  // way. The reason is the part that makes the trail worth keeping.
+  const amending = Boolean(existing) && existing!.status !== "DRAFT" && intent === "finish";
+  const amendmentReason = String(formData.get("amendmentReason") ?? "").trim();
+  if (amending && !amendmentReason) {
+    return {
+      error: {
+        message: "Say what is being corrected and why.",
+        fieldErrors: { amendmentReason: ["A reason is required to amend a signed note"] },
+      },
+    };
+  }
+  if (amendmentReason.length > 500) {
+    return {
+      error: {
+        message: "Keep the amendment reason under 500 characters.",
+        fieldErrors: { amendmentReason: ["Too long"] },
+      },
+    };
   }
 
   const visitedAt = fromDateTimeLocalValue(visitDate);
@@ -161,13 +267,23 @@ async function writeConsultation(
   const id = await db.transaction(async (tx) => {
     const t = tx.orm.public;
 
+    // Two amendments racing would otherwise compute the same next version
+    // number and one would lose to the unique index. The row lock makes the
+    // second wait and see the first.
+    if (existing) await lockRecord(tx, existing.id);
+    // Before the new text lands, not after.
+    if (amending) await ensureBaselineVersion(tx, existing!.id, doctorId);
+
     // Signing stamps who signed it and when, once. Re-saving a note that is
     // already signed leaves the original signature alone — it records when the
-    // note was committed to, which a later edit does not change.
+    // note was committed to, which a later edit does not change. An amendment
+    // says so in the status instead.
     const signature =
       intent === "finish" && (!existing || existing.status === "DRAFT")
         ? { status: "FINALIZED" as const, finalizedAt: now, finalizedById: doctorId }
-        : {};
+        : amending
+          ? { status: "AMENDED" as const }
+          : {};
 
     let targetId: string;
     if (existing) {
@@ -210,6 +326,48 @@ async function writeConsultation(
         // note written about it does not undo that decision.
         .where((a) => a.status.notIn(["CANCELLED", "NO_SHOW"]))
         .update({ status: AppointmentStatus.COMPLETED, updatedAt: now });
+    }
+
+    // Every signature and every amendment leaves a version behind. Nothing is
+    // written on a draft save: a draft has not been committed to, so there is
+    // no state anyone relied on to preserve.
+    if (intent === "finish") {
+      const snapshot: RecordSnapshot = {
+        visitDate: visitedAt.toISOString(),
+        chiefComplaint: scalars.chiefComplaint,
+        historyOfPresentIllness: scalars.historyOfPresentIllness,
+        physicalExamination: scalars.physicalExamination,
+        temperatureC: scalars.temperatureC,
+        heartRate: scalars.heartRate,
+        respiratoryRate: scalars.respiratoryRate,
+        systolic: scalars.systolic,
+        diastolic: scalars.diastolic,
+        weightKg: scalars.weightKg,
+        heightCm: scalars.heightCm,
+        oxygenSaturation: scalars.oxygenSaturation,
+        assessment: scalars.assessment,
+        treatmentPlan: scalars.treatmentPlan,
+        followUpDate: followUp ? followUp.toISOString().slice(0, 10) : null,
+        notes: scalars.notes,
+        prescriptions: rows,
+      };
+
+      const previous = await t.MedicalRecordVersion
+        .select("version")
+        .where((v) => v.medicalRecordId.eq(targetId))
+        .orderBy((v) => v.version.desc())
+        .first();
+
+      await t.MedicalRecordVersion.create({
+        id: newId(),
+        medicalRecordId: targetId,
+        version: (previous?.version ?? 0) + 1,
+        snapshot: JSON.stringify(snapshot),
+        // The first signature has no prior state to explain.
+        reason: amending ? amendmentReason : null,
+        authorId: doctorId,
+        createdAt: now,
+      });
     }
 
     return targetId;
@@ -266,22 +424,62 @@ export async function autosaveConsultation(formData: FormData): Promise<Autosave
   return { ok: true, recordId: outcome.recordId, savedAt: outcome.savedAt.toISOString() };
 }
 
-export async function deleteMedicalRecord(formData: FormData) {
+/**
+ * Takes a record out of the working chart without destroying it.
+ *
+ * A clinical record is evidence of what was decided and when. Deleting one
+ * removes the evidence and leaves nothing to say it ever existed, which is the
+ * opposite of what a record is for — so this hides it from the ordinary lists
+ * and keeps it readable, restorable, and attributed to whoever set it aside.
+ */
+export async function archiveMedicalRecord(formData: FormData) {
+  const doctor = await requireDoctor();
+  const recordId = String(formData.get("recordId") ?? "");
+  const reason = String(formData.get("archiveReason") ?? "").trim();
+  if (!recordId) return;
+
+  const record = await orm.MedicalRecord
+    .select("patientId", "archivedAt")
+    .where((r) => r.id.eq(recordId))
+    .where((r) => r.doctorId.eq(doctor.id))
+    .first();
+  if (!record || record.archivedAt) return;
+
+  const now = instantToDb(new Date());
+  await orm.MedicalRecord.where((r) => r.id.eq(recordId)).update({
+    archivedAt: now,
+    archivedById: doctor.id,
+    archiveReason: reason || null,
+    updatedAt: now,
+  });
+
+  revalidateRecord(recordId, record.patientId);
+  redirect(`/patients/${record.patientId}`);
+}
+
+/** Puts an archived record back into the chart. */
+export async function restoreMedicalRecord(formData: FormData) {
   const doctor = await requireDoctor();
   const recordId = String(formData.get("recordId") ?? "");
   if (!recordId) return;
 
   const record = await orm.MedicalRecord
-    .select("patientId")
+    .select("patientId", "archivedAt")
     .where((r) => r.id.eq(recordId))
     .where((r) => r.doctorId.eq(doctor.id))
     .first();
-  if (!record) return;
+  if (!record || !record.archivedAt) return;
 
-  await orm.MedicalRecord.where((r) => r.id.eq(recordId)).delete();
+  const now = instantToDb(new Date());
+  await orm.MedicalRecord.where((r) => r.id.eq(recordId)).update({
+    archivedAt: null,
+    archivedById: null,
+    archiveReason: null,
+    updatedAt: now,
+  });
 
-  revalidatePath(`/patients/${record.patientId}`);
-  redirect(`/patients/${record.patientId}`);
+  revalidateRecord(recordId, record.patientId);
+  redirect(`/records/${recordId}`);
 }
 
 /**

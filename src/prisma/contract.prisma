@@ -368,12 +368,13 @@ namespace public {
     @@map("ServiceDuration")
   }
 
-  /// One signed state of a record, kept forever.
+  /// One state a record has held, kept forever.
   ///
-  /// Version 1 is the text as first signed; every amendment writes the state it
-  /// replaced before the new text lands, so the trail answers "what did this
-  /// note say when the decision was made" — which is the question a clinical
-  /// record exists to answer.
+  /// Version 1 is the text as first signed; each amendment appends the text it
+  /// was changed to, with the reason. The newest version is therefore the same
+  /// text as the record itself, and the older ones are never rewritten — so
+  /// the trail answers "what did this note say when the decision was made",
+  /// which is the question a clinical record exists to answer.
   model MedicalRecordVersion {
     id              String        @id(map: "MedicalRecordVersion_pkey")
     medicalRecordId String

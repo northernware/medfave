@@ -80,6 +80,7 @@ export default async function DashboardPage() {
         .include("patient", (p) => p.select("id", "firstName", "middleName", "lastName"))
         .where((r) => r.doctorId.eq(doctor.id))
         .where((r) => r.status.eq("DRAFT"))
+        .where((r) => r.archivedAt.isNull())
         .orderBy((r) => r.updatedAt.desc())
         .limit(10)
         .all(),

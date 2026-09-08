@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { deleteMedicalRecord } from "@/app/actions/records";
+import { archiveMedicalRecord, restoreMedicalRecord } from "@/app/actions/records";
 import { closeFollowUp, reopenFollowUp } from "@/app/actions/records";
 import {
   followUpState,
@@ -23,11 +23,17 @@ import {
   RECORD_STATUS_TONE,
   SEX_LABELS,
 } from "@/lib/domain";
+import { changesBetween, parseSnapshot } from "@/lib/record-versions";
 import { AlertBanner, AllergyBanner } from "@/components/allergy-banner";
 import { DangerZone } from "@/components/danger-zone";
 import { Badge, Card, CardHeader, Detail, PageHeader, Prose, buttonClass } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Medical record" };
+
+/** Long prose in a change line is a wall; the point is which field moved. */
+function brief(value: string, max = 110) {
+  return value.length > max ? `${value.slice(0, max).trimEnd()}…` : value;
+}
 
 export default async function RecordPage({ params }: PageProps<"/records/[id]">) {
   const doctor = await requireDoctor();
@@ -43,6 +49,13 @@ export default async function RecordPage({ params }: PageProps<"/records/[id]">)
     )
     .include("appointment", (a) => a.select("id", "scheduledAt", "reason"))
     .include("finalizedBy", (d) => d.select("id", "fullName"))
+    .include("archivedBy", (d) => d.select("id", "fullName"))
+    .include("versions", (v) =>
+      v
+        .select("id", "version", "snapshot", "reason", "createdAt")
+        .include("author", (a) => a.select("id", "fullName"))
+        .orderBy((x) => x.version.desc()),
+    )
     .include("followUpAppointment", (a) => a.select("id", "scheduledAt", "status"))
     .include("prescriptions", (rx) =>
       rx
@@ -56,6 +69,15 @@ export default async function RecordPage({ params }: PageProps<"/records/[id]">)
 
   const { patient } = record;
   const draft = record.status === "DRAFT";
+  const archived = record.archivedAt !== null;
+
+  // Newest first for reading; each entry is compared against the one before it
+  // in time, which is the next element in this order.
+  const versions = record.versions.map((v) => ({
+    ...v,
+    createdAt: instantFromDb(v.createdAt),
+    parsed: parseSnapshot(v.snapshot),
+  }));
 
   // Derived on read from the linked appointment's status — never stored.
   const followUp = followUpState({
@@ -90,14 +112,37 @@ export default async function RecordPage({ params }: PageProps<"/records/[id]">)
           </>
         }
         actions={
-          <Link
-            href={`/records/${record.id}/edit`}
-            className={buttonClass(draft ? "primary" : "secondary")}
-          >
-            {draft ? "Continue writing" : "Edit record"}
-          </Link>
+          archived ? (
+            <form action={restoreMedicalRecord}>
+              <input type="hidden" name="recordId" value={record.id} />
+              <button className={buttonClass("primary")}>Restore record</button>
+            </form>
+          ) : (
+            <Link
+              href={`/records/${record.id}/edit`}
+              className={buttonClass(draft ? "primary" : "secondary")}
+            >
+              {draft ? "Continue writing" : "Amend record"}
+            </Link>
+          )
         }
       />
+
+      {archived ? (
+        <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-[13px]">
+          <p className="font-medium">
+            Archived {formatDateTime(instantFromDb(record.archivedAt!))}
+            {record.archivedBy ? ` by ${record.archivedBy.fullName}` : ""}.
+          </p>
+          <p className="mt-0.5 text-ink-muted">
+            {record.archiveReason
+              ? record.archiveReason
+              : "No reason was given."}{" "}
+            It is out of the patient&rsquo;s chart but nothing has been destroyed — restore it to
+            put it back.
+          </p>
+        </div>
+      ) : null}
 
       {/* An unfinished note is not the record of the visit yet, and reading it
           as though it were is the mistake worth preventing. */}
@@ -253,14 +298,75 @@ export default async function RecordPage({ params }: PageProps<"/records/[id]">)
         </Card>
       ) : null}
 
-      <DangerZone
-        action={deleteMedicalRecord}
-        fieldName="recordId"
-        fieldValue={record.id}
-        summary="Delete this record"
-        warning="Permanently removes this encounter and its prescriptions from the patient's history. Correcting the record is almost always better than deleting it."
-        confirmLabel="Delete record"
-      />
+      {versions.length > 0 ? (
+        <Card>
+          <CardHeader
+            title="History"
+            subtitle={`${versions.length} ${versions.length === 1 ? "version" : "versions"}, newest first`}
+          />
+          <ol className="divide-y divide-border">
+            {versions.map((v, i) => {
+              // The list is newest first, so the state this one replaced is the
+              // next element along.
+              const previous = versions[i + 1];
+              const changes =
+                v.parsed && previous?.parsed ? changesBetween(previous.parsed, v.parsed) : [];
+
+              return (
+                <li key={v.id} className="px-5 py-3.5">
+                  <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                    <span className="text-[13px] font-medium">
+                      {v.version === 1 ? "Signed" : `Amendment ${v.version - 1}`}
+                    </span>
+                    <span className="text-xs text-ink-muted">
+                      {formatDateTime(v.createdAt)} · {v.author.fullName}
+                    </span>
+                    {i === 0 ? <Badge tone="neutral">Current text</Badge> : null}
+                  </div>
+
+                  {v.reason ? (
+                    <p className="mt-1 text-[13px] text-pretty">{v.reason}</p>
+                  ) : null}
+
+                  {changes.length > 0 ? (
+                    <ul className="mt-2 space-y-1">
+                      {changes.map((c) => (
+                        <li key={c.label} className="text-xs text-ink-muted">
+                          <span className="font-medium text-ink">{c.label}</span>{" "}
+                          <span className="text-ink-faint line-through">{brief(c.from)}</span>{" "}
+                          <span aria-hidden="true">→</span> <span>{brief(c.to)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ol>
+        </Card>
+      ) : null}
+
+      {archived ? null : (
+        <DangerZone
+          action={archiveMedicalRecord}
+          fieldName="recordId"
+          fieldValue={record.id}
+          variant="secondary"
+          summary="Archive this record"
+          warning="Takes this encounter out of the patient's chart. It stays readable and can be restored — a clinical record is evidence of what was decided, so nothing here is destroyed. Amending is usually the right answer for a note that is merely wrong."
+          confirmLabel="Archive record"
+        >
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-medium">Reason</span>
+            <input
+              name="archiveReason"
+              maxLength={500}
+              placeholder="Recorded against the wrong patient"
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink placeholder:text-ink-faint"
+            />
+          </label>
+        </DangerZone>
+      )}
     </div>
   );
 }

@@ -165,7 +165,9 @@ export async function followUpsDue(doctorId: string, horizonDays = 14) {
       .where((r) => r.doctorId.eq(doctorId))
       .where((r) => r.followUpDate.isNotNull())
       .where((r) => r.followUpDate.lte(by))
-      .where((r) => r.followUpClosedAt.isNull());
+      .where((r) => r.followUpClosedAt.isNull())
+      // A visit taken out of the chart does not go on asking for a follow-up.
+      .where((r) => r.archivedAt.isNull());
 
   // Two passes rather than one `OR`: a follow-up is outstanding either because
   // nothing was ever booked, or because what was booked fell through. The

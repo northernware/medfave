@@ -27,7 +27,8 @@ async function loadHousehold(doctorId: string, householdId: string) {
           "allergyStatus",
         )
         .include("allergies", (a) => a.select("id", "severity"))
-        .include("medicalRecords", (r) => r.count())
+        // Archived visits are out of the chart, so they are out of its count.
+        .include("medicalRecords", (r) => r.where((x) => x.archivedAt.isNull()).count())
         .orderBy((x) => x.dateOfBirth.asc()),
     )
     .where((h) => h.id.eq(householdId))

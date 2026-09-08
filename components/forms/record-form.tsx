@@ -323,6 +323,29 @@ export function RecordForm({
         </Field>
       </section>
 
+      {/* Amending a signed note is a different act from writing one, and the
+          reason is what makes the trail worth keeping — so it is asked for
+          here, next to the button that commits the change. */}
+      {drafting ? null : (
+        <section className="border-t border-border pt-6">
+          <Field
+            label="Reason for this amendment"
+            htmlFor="amendmentReason"
+            error={err?.amendmentReason}
+            hint="Kept with the previous text, so the record shows what changed and why."
+            required
+          >
+            <TextArea
+              id="amendmentReason"
+              name="amendmentReason"
+              rows={2}
+              required
+              placeholder="Blood pressure transcribed from the wrong chart"
+            />
+          </Field>
+        </section>
+      )}
+
       <div className="flex flex-wrap items-center gap-2 border-t border-border pt-6">
         {drafting ? (
           <>
@@ -338,7 +361,7 @@ export function RecordForm({
           </>
         ) : (
           <SubmitButton name="intent" value="finish">
-            Save changes
+            Save amendment
           </SubmitButton>
         )}
         <Link href={cancelHref} className={buttonClass("secondary")}>

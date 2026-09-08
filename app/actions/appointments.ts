@@ -240,15 +240,33 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
     });
 
     // Booked to satisfy an earlier visit's follow-up: link it so the record
-    // stops showing as due. Scoped to this doctor and patient, and only onto a
-    // record that has not already been satisfied.
+    // stops showing as due. Scoped to this doctor and patient.
     if (followUpFor) {
-      await tx.orm.public.MedicalRecord
+      const record = await tx.orm.public.MedicalRecord
+        .select("id", "followUpAppointmentId")
+        .include("followUpAppointment", (a) => a.select("status"))
         .where((r) => r.id.eq(followUpFor))
         .where((r) => r.doctorId.eq(doctor.id))
         .where((r) => r.patientId.eq(created.patientId))
-        .where((r) => r.followUpAppointmentId.isNull())
-        .update({ followUpAppointmentId: created.id, updatedAt: now });
+        .first();
+
+      // A link to a booking that fell through is not a satisfied follow-up —
+      // it is the reason the follow-up came back. Refusing to replace it meant
+      // rebooking a cancelled or missed follow-up left the record pointing at
+      // the dead appointment, so it stayed on the due list however many times
+      // it was rebooked. A link to a visit that is still expected or already
+      // happened is left alone.
+      const replaceable =
+        record !== null &&
+        (record.followUpAppointmentId === null ||
+          record.followUpAppointment?.status === "CANCELLED" ||
+          record.followUpAppointment?.status === "NO_SHOW");
+
+      if (replaceable) {
+        await tx.orm.public.MedicalRecord
+          .where((r) => r.id.eq(record.id))
+          .update({ followUpAppointmentId: created.id, updatedAt: now });
+      }
     }
 
     return { clash: null, created };
