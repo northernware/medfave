@@ -19,6 +19,8 @@ namespace public {
     recordsFinalized MedicalRecord[] @relation(name: "MedicalRecord_finalizedById_fkey")
     recordsArchived  MedicalRecord[] @relation(name: "MedicalRecord_archivedById_fkey")
     recordVersions   MedicalRecordVersion[]
+    documentRequests DocumentRequest[]      @relation(name: "DocumentRequest_doctorId_fkey")
+    documentsReleased DocumentRequest[]     @relation(name: "DocumentRequest_releasedById_fkey")
     scheduleSettings ScheduleSettings?
     clinicHours      ClinicHours[]
     clinicBreaks     ClinicBreak[]
@@ -91,6 +93,7 @@ namespace public {
     conditions        PatientCondition[]
     medications       PatientMedication[]
     alerts            PatientAlert[]
+    documentRequests  DocumentRequest[]
     primaryContactFor Household[]                 @relation("HouseholdPrimaryContact")
     household         Household                   @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "Patient_householdId_fkey")
 
@@ -202,6 +205,7 @@ namespace public {
 
     prescriptions           Prescription[]
     versions                MedicalRecordVersion[]
+    documentRequests        DocumentRequest[]
     finalizedBy             Doctor?        @relation(name: "MedicalRecord_finalizedById_fkey", fields: [finalizedById], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "MedicalRecord_finalizedById_fkey")
     archivedBy              Doctor?        @relation(name: "MedicalRecord_archivedById_fkey", fields: [archivedById], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "MedicalRecord_archivedById_fkey")
     appointment             Appointment?   @relation(name: "MedicalRecord_appointmentId_fkey", fields: [appointmentId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "MedicalRecord_appointmentId_fkey")
@@ -403,6 +407,54 @@ namespace public {
     @@map("MedicalRecordVersion")
   }
 
+
+  /// A request for a document drawn from a patient's records.
+  ///
+  /// These are the things people come to a clinic's records desk for: a
+  /// certificate for an employer, an abstract for a specialist, a medico-legal
+  /// certificate for a case, a form for an insurer, copies for the patient
+  /// themselves. Each is a release of clinical information to somebody, so each
+  /// records who asked, what for, and who handed it over — the request is as
+  /// much a part of the record as the document it produces.
+  model DocumentRequest {
+    id               String  @id(map: "DocumentRequest_pkey")
+    doctorId         String
+    patientId        String
+    /// The visit the document draws on, where it draws on one.
+    medicalRecordId  String?
+    type             pg.enum(DocumentType)
+    status           pg.enum(DocumentRequestStatus) @default("REQUESTED")
+    /// Why it is wanted. Never optional: a release with no stated purpose is
+    /// one nobody can judge the reasonableness of afterwards.
+    purpose          String
+    /// Who asked, and what they are to the patient.
+    requesterName     String
+    requesterRelation String
+    /// The fields particular to one kind of document, JSON-encoded. Held as
+    /// text because each type reads its own shape back whole, and a column per
+    /// field across five documents would be mostly nulls.
+    details          String?
+    notes            String?
+    /// Set when the document was handed over, and to whom it was handed.
+    releasedAt       TimestampString(3)?
+    releasedById     String?
+    releasedTo       String?
+    declineReason    String?
+    createdAt        TimestampString(3) @default(now())
+    updatedAt        TimestampString(3)
+    doctor           Doctor        @relation(name: "DocumentRequest_doctorId_fkey", fields: [doctorId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "DocumentRequest_doctorId_fkey")
+    releasedBy       Doctor?       @relation(name: "DocumentRequest_releasedById_fkey", fields: [releasedById], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "DocumentRequest_releasedById_fkey")
+    patient          Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "DocumentRequest_patientId_fkey")
+    medicalRecord    MedicalRecord? @relation(fields: [medicalRecordId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "DocumentRequest_medicalRecordId_fkey")
+
+    @@index([doctorId, status], map: "DocumentRequest_doctorId_status_idx")
+    @@index([patientId], map: "DocumentRequest_patientId_idx")
+    @@index([medicalRecordId], map: "DocumentRequest_medicalRecordId_idx")
+    @@index([releasedById], map: "DocumentRequest_releasedById_idx")
+
+    @@map("DocumentRequest")
+  }
+
   model Prescription {
     id              String        @id(map: "Prescription_pkey")
     medicalRecordId String
@@ -468,6 +520,22 @@ namespace public {
     RECORDED = "RECORDED"
     NONE_KNOWN = "NONE_KNOWN"
     UNKNOWN = "UNKNOWN"
+  }
+
+
+  native_enum DocumentType {
+    MEDICAL_CERTIFICATE = "MEDICAL_CERTIFICATE"
+    MEDICAL_ABSTRACT = "MEDICAL_ABSTRACT"
+    MEDICO_LEGAL_CERTIFICATE = "MEDICO_LEGAL_CERTIFICATE"
+    INSURANCE_CLAIM = "INSURANCE_CLAIM"
+    RECORD_COPIES = "RECORD_COPIES"
+  }
+
+  native_enum DocumentRequestStatus {
+    REQUESTED = "REQUESTED"
+    READY = "READY"
+    RELEASED = "RELEASED"
+    DECLINED = "DECLINED"
   }
 
   native_enum RecordStatus {

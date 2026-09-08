@@ -8,6 +8,24 @@
  * stops assigning to its column's union and fails the typecheck.
  */
 
+export const DocumentType = {
+  MEDICAL_CERTIFICATE: "MEDICAL_CERTIFICATE",
+  MEDICAL_ABSTRACT: "MEDICAL_ABSTRACT",
+  MEDICO_LEGAL_CERTIFICATE: "MEDICO_LEGAL_CERTIFICATE",
+  INSURANCE_CLAIM: "INSURANCE_CLAIM",
+  RECORD_COPIES: "RECORD_COPIES",
+} as const;
+export type DocumentType = (typeof DocumentType)[keyof typeof DocumentType];
+
+export const DocumentRequestStatus = {
+  REQUESTED: "REQUESTED",
+  READY: "READY",
+  RELEASED: "RELEASED",
+  DECLINED: "DECLINED",
+} as const;
+export type DocumentRequestStatus =
+  (typeof DocumentRequestStatus)[keyof typeof DocumentRequestStatus];
+
 export const RecordStatus = {
   DRAFT: "DRAFT",
   FINALIZED: "FINALIZED",

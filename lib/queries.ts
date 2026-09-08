@@ -147,6 +147,37 @@ export async function bookingFormData(doctorId: string, excludeAppointmentId?: s
   };
 }
 
+
+/**
+ * Everything the document request form offers: who can be named, and which of
+ * their visits a document could be drawn from.
+ *
+ * Archived visits are left out — a document should not cite a record that has
+ * been taken out of the chart.
+ */
+export async function documentFormData(doctorId: string) {
+  const [patients, records] = await Promise.all([
+    patientOptions(doctorId),
+    orm.MedicalRecord
+      .select("id", "patientId", "visitDate", "chiefComplaint")
+      .where((r) => r.doctorId.eq(doctorId))
+      .where((r) => r.archivedAt.isNull())
+      .orderBy((r) => r.visitDate.desc())
+      .limit(500)
+      .all(),
+  ]);
+
+  const visits: Record<string, { id: string; label: string }[]> = {};
+  for (const r of records) {
+    (visits[r.patientId] ??= []).push({
+      id: r.id,
+      label: `${formatDateTime(instantFromDb(r.visitDate))} — ${r.chiefComplaint || "Untitled"}`,
+    });
+  }
+
+  return { patients, visits };
+}
+
 /**
  * Records whose follow-up has been asked for but never booked. The explicit
  * `followUpAppointmentId` link is what makes this exact — inferring it from

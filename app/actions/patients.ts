@@ -198,6 +198,7 @@ type PatientScalars = Omit<
   | "medications"
   | "alerts"
   | "primaryContactFor"
+  | "documentRequests"
 >;
 
 type ParsedPatient =

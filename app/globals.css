@@ -179,8 +179,8 @@ body {
 }
 
 /* ---------------------------------------------------------------------------
-   Print. Only the prescription sheet should reach the paper — the sidebar,
-   headers and buttons are screen furniture.
+   Print. Only the issued sheet should reach the paper — the sidebar, headers
+   and buttons are screen furniture.
 --------------------------------------------------------------------------- */
 @media print {
   aside,
@@ -197,7 +197,8 @@ body {
     padding: 0;
   }
 
-  .prescription-sheet {
+  .prescription-sheet,
+  .document-sheet {
     color: #000;
     background: #fff;
   }

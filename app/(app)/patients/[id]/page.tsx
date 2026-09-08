@@ -106,6 +106,9 @@ export default async function PatientPage({ params }: PageProps<"/patients/[id]"
             <Link href={`/appointments/new?patientId=${patient.id}`} className={buttonClass("secondary")}>
               Book
             </Link>
+            <Link href={`/documents/new?patientId=${patient.id}`} className={buttonClass("secondary")}>
+              Request document
+            </Link>
             <Link href={`/patients/${patient.id}/edit`} className={buttonClass("secondary")}>
               Edit
             </Link>
