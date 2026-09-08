@@ -43,9 +43,13 @@ const STATUS_ACTIONS: { value: AppointmentStatus; label: string }[] = [
   { value: "PENDING", label: "Back to pending" },
 ];
 
-export default async function AppointmentPage({ params }: PageProps<"/appointments/[id]">) {
+export default async function AppointmentPage({
+  params,
+  searchParams,
+}: PageProps<"/appointments/[id]">) {
   const doctor = await requireDoctor();
   const { id } = await params;
+  const { clash } = await searchParams;
 
   const appointment = await orm.Appointment
     .include("patient", (p) =>
@@ -66,6 +70,17 @@ export default async function AppointmentPage({ params }: PageProps<"/appointmen
   if (!appointment) notFound();
 
   const { patient } = appointment;
+
+  // Named rather than described: the reader's next question is "taken by whom".
+  const blocking =
+    typeof clash === "string" && clash
+      ? await orm.Appointment
+          .select("id", "scheduledAt")
+          .include("patient", (p) => p.select("firstName", "middleName", "lastName"))
+          .where((a) => a.id.eq(clash))
+          .where((a) => a.doctorId.eq(doctor.id))
+          .first()
+      : null;
 
   return (
     <div className="space-y-6">
@@ -94,6 +109,24 @@ export default async function AppointmentPage({ params }: PageProps<"/appointmen
           )
         }
       />
+
+      {/* Set when putting this appointment back would have double-booked its
+          slot. The status was left alone, and the booking in the way is named
+          so the next move is obvious. */}
+      {blocking ? (
+        <div className="rounded-lg border border-danger/30 bg-danger-soft px-4 py-3 text-[13px]">
+          <p className="font-medium text-danger-ink">
+            This appointment was left as it was — its slot is taken.
+          </p>
+          <p className="mt-0.5 text-ink-muted">
+            {formatDateTime(instantFromDb(blocking.scheduledAt))} is booked for{" "}
+            <Link href={`/appointments/${blocking.id}`} className="font-medium underline">
+              {fullName(blocking.patient)}
+            </Link>
+            . Reschedule one of them, then try again.
+          </p>
+        </div>
+      ) : null}
 
       <AlertBanner alerts={patient.alerts} />
       <AllergyBanner status={patient.allergyStatus} allergies={patient.allergies} />

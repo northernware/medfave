@@ -158,6 +158,17 @@ type WriteOutcome =
   | { error: FormState }
   | { recordId: string; patientId: string; savedAt: Date };
 
+/** Ways the record can move underneath a save that is already in flight. */
+type SaveConflict = "gone" | "archived" | "moved";
+
+const CONFLICT_MESSAGE: Record<SaveConflict, string> = {
+  gone: "That record no longer exists.",
+  archived:
+    "This record was archived while you were writing. Restore it before making changes — nothing here has been saved.",
+  moved:
+    "This note was signed or amended while you were writing, so nothing here has been saved. Reload to see the current text before making changes.",
+};
+
 /**
  * Writes a consultation, whether it is being drafted or finished.
  *
@@ -195,6 +206,10 @@ async function writeConsultation(
     : null;
   if (recordId && !existing) return { error: { message: "That record no longer exists." } };
 
+  // These three checks decide what kind of write this is. They read the row
+  // before the lock, so they are a plan rather than a guarantee — the same
+  // checks are made again under the lock below, where they can be trusted.
+  //
   // A signed note is not something autosave may quietly rewrite. Changing one
   // is a deliberate act with its own trail; drafting is not it.
   if (existing && existing.status !== "DRAFT" && intent === "draft") {
@@ -264,13 +279,32 @@ async function writeConsultation(
     updatedAt: now,
   };
 
-  const id = await db.transaction(async (tx) => {
+  const outcome = await db.transaction<{ conflict: SaveConflict } | { id: string }>(async (tx) => {
     const t = tx.orm.public;
 
     // Two amendments racing would otherwise compute the same next version
     // number and one would lose to the unique index. The row lock makes the
     // second wait and see the first.
-    if (existing) await lockRecord(tx, existing.id);
+    if (existing) {
+      await lockRecord(tx, existing.id);
+
+      // Everything above was decided against a read taken before the lock. In
+      // between, someone may have signed this note, amended it, or archived
+      // it — and an autosave still in flight from before that would land here
+      // believing it was writing to a draft. It would then overwrite signed
+      // text with no amendment and no version: the exact loss the trail is
+      // meant to prevent. So the row is read again, now that it is held still,
+      // and a save planned against a state that has moved is refused.
+      const current = await t.MedicalRecord
+        .select("id", "status", "archivedAt")
+        .where((r) => r.id.eq(existing.id))
+        .first();
+
+      if (!current) return { conflict: "gone" as const };
+      if (current.archivedAt) return { conflict: "archived" as const };
+      if (current.status !== existing.status) return { conflict: "moved" as const };
+    }
+
     // Before the new text lands, not after.
     if (amending) await ensureBaselineVersion(tx, existing!.id, doctorId);
 
@@ -370,10 +404,11 @@ async function writeConsultation(
       });
     }
 
-    return targetId;
+    return { id: targetId };
   });
 
-  return { recordId: id, patientId, savedAt };
+  if ("conflict" in outcome) return { error: { message: CONFLICT_MESSAGE[outcome.conflict] } };
+  return { recordId: outcome.id, patientId, savedAt };
 }
 
 function revalidateRecord(recordId: string, patientId: string) {

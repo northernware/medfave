@@ -413,16 +413,54 @@ export async function setAppointmentStatus(formData: FormData) {
   const status = raw as AppointmentStatus;
 
   const existing = await orm.Appointment
-    .select("arrivedAt", "consultationStartedAt")
+    .select("status", "scheduledAt", "durationMinutes", "arrivedAt", "consultationStartedAt")
     .where((a) => a.id.eq(appointmentId))
     .where((a) => a.doctorId.eq(doctor.id))
     .first();
   if (!existing) return;
 
-  await orm.Appointment
-    .where((a) => a.id.eq(appointmentId))
-    .where((a) => a.doctorId.eq(doctor.id))
-    .update({ status, ...queueStamps(status, existing, now), updatedAt: now });
+  const changes = { status, ...queueStamps(status, existing, now), updatedAt: now };
+
+  /**
+   * Cancelling frees the slot, so someone else can be booked into it. Putting
+   * this appointment back therefore re-claims a time that may no longer be
+   * free, which makes it a booking — and every booking goes through the lock
+   * and the overlap check. Skipping them here was how a restored cancellation
+   * could quietly land on top of the visit booked to replace it.
+   *
+   * Every other move is safe without the lock: cancelling and marking a
+   * no-show give a slot up, and the rest are between statuses that all hold
+   * the slot this appointment already had.
+   */
+  if (occupiesSlot(existing.status) || !occupiesSlot(status)) {
+    await orm.Appointment
+      .where((a) => a.id.eq(appointmentId))
+      .where((a) => a.doctorId.eq(doctor.id))
+      .update(changes);
+  } else {
+    const clash = await db.transaction(async (tx) => {
+      await lockDoctorSchedule(tx, doctor.id);
+
+      const found = await findClash(
+        tx,
+        doctor.id,
+        instantFromDb(existing.scheduledAt),
+        existing.durationMinutes,
+        appointmentId,
+      );
+      if (found) return found;
+
+      await tx.orm.public.Appointment
+        .where((a) => a.id.eq(appointmentId))
+        .where((a) => a.doctorId.eq(doctor.id))
+        .update(changes);
+      return null;
+    });
+
+    // A plain form has nowhere to put an error, so the appointment's own page
+    // says what happened and points at the booking that is in the way.
+    if (clash) redirect(`/appointments/${appointmentId}?clash=${clash.id}`);
+  }
 
   revalidatePath("/appointments");
   revalidatePath("/calendar");
