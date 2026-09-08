@@ -21,7 +21,7 @@ export default async function EditRecordPage({ params }: PageProps<"/records/[id
 
   const record = await orm.MedicalRecord
     .include("patient", (p) => p.select("id", "firstName", "middleName", "lastName"))
-    .include("appointment", (a) => a.select("id", "scheduledAt", "reason"))
+    .include("appointment", (a) => a.select("id", "scheduledAt", "reason", "visitType"))
     .include("prescriptions", (p) =>
       p
         .select("id", "drugName", "dosage", "frequency", "duration", "instructions")
@@ -56,6 +56,7 @@ export default async function EditRecordPage({ params }: PageProps<"/records/[id
               ? {
                   id: record.appointment.id,
                   label: `${formatDateTime(instantFromDb(record.appointment.scheduledAt))} — ${record.appointment.reason}`,
+                  remote: record.appointment.visitType === "TELECONSULTATION",
                 }
               : undefined
           }

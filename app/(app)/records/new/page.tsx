@@ -6,7 +6,7 @@ import { requireDoctor } from "@/lib/auth";
 import { orm } from "@/src/prisma/db";
 import { calendarDateFromDb, instantFromDb } from "@/lib/datetime";
 import { formatDateTime, toDateTimeLocalValue } from "@/lib/datetime";
-import { ageFrom, fullName, SEX_LABELS } from "@/lib/domain";
+import { ageFrom, CONSULTED_STATUSES, fullName, SEX_LABELS } from "@/lib/domain";
 import { RecordForm } from "@/components/forms/record-form";
 import { blankRecord } from "@/lib/form-defaults";
 import { AlertBanner, AllergyBanner } from "@/components/allergy-banner";
@@ -30,10 +30,13 @@ export default async function NewRecordPage({ searchParams }: PageProps<"/record
     .first();
   if (!patient) notFound();
 
+  // Only visits that actually happened can be written up, so only those are
+  // offered. A booking still to come has nothing to say yet.
   const undocumented = await orm.Appointment
-    .select("id", "scheduledAt", "reason")
+    .select("id", "scheduledAt", "reason", "visitType")
     .where((a) => a.patientId.eq(patient.id))
     .where((a) => a.doctorId.eq(doctor.id))
+    .where((a) => a.status.in(CONSULTED_STATUSES))
     .where((a) => a.medicalRecord.none((r) => r.id.isNotNull()))
     .orderBy((a) => a.scheduledAt.desc())
     .limit(20)
@@ -42,6 +45,7 @@ export default async function NewRecordPage({ searchParams }: PageProps<"/record
   const options = undocumented.map((a) => ({
     id: a.id,
     label: `${formatDateTime(instantFromDb(a.scheduledAt))} — ${a.reason}`,
+    remote: a.visitType === "TELECONSULTATION",
   }));
 
   const locked =

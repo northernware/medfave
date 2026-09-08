@@ -2,13 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { deleteAppointment, setAppointmentStatus } from "@/app/actions/appointments";
-import { AppointmentStatus } from "@/lib/enums";
 import { requireDoctor } from "@/lib/auth";
 import { orm } from "@/src/prisma/db";
 import { calendarDateFromDb, instantFromDb } from "@/lib/datetime";
-import { formatDateTime } from "@/lib/datetime";
+import { formatDateTime, formatTime } from "@/lib/datetime";
+import { NO_SHOW_GRACE_MINUTES } from "@/lib/no-show";
 import {
   ageFrom,
+  STATUS_TRANSITIONS,
+  statusActionLabel,
   APPOINTMENT_STATUS_LABELS,
   APPOINTMENT_STATUS_TONE,
   APPOINTMENT_TYPE_LABELS,
@@ -33,15 +35,7 @@ function describeArrival(scheduledAt: Date, arrivedAt: Date) {
   return minutes < 0 ? `${-minutes} minutes early` : `${minutes} minutes late`;
 }
 
-const STATUS_ACTIONS: { value: AppointmentStatus; label: string }[] = [
-  { value: "CONFIRMED", label: "Confirm" },
-  { value: "CHECKED_IN", label: "Check in" },
-  { value: "IN_CONSULTATION", label: "Start consultation" },
-  { value: "COMPLETED", label: "Mark completed" },
-  { value: "NO_SHOW", label: "Mark no-show" },
-  { value: "CANCELLED", label: "Cancel" },
-  { value: "PENDING", label: "Back to pending" },
-];
+
 
 export default async function AppointmentPage({
   params,
@@ -49,7 +43,7 @@ export default async function AppointmentPage({
 }: PageProps<"/appointments/[id]">) {
   const doctor = await requireDoctor();
   const { id } = await params;
-  const { clash } = await searchParams;
+  const { clash, blocked } = await searchParams;
 
   const appointment = await orm.Appointment
     .include("patient", (p) =>
@@ -109,6 +103,47 @@ export default async function AppointmentPage({
           )
         }
       />
+
+      {/* The clinic assumed this one rather than anybody deciding it, so it
+          says so, and offers the move that is almost always wanted next. */}
+      {appointment.autoNoShowAt ? (
+        <div className="rounded-lg border border-warn/40 bg-warn-tint px-4 py-3 text-[13px]">
+          <p className="font-medium text-warn-ink">
+            Marked as a no-show automatically{" "}
+            {formatDateTime(instantFromDb(appointment.autoNoShowAt))}.
+          </p>
+          <p className="mt-0.5 text-ink-muted">
+            Nobody checked this patient in within {NO_SHOW_GRACE_MINUTES} minutes of{" "}
+            {formatTime(instantFromDb(appointment.scheduledAt))}, so the slot was given up. If
+            they did attend, put the booking back; otherwise book them a new time.
+          </p>
+          <div className="mt-2.5 flex flex-wrap gap-2">
+            <Link
+              href={`/appointments/new?patientId=${patient.id}&service=${appointment.service}`}
+              className={buttonClass("primary")}
+            >
+              Book a new time
+            </Link>
+            <form action={setAppointmentStatus}>
+              <input type="hidden" name="appointmentId" value={appointment.id} />
+              <input type="hidden" name="status" value="CONFIRMED" />
+              <button className={buttonClass("secondary")}>They did attend — restore</button>
+            </form>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Set when a status change was refused because it does not exist from
+          where the visit currently is — a stale page, or a hand-made request. */}
+      {typeof blocked === "string" && blocked ? (
+        <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-[13px]">
+          <p className="font-medium">That change is not available from here.</p>
+          <p className="mt-0.5 text-ink-muted">
+            The visit has moved on since the page was loaded. The buttons below are the moves it
+            can make now.
+          </p>
+        </div>
+      ) : null}
 
       {/* Set when putting this appointment back would have double-booked its
           slot. The status was left alone, and the booking in the way is named
@@ -248,13 +283,22 @@ export default async function AppointmentPage({
         ) : null}
 
         <div className="mt-5 flex flex-wrap gap-2 border-t border-border pt-4">
-          {STATUS_ACTIONS.filter((s) => s.value !== appointment.status).map((status) => (
-            <form key={status.value} action={setAppointmentStatus}>
+          {/* Only the moves that exist from here. The first is the one the
+              visit is expected to make next, so it leads. */}
+          {STATUS_TRANSITIONS[appointment.status].map((next, i) => (
+            <form key={next} action={setAppointmentStatus}>
               <input type="hidden" name="appointmentId" value={appointment.id} />
-              <input type="hidden" name="status" value={status.value} />
-              <button className={buttonClass("secondary")}>{status.label}</button>
+              <input type="hidden" name="status" value={next} />
+              <button className={buttonClass(i === 0 ? "primary" : "secondary")}>
+                {statusActionLabel(appointment.status, next)}
+              </button>
             </form>
           ))}
+          {STATUS_TRANSITIONS[appointment.status].length === 0 ? (
+            <p className="text-[13px] text-ink-muted">
+              This visit is finished. Its record is where anything further belongs.
+            </p>
+          ) : null}
           <Link href={`/appointments/${appointment.id}/edit`} className={buttonClass("ghost")}>
             Reschedule
           </Link>

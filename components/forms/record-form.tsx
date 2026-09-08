@@ -43,10 +43,10 @@ export function RecordForm({
   autosave: (formData: FormData) => Promise<AutosaveResult>;
   defaults: RecordDefaults;
   patientId: string;
-  openAppointments: { id: string; label: string }[];
+  openAppointments: { id: string; label: string; remote: boolean }[];
   cancelHref: string;
   /** Set when documenting a specific booking — the link is fixed, not chosen. */
-  lockedAppointment?: { id: string; label: string };
+  lockedAppointment?: { id: string; label: string; remote: boolean };
 }) {
   const [state, formAction] = useActionState(action, EMPTY_FORM_STATE);
   const [rx, setRx] = useState<PrescriptionRow[]>(defaults.prescriptions);
@@ -56,6 +56,15 @@ export function RecordForm({
   // A note that has been signed is changed deliberately, with a reason — never
   // by a timer. Autosave belongs to drafts only.
   const drafting = defaults.status === "DRAFT";
+
+  // Which visit this documents decides what can honestly be written in it, and
+  // the visit can still be chosen here, so it is state rather than a prop.
+  const [appointmentId, setAppointmentId] = useState(
+    lockedAppointment?.id ?? defaults.appointmentId,
+  );
+  const remote = lockedAppointment
+    ? lockedAppointment.remote
+    : (openAppointments.find((a) => a.id === appointmentId)?.remote ?? false);
 
   const formRef = useRef<HTMLFormElement>(null);
   const [recordId, setRecordId] = useState(defaults.recordId);
@@ -141,7 +150,12 @@ export function RecordForm({
               error={err?.appointmentId}
               hint="Linking marks that appointment completed."
             >
-              <Select id="appointmentId" name="appointmentId" defaultValue={defaults.appointmentId}>
+              <Select
+                id="appointmentId"
+                name="appointmentId"
+                value={appointmentId}
+                onChange={(e) => setAppointmentId(e.target.value)}
+              >
                 <option value="">Walk-in — no appointment</option>
                 {openAppointments.map((a) => (
                   <option key={a.id} value={a.id}>
@@ -179,44 +193,61 @@ export function RecordForm({
           />
         </Field>
 
-        <Field
-          label="Physical examination"
-          htmlFor="physicalExamination"
-          error={err?.physicalExamination}
-          hint="Findings on examination — the vitals below are recorded separately."
-        >
-          <TextArea
-            id="physicalExamination"
-            name="physicalExamination"
-            rows={4}
-            defaultValue={defaults.physicalExamination}
-          />
-        </Field>
+        {/* Nobody was in the room for a teleconsultation, so there is nothing
+            to examine and nothing to measure. The fields are not merely
+            disabled — an empty box invites a guess, and a guessed vital in a
+            chart is worse than an absent one. */}
+        {remote ? null : (
+          <Field
+            label="Physical examination"
+            htmlFor="physicalExamination"
+            error={err?.physicalExamination}
+            hint="Findings on examination — the vitals below are recorded separately."
+          >
+            <TextArea
+              id="physicalExamination"
+              name="physicalExamination"
+              rows={4}
+              defaultValue={defaults.physicalExamination}
+            />
+          </Field>
+        )}
       </section>
 
-      <section className="space-y-4 border-t border-border pt-6">
-        <div>
-          <h2 className="text-sm font-semibold">Vitals</h2>
-          <p className="text-sm text-ink-muted">Leave blank anything you did not take.</p>
-        </div>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {VITALS.map((v) => (
-            <Field key={v.name} label={`${v.label} (${v.unit})`} htmlFor={v.name} error={err?.[v.name]}>
-              <TextInput
-                id={v.name}
-                name={v.name}
-                type="number"
-                step={v.step}
-                inputMode="decimal"
-                placeholder={v.placeholder}
-                defaultValue={defaults[v.name]}
-                invalid={Boolean(err?.[v.name])}
-                className="tabular"
-              />
-            </Field>
-          ))}
-        </div>
-      </section>
+      {remote ? (
+        <section className="border-t border-border pt-6">
+          <h2 className="text-sm font-semibold">Examination and vitals</h2>
+          <p className="mt-1 text-sm text-ink-muted">
+            Not recorded for a teleconsultation — nobody was there to take them. Anything the
+            patient reported themselves belongs in the history above, where it reads as what it
+            is.
+          </p>
+        </section>
+      ) : (
+        <section className="space-y-4 border-t border-border pt-6">
+          <div>
+            <h2 className="text-sm font-semibold">Vitals</h2>
+            <p className="text-sm text-ink-muted">Leave blank anything you did not take.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {VITALS.map((v) => (
+              <Field key={v.name} label={`${v.label} (${v.unit})`} htmlFor={v.name} error={err?.[v.name]}>
+                <TextInput
+                  id={v.name}
+                  name={v.name}
+                  type="number"
+                  step={v.step}
+                  inputMode="decimal"
+                  placeholder={v.placeholder}
+                  defaultValue={defaults[v.name]}
+                  invalid={Boolean(err?.[v.name])}
+                  className="tabular"
+                />
+              </Field>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="space-y-4 border-t border-border pt-6">
         <h2 className="text-sm font-semibold">Assessment and plan</h2>

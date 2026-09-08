@@ -3,6 +3,7 @@ import { setAppointmentStatus, startConsultation } from "@/app/actions/appointme
 import { requireDoctor } from "@/lib/auth";
 import { orm } from "@/src/prisma/db";
 import { followUpsDue } from "@/lib/queries";
+import { sweepNoShows } from "@/lib/no-show";
 import { RETURNED_BY_LABELS } from "@/lib/follow-up";
 import {
   clinicDayRange,
@@ -34,6 +35,11 @@ export default async function DashboardPage() {
   const doctor = await requireDoctor();
   const now = new Date();
   const today = clinicDayRange(now);
+
+  // Before anything is counted. A booking nobody spoke for long after its time
+  // would otherwise be counted as still to come on the very screen that says
+  // what is still to come.
+  await sweepNoShows(doctor.id, now);
 
   const [
     todaysRows,

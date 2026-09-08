@@ -89,6 +89,16 @@
                   }
                 }
               },
+              "autoNoShowAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
               "consultationStartedAt": {
                 "nullable": true,
                 "type": {
@@ -349,6 +359,9 @@
               "fields": {
                 "arrivedAt": {
                   "column": "arrivedAt"
+                },
+                "autoNoShowAt": {
+                  "column": "autoNoShowAt"
                 },
                 "consultationStartedAt": {
                   "column": "consultationStartedAt"
@@ -2880,6 +2893,14 @@
                     "precision": 3
                   }
                 },
+                "autoNoShowAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
                 "consultationStartedAt": {
                   "codecId": "pg/timestamp-string@1",
                   "nativeType": "timestamp",
@@ -5100,7 +5121,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "1b83f2d143e2e769cdd1d33191ec2805ace819c0def909b8f7954a9bf4473f14"
+    "storageHash": "3bbc281657d5ae18c0040cc2d0701b2f0b9006068ab1325c6a96a8f08cf9d131"
   },
   "capabilities": {
     "postgres": {

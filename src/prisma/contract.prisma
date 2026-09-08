@@ -124,6 +124,12 @@ namespace public {
     /// at the moment it is registered — the queue is ordered by it, not by the
     /// scheduled time, because a walk-in has no meaningful scheduled time.
     arrivedAt                  TimestampString(3)?
+    /// Set when the clinic marked this a no-show on its own, because nobody
+    /// said anything about it for long enough after the scheduled time. Kept
+    /// apart from a no-show a person recorded: the page can then say the
+    /// clinic assumed it rather than that someone decided it, and offer to
+    /// rebook. Cleared the moment the status moves anywhere else.
+    autoNoShowAt               TimestampString(3)?
     /// When the doctor actually started seeing them, stamped on the move into
     /// IN_CONSULTATION. Waiting time is arrival to this, so it stops climbing
     /// once the patient is in the room instead of running until check-out.

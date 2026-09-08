@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { AppointmentStatus } from "@/lib/enums";
+import { CONSULTED_STATUSES } from "@/lib/domain";
 import { requireDoctor } from "@/lib/auth";
 import { db, orm } from "@/src/prisma/db";
 import { calendarDateFromDb, calendarDateToDb, instantFromDb, instantToDb } from "@/lib/datetime";
@@ -71,6 +72,26 @@ async function writePrescriptions(
     await t.Prescription.create({ ...r, id: newId(), medicalRecordId, createdAt: now });
   }
 }
+
+/**
+ * The parts of a note that only exist because somebody was in the room.
+ *
+ * Everything here is either an examination or a measurement the clinic takes.
+ * A reading the patient gives over the phone is not one of these — it is
+ * something they said, and it belongs in the history with the rest of what
+ * they said.
+ */
+const PHYSICAL_FIELDS: [string, string][] = [
+  ["physicalExamination", "a physical examination"],
+  ["temperatureC", "Temperature"],
+  ["heartRate", "Pulse"],
+  ["respiratoryRate", "Respiratory rate"],
+  ["systolic", "Blood pressure"],
+  ["diastolic", "Blood pressure"],
+  ["weightKg", "Weight"],
+  ["heightCm", "Height"],
+  ["oxygenSaturation", "Oxygen saturation"],
+];
 
 /** What the doctor pressed: still writing, or done. */
 type Intent = "draft" | "finish";
@@ -253,7 +274,7 @@ async function writeConsultation(
   let linkedAppointmentId: string | null = existing?.appointmentId ?? null;
   if (!existing && appointmentId) {
     const appointment = await orm.Appointment
-      .select("id")
+      .select("id", "status")
       .where((a) => a.id.eq(appointmentId))
       .where((a) => a.doctorId.eq(doctorId))
       .where((a) => a.patientId.eq(patientId))
@@ -262,7 +283,49 @@ async function writeConsultation(
     if (!appointment) {
       return { error: { message: "That appointment is unavailable or already has a record." } };
     }
+    // A note is the account of a consultation, so there has to have been one.
+    // Writing up a visit that is merely booked — or one that was cancelled or
+    // missed — puts a consultation in the chart that never took place.
+    if (!CONSULTED_STATUSES.includes(appointment.status)) {
+      return {
+        error: {
+          message:
+            "That visit has not been seen yet. Start the consultation from the appointment, then write it up.",
+        },
+      };
+    }
     linkedAppointmentId = appointment.id;
+  }
+
+  // --- what a teleconsultation cannot contain -----------------------------
+  // Nobody laid hands on this patient, so nothing that requires it can be
+  // recorded as though they had. Anything the patient reported themselves
+  // belongs in the history, where it reads as what it is.
+  if (linkedAppointmentId) {
+    const visit = await orm.Appointment
+      .select("visitType")
+      .where((a) => a.id.eq(linkedAppointmentId))
+      .first();
+
+    if (visit?.visitType === "TELECONSULTATION") {
+      const offending = PHYSICAL_FIELDS.filter(
+        ([key]) => rest[key as keyof typeof rest] !== null && rest[key as keyof typeof rest] !== undefined,
+      );
+      if (offending.length > 0) {
+        return {
+          error: {
+            // Systolic and diastolic are one reading to a reader, so the
+            // message names blood pressure once.
+            message: `A teleconsultation cannot record ${[
+              ...new Set(offending.map(([, label]) => label.toLowerCase())),
+            ].join(", ")} — nobody was there to measure it. Put anything the patient reported in the history instead.`,
+            fieldErrors: Object.fromEntries(
+              offending.map(([key]) => [key, ["Not available in a teleconsultation"]]),
+            ),
+          },
+        };
+      }
+    }
   }
 
   const { rows, error } = readPrescriptions(formData);

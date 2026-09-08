@@ -12,7 +12,7 @@ import {
   instantToDb,
 } from "@/lib/datetime";
 import { newId } from "@/lib/ids";
-import { SERVICE_MINUTES } from "@/lib/domain";
+import { canMoveTo, SERVICE_MINUTES } from "@/lib/domain";
 import { formatSpan, minuteOfDay, occupiesSlot, overlaps } from "@/lib/scheduling";
 import { checkAvailability, durationFor } from "@/lib/availability";
 import { loadSchedule } from "@/lib/queries";
@@ -419,7 +419,19 @@ export async function setAppointmentStatus(formData: FormData) {
     .first();
   if (!existing) return;
 
-  const changes = { status, ...queueStamps(status, existing, now), updatedAt: now };
+  // The page only offers moves that exist, but the page is not the authority.
+  if (!canMoveTo(existing.status, status)) {
+    redirect(`/appointments/${appointmentId}?blocked=${existing.status}`);
+  }
+
+  const changes = {
+    status,
+    ...queueStamps(status, existing, now),
+    // A person deciding this is not the clinic assuming it, so an earlier
+    // assumption stops applying the moment anybody says otherwise.
+    autoNoShowAt: null,
+    updatedAt: now,
+  };
 
   /**
    * Cancelling frees the slot, so someone else can be booked into it. Putting

@@ -4,6 +4,7 @@ import { requireDoctor } from "@/lib/auth";
 import { orm } from "@/src/prisma/db";
 import { appointmentListQuery, toAppointmentListItem } from "@/lib/queries";
 import { instantToDb } from "@/lib/datetime";
+import { sweepNoShows } from "@/lib/no-show";
 import { AppointmentList } from "@/components/appointment-list";
 import { Pager } from "@/components/pager";
 import { buttonClass, Card, PageHeader } from "@/components/ui";
@@ -31,7 +32,9 @@ export default async function AppointmentsPage({ searchParams }: PageProps<"/app
   const { view, page: pageParam } = await searchParams;
   const active: ViewKey = VIEWS.some((v) => v.key === view) ? (view as ViewKey) : "upcoming";
 
-  const now = instantToDb(new Date());
+  const at = new Date();
+  await sweepNoShows(doctor.id, at);
+  const now = instantToDb(at);
 
   // The same window applied twice: once to the rows, once to the count. The
   // count is what makes paging honest — a page's own length cannot say how

@@ -88,6 +88,60 @@ export const ACTIVE_STATUSES: AppointmentStatus[] = [
  */
 export const QUEUE_STATUSES: AppointmentStatus[] = ["CHECKED_IN", "IN_CONSULTATION"];
 
+/**
+ * Where a visit can go from where it is.
+ *
+ * Offering every status at once let a visit jump from booked straight to
+ * completed, or be checked in after it had been marked a no-show, and the
+ * order of a consultation stopped meaning anything. A visit moves forward one
+ * step at a time — booked, confirmed, arrived, with the doctor, finished — and
+ * can fall out of that at any point up to the moment it finishes.
+ *
+ * Nothing leaves COMPLETED: what happened, happened. A visit that fell through
+ * can only be put back to CONFIRMED, and only if its slot is still free —
+ * setAppointmentStatus re-checks that under the booking lock.
+ */
+export const STATUS_TRANSITIONS: Record<AppointmentStatus, AppointmentStatus[]> = {
+  PENDING: ["CONFIRMED", "CHECKED_IN", "CANCELLED", "NO_SHOW"],
+  CONFIRMED: ["CHECKED_IN", "CANCELLED", "NO_SHOW"],
+  CHECKED_IN: ["IN_CONSULTATION", "CANCELLED", "NO_SHOW"],
+  IN_CONSULTATION: ["COMPLETED", "CANCELLED"],
+  COMPLETED: [],
+  CANCELLED: ["CONFIRMED"],
+  NO_SHOW: ["CONFIRMED"],
+};
+
+export function canMoveTo(from: AppointmentStatus, to: AppointmentStatus) {
+  return STATUS_TRANSITIONS[from].includes(to);
+}
+
+/**
+ * What the button says. The same destination means different things depending
+ * on where the visit is coming from: reaching CONFIRMED from a booking is
+ * confirming it, and reaching it from a cancellation is putting it back.
+ */
+export function statusActionLabel(from: AppointmentStatus, to: AppointmentStatus) {
+  if (to === "CONFIRMED" && (from === "CANCELLED" || from === "NO_SHOW")) {
+    return "Restore booking";
+  }
+  return {
+    PENDING: "Back to pending",
+    CONFIRMED: "Confirm",
+    CHECKED_IN: "Check in",
+    IN_CONSULTATION: "Start consultation",
+    COMPLETED: "Mark completed",
+    CANCELLED: "Cancel",
+    NO_SHOW: "Mark no-show",
+  }[to];
+}
+
+/**
+ * Statuses that mean the visit actually took place, so there is something to
+ * write up. Documenting anything else is documenting a visit that did not
+ * happen.
+ */
+export const CONSULTED_STATUSES: AppointmentStatus[] = ["IN_CONSULTATION", "COMPLETED"];
+
 export const APPOINTMENT_TYPE_LABELS: Record<AppointmentType, string> = {
   IN_PERSON: "In person",
   TELECONSULTATION: "Teleconsultation",
