@@ -17,7 +17,7 @@ export default async function DeskPatientPage({
 }: PageProps<"/desk/patients/[id]">) {
   const staff = await requireStaff();
   const { id } = await params;
-  const { code } = await searchParams;
+  const { code, mail } = await searchParams;
 
   const patient = await orm.Patient
     .select(
@@ -104,7 +104,16 @@ export default async function DeskPatientPage({
           <p className="tabular mt-1 text-lg font-semibold tracking-wider">{code}</p>
           <p className="mt-1 text-xs text-ink-muted">
             Give it to {fullName(patient)} in person. They enter it at the sign-up page to connect a
-            login to this record.
+            login to this record.{" "}
+            {mail === "sent" ? (
+            <>Also emailed to them.</>
+          ) : mail === "failed" ? (
+            <>The email could not be sent, so this code is the only copy — pass it on directly.</>
+          ) : mail === "no-address" ? (
+            <>No email address on file, so this code is the only copy.</>
+          ) : (
+            <>Email is not set up, so this code is the only copy.</>
+          )}
           </p>
         </div>
       ) : null}

@@ -7,6 +7,7 @@ import { requireDoctor, requireStaff } from "@/lib/auth";
 import { instantToDb } from "@/lib/datetime";
 import { newId } from "@/lib/ids";
 import { issueToken } from "@/lib/tokens";
+import { appUrl, sendPatientActivation, sendStaffInvite } from "@/lib/email";
 import type { FormState } from "@/lib/validation";
 
 /** Long enough to hand over and be typed in later; short enough to expire. */
@@ -29,7 +30,8 @@ export async function issuePatientActivation(formData: FormData) {
   if (!patientId) return;
 
   const patient = await orm.Patient
-    .select("id", "accountId")
+    .select("id", "accountId", "firstName", "lastName", "email")
+    .include("clinic", (c) => c.select("name"))
     .where((p) => p.id.eq(patientId))
     .where((p) => p.clinicId.eq(staff.clinicId))
     .first();
@@ -61,9 +63,27 @@ export async function issuePatientActivation(formData: FormData) {
     createdAt: now,
   });
 
+  // Posted as well, when the patient has an address on file and the clinic
+  // has mail configured. Never instead: the code is still shown on screen, so
+  // a mistyped address or a provider having a bad afternoon does not send
+  // somebody home empty-handed.
+  let mail: "sent" | "failed" | "no-address" | "off" = "off";
+  if (patient.email) {
+    const outcome = await sendPatientActivation({
+      to: patient.email,
+      patientName: `${patient.firstName} ${patient.lastName}`,
+      clinicName: patient.clinic?.name ?? staff.clinicName,
+      code: token,
+      link: appUrl(`/register?code=${encodeURIComponent(token)}`),
+    });
+    mail = outcome.sent ? "sent" : outcome.reason === "not-configured" ? "off" : "failed";
+  } else {
+    mail = "no-address";
+  }
+
   revalidatePath(`/desk/patients/${patientId}`);
   // The code travels in the URL exactly once, to be read off the screen.
-  redirect(`/desk/patients/${patientId}?code=${encodeURIComponent(token)}`);
+  redirect(`/desk/patients/${patientId}?code=${encodeURIComponent(token)}&mail=${mail}`);
 }
 
 export async function revokePatientActivation(formData: FormData) {
@@ -138,11 +158,22 @@ export async function inviteStaff(_prev: FormState, formData: FormData): Promise
     createdAt: now,
   });
 
+  const outcome = await sendStaffInvite({
+    to: email,
+    clinicName: doctor.clinicName ?? "the clinic",
+    invitedBy: doctor.fullName,
+    role: "secretary",
+    code: token,
+    link: appUrl(`/invite?code=${encodeURIComponent(token)}`),
+  });
+  const mail = outcome.sent ? "sent" : outcome.reason === "not-configured" ? "off" : "failed";
+
   revalidatePath("/staff");
-  // No mail is sent from this application yet, so the code is shown to the
-  // person who created it to pass on. Said plainly rather than pretending an
-  // email is on its way.
-  redirect(`/staff?code=${encodeURIComponent(token)}&to=${encodeURIComponent(email)}`);
+  // Shown on screen either way. Mail is a convenience here, not the record of
+  // what was issued.
+  redirect(
+    `/staff?code=${encodeURIComponent(token)}&to=${encodeURIComponent(email)}&mail=${mail}`,
+  );
 }
 
 export async function revokeStaffInvite(formData: FormData) {

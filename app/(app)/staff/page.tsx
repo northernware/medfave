@@ -16,7 +16,7 @@ const ROLE_LABELS: Record<string, string> = {
 
 export default async function StaffPage({ searchParams }: PageProps<"/staff">) {
   const doctor = await requireDoctor();
-  const { code, to } = await searchParams;
+  const { code, to, mail } = await searchParams;
 
   const [members, invites] = await Promise.all([
     orm.ClinicMember
@@ -52,7 +52,16 @@ export default async function StaffPage({ searchParams }: PageProps<"/staff">) {
           <p className="tabular mt-1 text-lg font-semibold tracking-wider">{code}</p>
           <p className="mt-1 text-xs text-ink-muted">
             They enter it at <strong>/invite</strong>. It is valid for seven days and can only be
-            used once.
+            used once.{" "}
+            {mail === "sent" ? (
+            <>Also emailed to that address.</>
+          ) : mail === "failed" ? (
+            <>The email could not be sent, so this code is the only copy — pass it on directly.</>
+          ) : mail === "no-address" ? (
+            <>No email address on file, so this code is the only copy.</>
+          ) : (
+            <>Email is not set up, so this code is the only copy.</>
+          )}
           </p>
         </div>
       ) : null}
