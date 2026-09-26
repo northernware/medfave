@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { AllergySeverity } from "@/lib/enums";
-import { requireDoctor } from "@/lib/auth";
+import { requireStaff } from "@/lib/auth";
+import { clinicDoctorId } from "@/lib/clinic";
 import { db, orm } from "@/src/prisma/db";
 import { calendarDateToDb, instantToDb } from "@/lib/datetime";
 import { newId } from "@/lib/ids";
@@ -19,15 +20,31 @@ import {
 } from "@/lib/validation";
 import { findPossibleDuplicates } from "@/lib/queries";
 
-/** Confirms the household belongs to the signed-in doctor before anything is written. */
-async function assertOwnsHousehold(doctorId: string, householdId: string) {
+/** Confirms the household belongs to this clinic before anything is written. */
+async function assertClinicHousehold(clinicId: string, householdId: string) {
   const household = await orm.Household
     .select("id")
     .where((h) => h.id.eq(householdId))
-    .where((h) => h.doctorId.eq(doctorId))
+    .where((h) => h.clinicId.eq(clinicId))
     .first();
   return household !== null;
 }
+
+/**
+ * The clinical lists are a doctor's to keep.
+ *
+ * Registration is desk work — a name, a birthday, a phone number — but
+ * allergies, conditions, medications and alerts are clinical findings. A
+ * secretary's form does not show them, and this is what makes that true rather
+ * than merely displayed: their submissions are ignored, and on an edit the
+ * lists already recorded are left exactly as they are.
+ */
+const EMPTY_LISTS: ClinicalLists = {
+  allergies: [],
+  conditions: [],
+  medications: [],
+  alerts: [],
+};
 
 type ClinicalRow = {
   label: string;
@@ -274,7 +291,7 @@ function parsePatientForm(formData: FormData): ParsedPatient {
  * of birth after ticking and this no longer matches, so we ask again.
  */
 async function duplicateChallenge(
-  doctorId: string,
+  clinicId: string,
   formData: FormData,
   scalars: Record<string, unknown>,
   excludePatientId?: string,
@@ -290,7 +307,7 @@ async function duplicateChallenge(
   const fingerprint = identityFingerprint(identity);
   if (String(formData.get("confirmDuplicate") ?? "") === fingerprint) return null;
 
-  const duplicates = await findPossibleDuplicates(doctorId, identity, excludePatientId);
+  const duplicates = await findPossibleDuplicates(clinicId, identity, excludePatientId);
   if (duplicates.length === 0) return null;
 
   return {
@@ -304,7 +321,7 @@ async function duplicateChallenge(
 }
 
 export async function createPatient(_prev: FormState, formData: FormData): Promise<FormState> {
-  const doctor = await requireDoctor();
+  const staff = await requireStaff();
   const parsed = parsePatientForm(formData);
   if (!parsed.ok) return parsed.error;
 
@@ -318,11 +335,16 @@ export async function createPatient(_prev: FormState, formData: FormData): Promi
         fieldErrors: { newHouseholdName: ["Required when creating a household"] },
       };
     }
-  } else if (!(await assertOwnsHousehold(doctor.id, parsed.householdId))) {
+  } else if (!(await assertClinicHousehold(staff.clinicId, parsed.householdId))) {
     return { message: "That household is not on your list." };
   }
 
-  const challenge = await duplicateChallenge(doctor.id, formData, parsed.scalars);
+  const attributedTo = staff.doctorId ?? (await clinicDoctorId(staff.clinicId));
+  if (!attributedTo) return { message: "This clinic has no clinician to register under." };
+
+  const clinical = staff.role === "SECRETARY" ? EMPTY_LISTS : parsed.lists;
+
+  const challenge = await duplicateChallenge(staff.clinicId, formData, parsed.scalars);
   if (challenge) return challenge;
 
   // The patient and its clinical lists are written together: a half-created
@@ -337,7 +359,8 @@ export async function createPatient(_prev: FormState, formData: FormData): Promi
       ? (
           await tx.orm.public.Household.select("id").create({
             id: newId(),
-            doctorId: doctor.id,
+            doctorId: attributedTo,
+            clinicId: staff.clinicId,
             name: newHouseholdName,
             createdAt: now,
             updatedAt: now,
@@ -353,10 +376,11 @@ export async function createPatient(_prev: FormState, formData: FormData): Promi
       id: newId(),
       patientNumber,
       householdId,
+      clinicId: staff.clinicId,
       createdAt: now,
       updatedAt: now,
     });
-    await writeClinicalLists(tx.orm.public, created.id, parsed.lists);
+    await writeClinicalLists(tx.orm.public, created.id, clinical);
 
     // The first member of a household created here becomes its point of
     // contact. Nobody else can be — the household has exactly this one person —
@@ -381,7 +405,7 @@ export async function updatePatient(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const doctor = await requireDoctor();
+  const staff = await requireStaff();
   const parsed = parsePatientForm(formData);
   if (!parsed.ok) return parsed.error;
 
@@ -397,19 +421,22 @@ export async function updatePatient(
         fieldErrors: { newHouseholdName: ["Required when creating a household"] },
       };
     }
-  } else if (!(await assertOwnsHousehold(doctor.id, parsed.householdId))) {
+  } else if (!(await assertClinicHousehold(staff.clinicId, parsed.householdId))) {
     return { message: "That household is not on your list." };
   }
 
   const owned = await orm.Patient
     .select("id", "householdId")
     .where((p) => p.id.eq(patientId))
-    .where((p) => p.household.some((h) => h.doctorId.eq(doctor.id)))
+    .where((p) => p.clinicId.eq(staff.clinicId))
     .first();
   if (!owned) return { message: "That patient no longer exists." };
 
+  const attributedTo = staff.doctorId ?? (await clinicDoctorId(staff.clinicId));
+  if (!attributedTo) return { message: "This clinic has no clinician to register under." };
+
   // Excluding this patient stops it matching itself.
-  const challenge = await duplicateChallenge(doctor.id, formData, parsed.scalars, patientId);
+  const challenge = await duplicateChallenge(staff.clinicId, formData, parsed.scalars, patientId);
   if (challenge) return challenge;
 
   // The lists are edited as a whole, so they are replaced wholesale — the same
@@ -423,7 +450,8 @@ export async function updatePatient(
       ? (
           await t.Household.select("id").create({
             id: newId(),
-            doctorId: doctor.id,
+            doctorId: attributedTo,
+            clinicId: staff.clinicId,
             name: newHouseholdName,
             createdAt: now,
             updatedAt: now,
@@ -450,8 +478,13 @@ export async function updatePatient(
       householdId: target,
       updatedAt: now,
     });
-    await clearClinicalLists(tx, patientId);
-    await writeClinicalLists(t, patientId, parsed.lists);
+    // A secretary's edit never reaches the clinical lists, so they are left
+    // exactly as the doctor last recorded them rather than replaced by an
+    // empty set from a form that did not show them.
+    if (staff.role !== "SECRETARY") {
+      await clearClinicalLists(tx, patientId);
+      await writeClinicalLists(t, patientId, parsed.lists);
+    }
 
     // Same reasoning as on registration: the only member of a household made
     // here is its point of contact.
@@ -473,14 +506,14 @@ export async function updatePatient(
 }
 
 export async function deletePatient(formData: FormData) {
-  const doctor = await requireDoctor();
+  const staff = await requireStaff();
   const patientId = String(formData.get("patientId") ?? "");
   if (!patientId) return;
 
   const patient = await orm.Patient
     .select("householdId")
     .where((p) => p.id.eq(patientId))
-    .where((p) => p.household.some((h) => h.doctorId.eq(doctor.id)))
+    .where((p) => p.clinicId.eq(staff.clinicId))
     .first();
   if (!patient) return;
 

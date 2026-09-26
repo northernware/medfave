@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { AppointmentStatus } from "@/lib/enums";
-import { requireDoctor } from "@/lib/auth";
+import { requireDoctor, requireStaff } from "@/lib/auth";
+import { clinicDoctorId } from "@/lib/clinic";
 import { db, orm } from "@/src/prisma/db";
 import {
   clinicDayRange,
@@ -18,11 +19,18 @@ import { checkAvailability, durationFor } from "@/lib/availability";
 import { loadSchedule } from "@/lib/queries";
 import { appointmentSchema, toFieldErrors, type FormState } from "@/lib/validation";
 
-async function assertOwnsPatient(doctorId: string, patientId: string) {
+/**
+ * Confirms the patient is one of this clinic's.
+ *
+ * Scoped by clinic rather than by clinician: the desk books for whoever is
+ * working, and a secretary is not any doctor. It stays the boundary that
+ * matters — nothing outside the clinic is reachable through here.
+ */
+async function assertClinicPatient(clinicId: string, patientId: string) {
   const patient = await orm.Patient
     .select("id")
     .where((p) => p.id.eq(patientId))
-    .where((p) => p.household.some((h) => h.doctorId.eq(doctorId)))
+    .where((p) => p.clinicId.eq(clinicId))
     .first();
   return patient !== null;
 }
@@ -52,13 +60,14 @@ type AppointmentScalars = Omit<
  * direct POST both land here.
  */
 async function resolveBooking(
+  clinicId: string,
   doctorId: string,
   data: ReturnType<typeof appointmentSchema.parse>,
   ignoreAppointmentId?: string,
 ): Promise<{ error: FormState } | { data: AppointmentScalars; scheduledAt: Date; durationMinutes: number }> {
   const { patientId, date, time, service, previousAppointmentId, type, ...rest } = data;
 
-  if (!(await assertOwnsPatient(doctorId, patientId))) {
+  if (!(await assertClinicPatient(clinicId, patientId))) {
     return { error: { message: "That patient is not on your list." } };
   }
 
@@ -127,6 +136,22 @@ async function resolveBooking(
 
 /** A transaction context, as `db.transaction` hands it over. */
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+/**
+ * The queue moves the desk is allowed to make.
+ *
+ * Confirming, checking in, cancelling and recording a no-show are all things
+ * that happen at the front of the clinic. IN_CONSULTATION and COMPLETED are
+ * assertions that a consultation began and ended, which is not the desk's to
+ * assert.
+ */
+const DESK_STATUSES: AppointmentStatus[] = [
+  "PENDING",
+  "CONFIRMED",
+  "CHECKED_IN",
+  "CANCELLED",
+  "NO_SHOW",
+];
 
 /**
  * Serialises every booking for one doctor.
@@ -200,11 +225,16 @@ function clashMessage(clash: { startMinute: number; durationMinutes: number }): 
 }
 
 export async function createAppointment(_prev: FormState, formData: FormData): Promise<FormState> {
-  const doctor = await requireDoctor();
+  // Booking is desk work. A secretary does it for the clinic's clinician, so
+  // the gate is membership and the diary is the doctor's.
+  const staff = await requireStaff();
   const parsed = appointmentSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return toFieldErrors(parsed.error);
 
-  const resolved = await resolveBooking(doctor.id, parsed.data);
+  const doctorId = staff.doctorId ?? (await clinicDoctorId(staff.clinicId));
+  if (!doctorId) return { message: "This clinic has no clinician to book with." };
+
+  const resolved = await resolveBooking(staff.clinicId, doctorId, parsed.data);
   if ("error" in resolved) return resolved.error;
 
   const followUpFor = String(formData.get("followUpFor") ?? "");
@@ -213,9 +243,9 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
   // check the form did: between rendering the slot list and this write, anyone
   // could have taken it.
   const outcome = await db.transaction(async (tx) => {
-    await lockDoctorSchedule(tx, doctor.id);
+    await lockDoctorSchedule(tx, doctorId);
 
-    const clash = await findClash(tx, doctor.id, resolved.scheduledAt, resolved.durationMinutes);
+    const clash = await findClash(tx, doctorId, resolved.scheduledAt, resolved.durationMinutes);
     if (clash) return { clash, created: null };
 
     const now = instantToDb(new Date());
@@ -233,7 +263,10 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
     const created = await tx.orm.public.Appointment.select("id", "patientId").create({
       ...resolved.data,
       id: newId(),
-      doctorId: doctor.id,
+      clinicId: staff.clinicId,
+      doctorId,
+      // Who made the booking, kept apart from the clinician it is with.
+      bookedById: staff.accountId,
       status,
       // Arrival is stamped whenever the visit starts out in the queue, however
       // it got there — not only on the walk-in path.
@@ -249,7 +282,7 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
         .select("id", "followUpAppointmentId")
         .include("followUpAppointment", (a) => a.select("status"))
         .where((r) => r.id.eq(followUpFor))
-        .where((r) => r.doctorId.eq(doctor.id))
+        .where((r) => r.clinicId.eq(staff.clinicId))
         .where((r) => r.patientId.eq(created.patientId))
         .first();
 
@@ -291,28 +324,31 @@ export async function updateAppointment(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const doctor = await requireDoctor();
+  const staff = await requireStaff();
   const parsed = appointmentSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return toFieldErrors(parsed.error);
 
   const owned = await orm.Appointment
-    .select("id")
+    .select("id", "doctorId")
     .where((a) => a.id.eq(appointmentId))
-    .where((a) => a.doctorId.eq(doctor.id))
+    .where((a) => a.clinicId.eq(staff.clinicId))
     .first();
   if (!owned) return { message: "That appointment no longer exists." };
 
-  const resolved = await resolveBooking(doctor.id, parsed.data, appointmentId);
+  // Rescheduling keeps the clinician it was booked with; the desk is moving a
+  // time, not reassigning a patient.
+  const doctorId = owned.doctorId;
+  const resolved = await resolveBooking(staff.clinicId, doctorId, parsed.data, appointmentId);
   if ("error" in resolved) return resolved.error;
 
   // Rescheduling races the same way a new booking does, and a service change
   // can lengthen the visit into a neighbour, so the same locked re-check applies.
   const outcome = await db.transaction(async (tx) => {
-    await lockDoctorSchedule(tx, doctor.id);
+    await lockDoctorSchedule(tx, doctorId);
 
     const clash = await findClash(
       tx,
-      doctor.id,
+      doctorId,
       resolved.scheduledAt,
       resolved.durationMinutes,
       appointmentId,
@@ -369,6 +405,7 @@ function queueStamps(
  * clinic they are the same act.
  */
 export async function startConsultation(formData: FormData) {
+  // Deliberately the clinical gate: this opens the notes.
   const doctor = await requireDoctor();
   const appointmentId = String(formData.get("appointmentId") ?? "");
   if (!appointmentId) return;
@@ -406,7 +443,7 @@ export async function startConsultation(formData: FormData) {
 
 /** Quick status change from the detail page — no full form round-trip. */
 export async function setAppointmentStatus(formData: FormData) {
-  const doctor = await requireDoctor();
+  const staff = await requireStaff();
   const appointmentId = String(formData.get("appointmentId") ?? "");
   const raw = String(formData.get("status") ?? "");
 
@@ -415,10 +452,17 @@ export async function setAppointmentStatus(formData: FormData) {
   const now = instantToDb(new Date());
   const status = raw as AppointmentStatus;
 
+  // The desk moves people through the queue; it does not begin or end a
+  // consultation. Those two say something clinical happened, and only somebody
+  // clinical may say it.
+  if (staff.role === "SECRETARY" && !DESK_STATUSES.includes(status)) {
+    redirect(`/desk/appointments/${appointmentId}?blocked=role`);
+  }
+
   const existing = await orm.Appointment
-    .select("status", "scheduledAt", "durationMinutes", "arrivedAt", "consultationStartedAt")
+    .select("status", "doctorId", "scheduledAt", "durationMinutes", "arrivedAt", "consultationStartedAt")
     .where((a) => a.id.eq(appointmentId))
-    .where((a) => a.doctorId.eq(doctor.id))
+    .where((a) => a.clinicId.eq(staff.clinicId))
     .first();
   if (!existing) return;
 
@@ -450,15 +494,15 @@ export async function setAppointmentStatus(formData: FormData) {
   if (occupiesSlot(existing.status) || !occupiesSlot(status)) {
     await orm.Appointment
       .where((a) => a.id.eq(appointmentId))
-      .where((a) => a.doctorId.eq(doctor.id))
+      .where((a) => a.clinicId.eq(staff.clinicId))
       .update(changes);
   } else {
     const clash = await db.transaction(async (tx) => {
-      await lockDoctorSchedule(tx, doctor.id);
+      await lockDoctorSchedule(tx, existing.doctorId);
 
       const found = await findClash(
         tx,
-        doctor.id,
+        existing.doctorId,
         instantFromDb(existing.scheduledAt),
         existing.durationMinutes,
         appointmentId,
@@ -467,7 +511,7 @@ export async function setAppointmentStatus(formData: FormData) {
 
       await tx.orm.public.Appointment
         .where((a) => a.id.eq(appointmentId))
-        .where((a) => a.doctorId.eq(doctor.id))
+        .where((a) => a.clinicId.eq(staff.clinicId))
         .update(changes);
       return null;
     });
@@ -484,13 +528,13 @@ export async function setAppointmentStatus(formData: FormData) {
 }
 
 export async function deleteAppointment(formData: FormData) {
-  const doctor = await requireDoctor();
+  const staff = await requireStaff();
   const appointmentId = String(formData.get("appointmentId") ?? "");
   if (!appointmentId) return;
 
   await orm.Appointment
     .where((a) => a.id.eq(appointmentId))
-    .where((a) => a.doctorId.eq(doctor.id))
+    .where((a) => a.clinicId.eq(staff.clinicId))
     .delete();
 
   revalidatePath("/appointments");

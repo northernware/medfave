@@ -199,6 +199,7 @@ const CONFLICT_MESSAGE: Record<SaveConflict, string> = {
  * and the doctor never sees which happened.
  */
 async function writeConsultation(
+  clinicId: string,
   doctorId: string,
   formData: FormData,
   intent: Intent,
@@ -402,6 +403,8 @@ async function writeConsultation(
         id: newId(),
         patientId,
         doctorId,
+        // The clinic owns the note; the doctor authored it.
+        clinicId,
         appointmentId: linkedAppointmentId,
         status: "DRAFT",
         createdAt: now,
@@ -489,7 +492,7 @@ export async function saveMedicalRecord(_prev: FormState, formData: FormData): P
   const doctor = await requireDoctor();
   const intent: Intent = formData.get("intent") === "finish" ? "finish" : "draft";
 
-  const outcome = await writeConsultation(doctor.id, formData, intent);
+  const outcome = await writeConsultation(doctor.clinicId, doctor.id, formData, intent);
   if ("error" in outcome) return outcome.error;
 
   revalidateRecord(outcome.recordId, outcome.patientId);
@@ -513,7 +516,7 @@ export type AutosaveResult =
  */
 export async function autosaveConsultation(formData: FormData): Promise<AutosaveResult> {
   const doctor = await requireDoctor();
-  const outcome = await writeConsultation(doctor.id, formData, "draft");
+  const outcome = await writeConsultation(doctor.clinicId, doctor.id, formData, "draft");
   if ("error" in outcome) {
     return { ok: false, message: outcome.error.message ?? "Could not save." };
   }

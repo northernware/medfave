@@ -16,12 +16,15 @@ export function PatientForm({
   households,
   submitLabel,
   cancelHref,
+  clinical = true,
 }: {
   action: (state: FormState, formData: FormData) => Promise<FormState>;
   defaults: PatientDefaults;
   households: { id: string; name: string }[];
   submitLabel: string;
   cancelHref: string;
+  /** False at the desk: registration is not the place for clinical findings. */
+  clinical?: boolean;
 }) {
   const [state, formAction] = useActionState(action, EMPTY_FORM_STATE);
   const err = state.fieldErrors;
@@ -195,62 +198,69 @@ export function PatientForm({
       </section>
 
       <section className="space-y-5 border-t border-border pt-5">
-        <div>
-          <h2 className="text-sm font-semibold">Standing clinical notes</h2>
-          <p className="text-sm text-ink-muted">
-            Allergies show at the top of this patient&rsquo;s chart on every visit.
-          </p>
-        </div>
+        {/* Allergies, conditions, medications and alerts are clinical findings,
+            not registration details. The desk does not see them, and the action
+            ignores them if they are posted anyway. */}
+        {clinical ? (
+          <>
+          <div>
+            <h2 className="text-sm font-semibold">Standing clinical notes</h2>
+            <p className="text-sm text-ink-muted">
+              Allergies show at the top of this patient&rsquo;s chart on every visit.
+            </p>
+          </div>
 
-        <ClinicalPicker
-          legend="Allergies"
-          fieldName="allergy"
-          statusName="allergyStatus"
-          groups={ALLERGY_GROUPS}
-          placeholder="Search or select allergies…"
-          noneLabel="No known allergies"
-          defaultStatus={defaults.allergyStatus as "RECORDED" | "NONE_KNOWN" | "UNKNOWN"}
-          defaultItems={defaults.allergies}
-          detailFields={["reaction", "severity", "notes"]}
-          error={err?.allergyStatus}
-        />
+          <ClinicalPicker
+            legend="Allergies"
+            fieldName="allergy"
+            statusName="allergyStatus"
+            groups={ALLERGY_GROUPS}
+            placeholder="Search or select allergies…"
+            noneLabel="No known allergies"
+            defaultStatus={defaults.allergyStatus as "RECORDED" | "NONE_KNOWN" | "UNKNOWN"}
+            defaultItems={defaults.allergies}
+            detailFields={["reaction", "severity", "notes"]}
+            error={err?.allergyStatus}
+          />
 
-        <ClinicalPicker
-          legend="Chronic conditions"
-          fieldName="condition"
-          statusName="conditionStatus"
-          groups={CONDITION_GROUPS}
-          placeholder="Search or select conditions…"
-          noneLabel="No known chronic conditions"
-          defaultStatus={defaults.conditionStatus as "RECORDED" | "NONE_KNOWN" | "UNKNOWN"}
-          defaultItems={defaults.conditions}
-          detailFields={["notes"]}
-          error={err?.conditionStatus}
-        />
+          <ClinicalPicker
+            legend="Chronic conditions"
+            fieldName="condition"
+            statusName="conditionStatus"
+            groups={CONDITION_GROUPS}
+            placeholder="Search or select conditions…"
+            noneLabel="No known chronic conditions"
+            defaultStatus={defaults.conditionStatus as "RECORDED" | "NONE_KNOWN" | "UNKNOWN"}
+            defaultItems={defaults.conditions}
+            detailFields={["notes"]}
+            error={err?.conditionStatus}
+          />
 
-        <ClinicalPicker
-          legend="Current medications"
-          fieldName="medication"
-          statusName="medicationStatus"
-          groups={MEDICATION_GROUPS}
-          placeholder="Search or select medicines…"
-          noneLabel="No current medications"
-          defaultStatus={defaults.medicationStatus as "RECORDED" | "NONE_KNOWN" | "UNKNOWN"}
-          defaultItems={defaults.medications}
-          detailFields={["dosage", "frequency", "notes"]}
-          error={err?.medicationStatus}
-        />
+          <ClinicalPicker
+            legend="Current medications"
+            fieldName="medication"
+            statusName="medicationStatus"
+            groups={MEDICATION_GROUPS}
+            placeholder="Search or select medicines…"
+            noneLabel="No current medications"
+            defaultStatus={defaults.medicationStatus as "RECORDED" | "NONE_KNOWN" | "UNKNOWN"}
+            defaultItems={defaults.medications}
+            detailFields={["dosage", "frequency", "notes"]}
+            error={err?.medicationStatus}
+          />
 
-        <ClinicalPicker
-          legend="Medical alerts"
-          fieldName="alert"
-          groups={ALERT_GROUPS}
-          placeholder="Search or add an alert…"
-          noneLabel="No alerts"
-          defaultStatus={defaults.alerts.length > 0 ? "RECORDED" : "UNKNOWN"}
-          defaultItems={defaults.alerts}
-          detailFields={["notes"]}
-        />
+          <ClinicalPicker
+            legend="Medical alerts"
+            fieldName="alert"
+            groups={ALERT_GROUPS}
+            placeholder="Search or add an alert…"
+            noneLabel="No alerts"
+            defaultStatus={defaults.alerts.length > 0 ? "RECORDED" : "UNKNOWN"}
+            defaultItems={defaults.alerts}
+            detailFields={["notes"]}
+          />
+          </>
+        ) : null}
 
         <FieldGrid>
           <Field label="Contact number" htmlFor="contactNumber" error={err?.contactNumber}>

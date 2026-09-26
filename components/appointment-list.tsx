@@ -106,11 +106,14 @@ export function AppointmentList({
   emptyTitle = "Nothing scheduled",
   emptyDescription,
   showDayHeadings = true,
+  hrefFor = (id) => `/appointments/${id}`,
 }: {
   appointments: AppointmentListItem[];
   emptyTitle?: string;
   emptyDescription?: string;
   showDayHeadings?: boolean;
+  /** Where a row leads. The desk has its own pages for the same visits. */
+  hrefFor?: (id: string) => string;
 }) {
   if (appointments.length === 0) {
     return <EmptyState title={emptyTitle} description={emptyDescription} />;
@@ -120,7 +123,7 @@ export function AppointmentList({
     return (
       <ul className="divide-y divide-border">
         {appointments.map((a) => (
-          <AppointmentRow key={a.id} appointment={a} />
+          <AppointmentRow key={a.id} appointment={a} hrefFor={hrefFor} />
         ))}
       </ul>
     );
@@ -160,7 +163,7 @@ export function AppointmentList({
             </h3>
             <ul className="divide-y divide-border">
               {group.items.map((a) => (
-                <AppointmentRow key={a.id} appointment={a} />
+                <AppointmentRow key={a.id} appointment={a} hrefFor={hrefFor} />
               ))}
             </ul>
           </section>
@@ -170,7 +173,13 @@ export function AppointmentList({
   );
 }
 
-function AppointmentRow({ appointment }: { appointment: AppointmentListItem }) {
+function AppointmentRow({
+  appointment,
+  hrefFor,
+}: {
+  appointment: AppointmentListItem;
+  hrefFor: (id: string) => string;
+}) {
   const { patient } = appointment;
   const dropped = isDropped(appointment.status);
   const urgent = appointment.priority !== "ROUTINE";
@@ -179,7 +188,7 @@ function AppointmentRow({ appointment }: { appointment: AppointmentListItem }) {
   return (
     <li className="transition-colors hover:bg-surface-muted">
       <Link
-        href={`/appointments/${appointment.id}`}
+        href={hrefFor(appointment.id)}
         className={[
           "flex items-stretch gap-3 px-4 py-3",
           // A cancelled visit stays on the list — it is part of the record — but

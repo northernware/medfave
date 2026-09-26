@@ -10,6 +10,8 @@ const LINKS = [
   { href: "/households", label: "Households", icon: "M4 20v-2a4 4 0 014-4h1m7 6v-2a4 4 0 00-3-3.9M9 7a3 3 0 106 0 3 3 0 10-6 0m8 3a2.5 2.5 0 100-5" },
   { href: "/patients", label: "Patients", icon: "M12 11a4 4 0 100-8 4 4 0 000 8zM5 21v-1a7 7 0 0114 0v1" },
   { href: "/documents", label: "Records requests", icon: "M8 4h8l4 4v12H4V4h4zm8 0v4h4M8 13h8M8 17h5" },
+  { href: "/desk", label: "Front desk", icon: "M4 19h16M6 19V9l6-4 6 4v10M10 19v-5h4v5" },
+  { href: "/staff", label: "Staff", icon: "M9 7a3 3 0 106 0 3 3 0 10-6 0M4 20v-1a5 5 0 015-5h2a5 5 0 015 5v1M17 11a2.5 2.5 0 100-5" },
 ] as const;
 
 function isActive(pathname: string, href: string) {

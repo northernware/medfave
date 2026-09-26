@@ -275,7 +275,7 @@ export async function loadSchedule(doctorId: string): Promise<Schedule> {
  * way to treat a possible duplicate of a medical record.
  */
 export async function findPossibleDuplicates(
-  doctorId: string,
+  clinicId: string,
   candidate: {
     firstName: string;
     lastName: string;
@@ -290,7 +290,7 @@ export async function findPossibleDuplicates(
   let query = orm.Patient
     .select("id", "patientNumber", "firstName", "middleName", "lastName", "dateOfBirth", "contactNumber", "email")
     .include("household", (h) => h.select("name"))
-    .where((p) => p.household.some((h) => h.doctorId.eq(doctorId)))
+    .where((p) => p.clinicId.eq(clinicId))
     .where((p) =>
       or(
         and(

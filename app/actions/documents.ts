@@ -83,7 +83,7 @@ export async function createDocumentRequest(
   const patient = await orm.Patient
     .select("id")
     .where((p) => p.id.eq(patientId))
-    .where((p) => p.household.some((h) => h.doctorId.eq(doctor.id)))
+    .where((p) => p.clinicId.eq(doctor.clinicId))
     .first();
   if (!patient) return { message: "That patient is not on your list." };
 
@@ -94,7 +94,7 @@ export async function createDocumentRequest(
     const record = await orm.MedicalRecord
       .select("id")
       .where((r) => r.id.eq(medicalRecordId))
-      .where((r) => r.doctorId.eq(doctor.id))
+      .where((r) => r.clinicId.eq(doctor.clinicId))
       .where((r) => r.patientId.eq(patient.id))
       .where((r) => r.archivedAt.isNull())
       .first();
@@ -109,6 +109,7 @@ export async function createDocumentRequest(
   const created = await orm.DocumentRequest.select("id").create({
     id: newId(),
     doctorId: doctor.id,
+    clinicId: doctor.clinicId,
     patientId: patient.id,
     medicalRecordId: linkedRecordId,
     type,
@@ -138,7 +139,7 @@ export async function updateDocumentRequest(
   const existing = await orm.DocumentRequest
     .select("id", "patientId", "type", "status")
     .where((r) => r.id.eq(requestId))
-    .where((r) => r.doctorId.eq(doctor.id))
+    .where((r) => r.clinicId.eq(doctor.clinicId))
     .first();
   if (!existing) return { message: "That request no longer exists." };
   if (existing.status === "RELEASED") {
@@ -191,7 +192,7 @@ export async function setDocumentStatus(formData: FormData) {
   const existing = await orm.DocumentRequest
     .select("id", "status", "patientId")
     .where((r) => r.id.eq(requestId))
-    .where((r) => r.doctorId.eq(doctor.id))
+    .where((r) => r.clinicId.eq(doctor.clinicId))
     .first();
   if (!existing) return;
 
@@ -224,6 +225,41 @@ export async function setDocumentStatus(formData: FormData) {
   revalidatePath(`/patients/${existing.patientId}`);
 }
 
+/**
+ * Shows a released document to the patient in their own portal.
+ *
+ * Kept apart from releasing it. A certificate handed to an employer has been
+ * released, and that is not the same as the patient having been given it — so
+ * publishing is a second, deliberate decision rather than a consequence of the
+ * first.
+ */
+export async function shareDocumentWithPatient(formData: FormData) {
+  const doctor = await requireDoctor();
+  const requestId = String(formData.get("requestId") ?? "");
+  const share = String(formData.get("share") ?? "1") === "1";
+  if (!requestId) return;
+
+  const existing = await orm.DocumentRequest
+    .select("id", "status")
+    .where((r) => r.id.eq(requestId))
+    .where((r) => r.clinicId.eq(doctor.clinicId))
+    .first();
+  if (!existing) return;
+
+  // Nothing unfinished is published: a draft certificate in a patient's portal
+  // is a statement the clinic has not made yet.
+  if (share && existing.status !== "RELEASED" && existing.status !== "READY") return;
+
+  const now = instantToDb(new Date());
+  await orm.DocumentRequest.where((r) => r.id.eq(requestId)).update({
+    sharedWithPatientAt: share ? now : null,
+    updatedAt: now,
+  });
+
+  revalidatePath(`/documents/${requestId}`);
+  revalidatePath("/portal");
+}
+
 /** A request withdrawn before anything went out. */
 export async function deleteDocumentRequest(formData: FormData) {
   const doctor = await requireDoctor();
@@ -233,7 +269,7 @@ export async function deleteDocumentRequest(formData: FormData) {
   const existing = await orm.DocumentRequest
     .select("id", "status", "patientId", "type")
     .where((r) => r.id.eq(requestId))
-    .where((r) => r.doctorId.eq(doctor.id))
+    .where((r) => r.clinicId.eq(doctor.clinicId))
     .first();
   if (!existing) return;
 
