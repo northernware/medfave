@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { inviteStaff, removeClinicMember, revokeStaffInvite } from "@/app/actions/access";
-import { requireDoctor } from "@/lib/auth";
+import { requireClinicManager } from "@/lib/auth";
 import { orm } from "@/src/prisma/db";
 import { formatDateTime, instantFromDb } from "@/lib/datetime";
 import { Badge, Card, CardHeader, EmptyState, PageHeader, buttonClass } from "@/components/ui";
@@ -14,36 +14,53 @@ const ROLE_LABELS: Record<string, string> = {
   ADMIN: "Administrator",
 };
 
-export default async function StaffPage({ searchParams }: PageProps<"/staff">) {
-  const doctor = await requireDoctor();
+/** Roles that can administer the clinic. One of them has to remain. */
+const MANAGER_ROLES = ["DOCTOR", "ADMIN"];
+
+export default async function StaffPage({ searchParams }: PageProps<"/manage/staff">) {
+  const manager = await requireClinicManager();
   const { code, to, mail } = await searchParams;
 
   const [members, invites] = await Promise.all([
     orm.ClinicMember
       .select("id", "role", "createdAt")
       .include("account", (a) => a.select("id", "email", "fullName"))
-      .where((m) => m.clinicId.eq(doctor.clinicId))
+      .where((m) => m.clinicId.eq(manager.clinicId))
       .orderBy((m) => m.createdAt.asc())
       .all(),
     orm.StaffInvite
       .select("id", "email", "role", "expiresAt", "acceptedAt", "revokedAt", "createdAt")
-      .where((i) => i.clinicId.eq(doctor.clinicId))
+      .where((i) => i.clinicId.eq(manager.clinicId))
       .orderBy((i) => i.createdAt.desc())
       .limit(20)
       .all(),
   ]);
 
   const live = invites.filter((i) => !i.acceptedAt && !i.revokedAt);
+  const managers = members.filter((m) => MANAGER_ROLES.includes(m.role));
+
+  /**
+   * Whether this membership can be given up.
+   *
+   * A clinician is never removed here — a clinic with no clinician has records
+   * nobody can reach — and the last person who can administer the clinic stays
+   * too, or there is no way back in to appoint anyone.
+   */
+  const removable = (role: string) => {
+    if (role === "DOCTOR") return false;
+    if (MANAGER_ROLES.includes(role) && managers.length <= 1) return false;
+    return true;
+  };
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Staff"
-        subtitle={`Who works at ${doctor.clinicName ?? "this clinic"}, and what they may reach.`}
+        subtitle={`Who works at ${manager.clinicName}, and what they may reach.`}
       />
 
-      {/* No mail is sent from this application yet, so the code is shown once
-          to the person who made it, to pass on however they normally would. */}
+      {/* The code is shown once to the person who made it, whatever the mail
+          did, so an invitation is never lost to a mail problem. */}
       {code ? (
         <div className="rounded-lg border border-ok/40 bg-ok-tint px-4 py-3">
           <p className="text-[13px] font-medium text-ok-ink">
@@ -54,14 +71,12 @@ export default async function StaffPage({ searchParams }: PageProps<"/staff">) {
             They enter it at <strong>/invite</strong>. It is valid for seven days and can only be
             used once.{" "}
             {mail === "sent" ? (
-            <>Also emailed to that address.</>
-          ) : mail === "failed" ? (
-            <>The email could not be sent, so this code is the only copy — pass it on directly.</>
-          ) : mail === "no-address" ? (
-            <>No email address on file, so this code is the only copy.</>
-          ) : (
-            <>Email is not set up, so this code is the only copy.</>
-          )}
+              <>Also emailed to that address.</>
+            ) : mail === "failed" ? (
+              <>The email could not be sent, so this code is the only copy — pass it on directly.</>
+            ) : (
+              <>Email is not set up, so this code is the only copy.</>
+            )}
           </p>
         </div>
       ) : null}
@@ -75,20 +90,21 @@ export default async function StaffPage({ searchParams }: PageProps<"/staff">) {
                 <span className="block text-[13px] font-medium">{m.account.fullName}</span>
                 <span className="block truncate text-xs text-ink-muted">{m.account.email}</span>
               </span>
-              <Badge tone={m.role === "DOCTOR" ? "accent" : "neutral"}>
+              <Badge tone={MANAGER_ROLES.includes(m.role) ? "accent" : "neutral"}>
                 {ROLE_LABELS[m.role] ?? m.role}
               </Badge>
-              {/* A clinic that can be left with nobody clinical in it is a
-                  clinic whose records nobody can reach, so only the desk can
-                  be removed here. */}
-              {m.role === "SECRETARY" ? (
+              {removable(m.role) ? (
                 <form action={removeClinicMember}>
                   <input type="hidden" name="memberId" value={m.id} />
                   <button className="text-xs font-medium text-ink-muted hover:text-danger-ink">
                     Remove
                   </button>
                 </form>
-              ) : null}
+              ) : (
+                <span className="text-xs text-ink-faint">
+                  {m.role === "DOCTOR" ? "Clinician" : "Last administrator"}
+                </span>
+              )}
             </li>
           ))}
         </ul>
@@ -96,8 +112,8 @@ export default async function StaffPage({ searchParams }: PageProps<"/staff">) {
 
       <Card>
         <CardHeader
-          title="Invite a secretary"
-          subtitle="They can register patients, book, and run the waiting room — never the notes."
+          title="Invite somebody"
+          subtitle="A secretary registers patients, books and runs the waiting room — never the notes. An administrator runs the clinic: staff and settings, no charts."
         />
         <div className="px-5 py-4">
           <InviteStaffForm action={inviteStaff} />

@@ -190,7 +190,8 @@ export async function acceptStaffInvite(
   });
 
   await createSession(accountId);
-  redirect(invite.role === "SECRETARY" ? "/desk" : "/");
+  // Straight to the door that belongs to the role the invitation granted.
+  redirect(invite.role === "SECRETARY" ? "/desk" : invite.role === "ADMIN" ? "/manage" : "/");
 }
 
 /** Reads an invitation for the acceptance page, without spending it. */

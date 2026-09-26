@@ -83,6 +83,10 @@ export async function requireViewer(): Promise<Viewer> {
 /** Where an account belongs when it lands on the wrong door. */
 export function homeFor(viewer: Viewer) {
   if (viewer.staff?.role === "SECRETARY") return "/desk";
+  // An administrator runs the clinic without practising in it, so the clinical
+  // section is not theirs. Sending them to "/" was an infinite redirect: the
+  // clinical gate bounced them straight back here.
+  if (viewer.staff?.role === "ADMIN") return "/manage";
   if (viewer.staff) return "/";
   if (viewer.patient) return "/portal";
   return "/no-access";
@@ -109,7 +113,10 @@ export type CurrentDoctor = {
  */
 export async function requireDoctor(): Promise<CurrentDoctor> {
   const viewer = await requireViewer();
-  if (!viewer.staff || viewer.staff.role === "SECRETARY" || !viewer.doctorId) {
+  // Stated as the role it wants rather than the one it refuses: an
+  // administrator is staff and holds no clinician profile, and "not a
+  // secretary" would have been the wrong question to ask about them.
+  if (!viewer.staff || viewer.staff.role !== "DOCTOR" || !viewer.doctorId) {
     redirect(homeFor(viewer));
   }
 
@@ -156,6 +163,42 @@ export type CurrentStaff = {
 export async function requireStaff(): Promise<CurrentStaff> {
   const viewer = await requireViewer();
   if (!viewer.staff) redirect(homeFor(viewer));
+
+  return {
+    accountId: viewer.accountId,
+    clinicId: viewer.staff.clinicId,
+    clinicName: viewer.staff.clinicName,
+    role: viewer.staff.role,
+    fullName: viewer.fullName,
+    email: viewer.email,
+    doctorId: viewer.doctorId,
+  };
+}
+
+export type CurrentManager = {
+  accountId: string;
+  clinicId: string;
+  clinicName: string;
+  role: ClinicRole;
+  fullName: string;
+  email: string;
+  /** Set when this manager is also the clinic's clinician. */
+  doctorId: string | null;
+};
+
+/**
+ * Who may run the clinic: its clinician, or an administrator.
+ *
+ * Deliberately separate from `requireDoctor`. Appointing staff, setting opening
+ * hours and changing what the letterhead says are the practice's business
+ * rather than the consulting room's, and a clinic should be able to employ
+ * somebody to do them without also handing them the notes. The 40-odd
+ * `requireDoctor` call sites keep meaning "clinician", which is what every
+ * clinical page actually needs.
+ */
+export async function requireClinicManager(): Promise<CurrentManager> {
+  const viewer = await requireViewer();
+  if (!viewer.staff || viewer.staff.role === "SECRETARY") redirect(homeFor(viewer));
 
   return {
     accountId: viewer.accountId,
