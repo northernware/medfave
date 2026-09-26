@@ -243,6 +243,22 @@ export const patientSchema = z.object({
   }),
 });
 
+/**
+ * The part of their own chart a patient may correct.
+ *
+ * Two fields, and deliberately no more. Name, date of birth and household are
+ * identity, and a record whose subject can rewrite its identity is not a
+ * reliable one — those stay with the desk, which is where somebody was
+ * identified in the first place. How to reach them is different: they are the
+ * authority on their own phone number, and a wrong one means a missed reminder.
+ */
+export const patientContactSchema = z.object({
+  contactNumber: optionalText(40),
+  email: optionalText(160).refine((v) => v === null || z.email().safeParse(v).success, {
+    message: "Enter a valid email address",
+  }),
+});
+
 // --- Appointments -----------------------------------------------------------
 
 // Date and time are separate fields: the form offers only the slots the clinic

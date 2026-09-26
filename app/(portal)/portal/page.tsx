@@ -68,7 +68,6 @@ export default async function PortalPage({ searchParams }: PageProps<"/portal">)
   ]);
 
   if (!profile) return null;
-  const pending = requests.filter((r) => r.status === "PENDING");
 
   return (
     <div className="space-y-6">
@@ -190,7 +189,15 @@ export default async function PortalPage({ searchParams }: PageProps<"/portal">)
       ) : null}
 
       <Card>
-        <CardHeader title="Your details" subtitle="Tell the clinic if any of this is wrong." />
+        <CardHeader
+          title="Your details"
+          subtitle="Your contact details are yours to correct; the rest is held by the clinic."
+          action={
+            <Link href="/portal/details" className={buttonClass("secondary", "text-xs")}>
+              Update
+            </Link>
+          }
+        />
         <dl className="grid gap-4 px-5 py-4 sm:grid-cols-2">
           <Detail label="Name" value={fullName(profile)} />
           <Detail

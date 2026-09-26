@@ -4,13 +4,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
 import { orm } from "@/src/prisma/db";
-import { requireViewer } from "@/lib/auth";
+import { requirePatientAccount, requireViewer } from "@/lib/auth";
 import { instantToDb } from "@/lib/datetime";
 import { createSession } from "@/lib/session";
 import {
   accountDetailsSchema,
   clinicianProfileSchema,
   passwordChangeSchema,
+  patientContactSchema,
   toFieldErrors,
   type FormState,
 } from "@/lib/validation";
@@ -125,4 +126,43 @@ export async function updateClinicianProfile(
 
   revalidatePath("/account");
   redirect("/account?saved=clinician");
+}
+
+/**
+ * How to reach a patient, corrected by the patient.
+ *
+ * The chart id is taken from the login, never from the form, so this can only
+ * ever touch the one chart this account was activated against. Only two fields
+ * are read out of the submission at all: anything else posted alongside them —
+ * a name, a date of birth, a household — is dropped by the schema rather than
+ * refused, because a form that never offered those fields has no business
+ * reporting errors about them.
+ *
+ * This is the address the clinic's confirmations and reminders go to, which is
+ * the reason a patient is allowed to fix it: a wrong number is a missed visit.
+ * It is not the address they sign in with — that lives on the account, and
+ * changing it is on /account.
+ */
+export async function updatePatientContact(
+  _prev: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const me = await requirePatientAccount();
+  const parsed = patientContactSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return toFieldErrors(parsed.error);
+
+  await orm.Patient
+    .where((p) => p.id.eq(me.patientId))
+    // Belt and braces: the id already came from the session, and the chart must
+    // still be the one this account is linked to.
+    .where((p) => p.accountId.eq(me.accountId))
+    .update({
+      contactNumber: parsed.data.contactNumber,
+      email: parsed.data.email,
+      updatedAt: instantToDb(new Date()),
+    });
+
+  revalidatePath("/portal");
+  revalidatePath("/portal/details");
+  redirect("/portal/details?saved=contact");
 }
