@@ -98,6 +98,12 @@ namespace public {
     bloodType         pg.enum(BloodType)          @default("UNKNOWN")
     contactNumber     String?
     email             String?
+    /// Whether this person wants to hear from the clinic before a visit, and
+    /// how. Theirs to set from the portal, and the default every new
+    /// appointment takes; the copy on the appointment is what actually decides
+    /// a send, so a change here never rewrites what was promised for a visit
+    /// that has already been reminded.
+    reminderPreference pg.enum(ReminderPreference) @default("NONE")
     createdAt         TimestampString(3)                @default(now())
     updatedAt         TimestampString(3)
     allergyStatus     pg.enum(ClinicalListStatus) @default("UNKNOWN")

@@ -5,7 +5,7 @@ import { issuePatientActivation, revokePatientActivation } from "@/app/actions/a
 import { requireStaff } from "@/lib/auth";
 import { orm } from "@/src/prisma/db";
 import { calendarDateFromDb, formatCalendarDate, formatDateTime, instantFromDb } from "@/lib/datetime";
-import { ageFrom, fullName, RELATIONSHIP_LABELS, SEX_LABELS } from "@/lib/domain";
+import { ageFrom, fullName, RELATIONSHIP_LABELS, REMINDER_LABELS, SEX_LABELS } from "@/lib/domain";
 import { AppointmentList } from "@/components/appointment-list";
 import { Badge, buttonClass, Card, CardHeader, Detail, PageHeader } from "@/components/ui";
 
@@ -30,6 +30,7 @@ export default async function DeskPatientPage({
       "relationship",
       "contactNumber",
       "email",
+      "reminderPreference",
       "patientNumber",
       "accountId",
       "emergencyContactName",
@@ -125,6 +126,9 @@ export default async function DeskPatientPage({
           <Detail label="Relationship" value={RELATIONSHIP_LABELS[patient.relationship]} />
           <Detail label="Mobile" value={patient.contactNumber} />
           <Detail label="Email" value={patient.email} />
+          {/* The patient's own standing choice, set from their portal. New
+              bookings take it as their default. */}
+          <Detail label="Reminders" value={REMINDER_LABELS[patient.reminderPreference]} />
           <Detail label="Household address" value={patient.household.address} />
           <Detail label="Household number" value={patient.household.contactNumber} />
           <Detail label="Emergency contact" value={patient.emergencyContactName} />

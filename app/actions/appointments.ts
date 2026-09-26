@@ -286,6 +286,20 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
 
   const followUpFor = String(formData.get("followUpFor") ?? "");
 
+  // The booking form starts at "No reminder" whether or not it knows who the
+  // patient is, so a NONE coming out of it is an absence of a choice rather than
+  // a refusal. Somebody who has asked the clinic to remind them is honoured
+  // here; staff can still set the visit to anything else, and that stands.
+  const standing = await orm.Patient
+    .select("reminderPreference")
+    .where((p) => p.id.eq(parsed.data.patientId))
+    .where((p) => p.clinicId.eq(staff.clinicId))
+    .first();
+  const reminderPreference =
+    resolved.data.reminderPreference === "NONE" && standing?.reminderPreference === "EMAIL"
+      ? ("EMAIL" as const)
+      : resolved.data.reminderPreference;
+
   // Availability is re-checked here, inside the lock, rather than trusting the
   // check the form did: between rendering the slot list and this write, anyone
   // could have taken it.
@@ -309,6 +323,7 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
 
     const created = await tx.orm.public.Appointment.select("id", "patientId").create({
       ...resolved.data,
+      reminderPreference,
       id: newId(),
       clinicId: staff.clinicId,
       doctorId,

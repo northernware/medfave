@@ -12,6 +12,7 @@ import {
   APPOINTMENT_TYPE_LABELS,
   BOOKING_SOURCE_LABELS,
   fullName,
+  REMINDER_LABELS,
   SERVICE_LABELS,
   STATUS_TRANSITIONS,
   statusActionLabel,
@@ -105,6 +106,9 @@ export default async function DeskAppointmentPage({
           <Detail label="Priority" value={VISIT_PRIORITY_LABELS[appointment.priority]} />
           <Detail label="Room" value={appointment.room} />
           <Detail label="Booked as" value={BOOKING_SOURCE_LABELS[appointment.source]} />
+          {/* The desk books, so the desk is who needs to know whether anything
+              goes out the day before. */}
+          <Detail label="Reminder" value={REMINDER_LABELS[appointment.reminderPreference]} />
           <Detail
             label="Arrived"
             value={appointment.arrivedAt ? formatTime(instantFromDb(appointment.arrivedAt)) : null}

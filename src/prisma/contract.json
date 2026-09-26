@@ -3414,6 +3414,16 @@
                   }
                 }
               },
+              "reminderPreference": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/enum@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "typeName": "ReminderPreference"
+                  }
+                }
+              },
               "sex": {
                 "nullable": false,
                 "type": {
@@ -3693,6 +3703,9 @@
                 },
                 "relationship": {
                   "column": "relationship"
+                },
+                "reminderPreference": {
+                  "column": "reminderPreference"
                 },
                 "sex": {
                   "column": "sex"
@@ -7419,6 +7432,24 @@
                     "plane": "storage"
                   }
                 },
+                "reminderPreference": {
+                  "codecId": "pg/enum@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "NONE"
+                  },
+                  "nativeType": "ReminderPreference",
+                  "nullable": false,
+                  "typeParams": {
+                    "typeName": "ReminderPreference"
+                  },
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "ReminderPreference",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
                 "sex": {
                   "codecId": "pg/enum@1",
                   "nativeType": "Sex",
@@ -8676,7 +8707,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "2f520a5f5aacacc08411744686193f10454fe5ccddc6338b1b8fa82ddc601494"
+    "storageHash": "e133f779980eb18bb2cf07d057f5a048c1a135d5c1d51e39100c2cf2b6a020ba"
   },
   "capabilities": {
     "postgres": {

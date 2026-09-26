@@ -151,6 +151,7 @@ export async function updatePatientContact(
   const parsed = patientContactSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return toFieldErrors(parsed.error);
 
+  const now = instantToDb(new Date());
   await orm.Patient
     .where((p) => p.id.eq(me.patientId))
     // Belt and braces: the id already came from the session, and the chart must
@@ -159,8 +160,28 @@ export async function updatePatientContact(
     .update({
       contactNumber: parsed.data.contactNumber,
       email: parsed.data.email,
-      updatedAt: instantToDb(new Date()),
+      reminderPreference: parsed.data.reminderPreference,
+      updatedAt: now,
     });
+
+  // A standing choice that only applied to visits booked after it would be no
+  // use to somebody who already has one in the diary, so it is carried across
+  // to the appointments still ahead of them. Not to a visit already reminded —
+  // that reminder has gone, and rewriting the row would misreport what was
+  // sent — and not to the past, which is a record of what happened.
+  const ahead = await orm.Appointment
+    .select("id")
+    .where((a) => a.patientId.eq(me.patientId))
+    .where((a) => a.clinicId.eq(me.clinicId))
+    .where((a) => a.scheduledAt.gte(now))
+    .where((a) => a.reminderSentAt.isNull())
+    .all();
+  for (const appointment of ahead) {
+    await orm.Appointment.where((a) => a.id.eq(appointment.id)).update({
+      reminderPreference: parsed.data.reminderPreference,
+      updatedAt: now,
+    });
+  }
 
   revalidatePath("/portal");
   revalidatePath("/portal/details");

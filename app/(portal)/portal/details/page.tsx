@@ -32,6 +32,7 @@ export default async function PortalDetailsPage({ searchParams }: PageProps<"/po
       "patientNumber",
       "contactNumber",
       "email",
+      "reminderPreference",
     )
     .include("household", (h) => h.select("name"))
     .where((p) => p.id.eq(me.patientId))
@@ -53,7 +54,8 @@ export default async function PortalDetailsPage({ searchParams }: PageProps<"/po
       {saved === "contact" ? (
         <div className="rounded-lg border border-ok/40 bg-ok-tint px-4 py-3 text-[13px]">
           <p className="font-medium text-ok-ink">
-            Your contact details have been updated. The clinic sees the change straight away.
+            Your contact details have been updated. The clinic sees the change straight away, and
+            the visits already in your diary follow your reminder choice.
           </p>
         </div>
       ) : null}
@@ -61,7 +63,7 @@ export default async function PortalDetailsPage({ searchParams }: PageProps<"/po
       <Card>
         <CardHeader
           title="How to reach you"
-          subtitle="Yours to correct. Confirmations and reminders go here."
+          subtitle="Yours to correct, including whether the clinic writes to you at all."
         />
         <div className="px-5 py-4">
           <ContactForm
@@ -69,6 +71,7 @@ export default async function PortalDetailsPage({ searchParams }: PageProps<"/po
             defaults={{
               contactNumber: profile.contactNumber ?? "",
               email: profile.email ?? "",
+              reminderPreference: profile.reminderPreference,
             }}
           />
         </div>

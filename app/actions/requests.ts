@@ -200,6 +200,7 @@ export async function acceptRequest(formData: FormData) {
 
   const request = await orm.AppointmentRequest
     .select("id", "status", "patientId", "doctorId", "preferredDate", "preferredTime", "service", "reason")
+    .include("patient", (p) => p.select("reminderPreference"))
     .where((r) => r.id.eq(requestId))
     .where((r) => r.clinicId.eq(staff.clinicId))
     .first();
@@ -259,7 +260,9 @@ export async function acceptRequest(formData: FormData) {
       source: "PATIENT_PORTAL",
       visitType: "IN_PERSON",
       priority: "ROUTINE",
-      reminderPreference: "NONE",
+      // The patient asked for this visit themselves, so their standing choice
+      // about hearing from the clinic is the only signal there is.
+      reminderPreference: request.patient.reminderPreference,
       createdAt: now,
       updatedAt: now,
     });

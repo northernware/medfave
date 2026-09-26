@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { Field, FieldGrid, FormError, SubmitButton, TextInput } from "@/components/form";
+import { Field, FieldGrid, FormError, Select, SubmitButton, TextInput } from "@/components/form";
 import { EMPTY_FORM_STATE, type FormState } from "@/lib/validation";
 
 export function ContactForm({
@@ -9,7 +9,7 @@ export function ContactForm({
   defaults,
 }: {
   action: (state: FormState, formData: FormData) => Promise<FormState>;
-  defaults: { contactNumber: string; email: string };
+  defaults: { contactNumber: string; email: string; reminderPreference: string };
 }) {
   const [state, formAction] = useActionState(action, EMPTY_FORM_STATE);
   const err = state.fieldErrors;
@@ -52,6 +52,23 @@ export function ContactForm({
           />
         </Field>
       </FieldGrid>
+
+      <Field
+        label="Reminders"
+        htmlFor="reminderPreference"
+        error={err?.reminderPreference}
+        hint="A reminder goes out the day before a visit, to the address above."
+      >
+        <Select
+          id="reminderPreference"
+          name="reminderPreference"
+          defaultValue={defaults.reminderPreference}
+          invalid={Boolean(err?.reminderPreference)}
+        >
+          <option value="EMAIL">Email me before a visit</option>
+          <option value="NONE">Do not remind me</option>
+        </Select>
+      </Field>
 
       <SubmitButton>Save contact details</SubmitButton>
     </form>

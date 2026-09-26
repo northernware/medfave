@@ -252,12 +252,23 @@ export const patientSchema = z.object({
  * identified in the first place. How to reach them is different: they are the
  * authority on their own phone number, and a wrong one means a missed reminder.
  */
-export const patientContactSchema = z.object({
-  contactNumber: optionalText(40),
-  email: optionalText(160).refine((v) => v === null || z.email().safeParse(v).success, {
-    message: "Enter a valid email address",
-  }),
-});
+export const patientContactSchema = z
+  .object({
+    contactNumber: optionalText(40),
+    email: optionalText(160).refine((v) => v === null || z.email().safeParse(v).success, {
+      message: "Enter a valid email address",
+    }),
+    // Only the two the application can actually honour. SMS and APP exist in the
+    // enum for the clinic's own records, and offering a patient a choice nothing
+    // would act on is worse than not offering it.
+    reminderPreference: z.enum([ReminderPreference.NONE, ReminderPreference.EMAIL], {
+      message: "Choose whether you want a reminder",
+    }),
+  })
+  .refine((v) => v.reminderPreference !== ReminderPreference.EMAIL || v.email !== null, {
+    message: "Add an email address to be reminded by email",
+    path: ["email"],
+  });
 
 // --- Appointments -----------------------------------------------------------
 
