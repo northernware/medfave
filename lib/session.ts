@@ -37,12 +37,21 @@ export async function createSession(accountId: string) {
   });
 }
 
-export async function readSession(): Promise<{ accountId: string } | null> {
+/**
+ * Who the cookie says this is, and when it said so.
+ *
+ * `issuedAt` is what lets a password change end sessions that are already
+ * out there: the account records a moment before which no session counts, and
+ * a token older than that is refused. Without it, signing out only clears the
+ * browser's own copy and a stolen cookie keeps working for its full life.
+ */
+export async function readSession(): Promise<{ accountId: string; issuedAt: Date } | null> {
   const token = (await cookies()).get(COOKIE_NAME)?.value;
   if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, signingKey(), { algorithms: ["HS256"] });
-    return typeof payload.accountId === "string" ? { accountId: payload.accountId } : null;
+    if (typeof payload.accountId !== "string" || typeof payload.iat !== "number") return null;
+    return { accountId: payload.accountId, issuedAt: new Date(payload.iat * 1000) };
   } catch {
     // Expired or tampered with — treat as signed out.
     return null;

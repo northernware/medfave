@@ -550,6 +550,14 @@ namespace public {
     email        String
     passwordHash String
     fullName     String
+    /// Sessions issued before this instant stop being accepted.
+    ///
+    /// The cookie is a stateless JWT, so there is otherwise no way to end a
+    /// session that is already out there — signing out only clears the
+    /// browser's own copy. Bumping this on a password change or reset is what
+    /// makes either of them actually evict anybody. Null means every session
+    /// is still good, which is the ordinary case.
+    sessionsValidFrom TimestampString(3)?
     createdAt    TimestampString(3) @default(now())
     updatedAt    TimestampString(3)
     memberships  ClinicMember[]

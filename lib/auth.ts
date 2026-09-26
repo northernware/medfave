@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { orm } from "@/src/prisma/db";
+import { instantFromDb } from "@/lib/datetime";
 import type { ClinicRole } from "@/lib/enums";
 import { readSession } from "./session";
 
@@ -31,7 +32,7 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
   if (!session) return null;
 
   const account = await orm.Account
-    .select("id", "email", "fullName")
+    .select("id", "email", "fullName", "sessionsValidFrom")
     .include("memberships", (m) =>
       m.select("clinicId", "role").include("clinic", (c) => c.select("name")),
     )
@@ -40,6 +41,15 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
     .where((a) => a.id.eq(session.accountId))
     .first();
   if (!account) return null;
+
+  // A session older than the account's cut-off is over, whatever the cookie
+  // still says. The clock has one second of resolution, so a token issued in
+  // the same second as the change is kept — otherwise changing a password
+  // would sign out the very browser that changed it.
+  if (account.sessionsValidFrom) {
+    const validFrom = instantFromDb(account.sessionsValidFrom);
+    if (session.issuedAt.getTime() < validFrom.getTime() - 1000) return null;
+  }
 
   // One clinic per account for now. The model allows more, and when it is used
   // the clinic will have to be chosen rather than assumed — this is the single

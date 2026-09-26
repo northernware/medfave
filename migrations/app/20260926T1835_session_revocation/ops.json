@@ -1,0 +1,44 @@
+[
+  {
+    "id": "column.public.Account.sessionsValidFrom",
+    "label": "Add column \"sessionsValidFrom\" to \"Account\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "sessionsValidFrom",
+        "table": "Account"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"sessionsValidFrom\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Account",
+          "sessionsValidFrom"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"sessionsValidFrom\"",
+        "sql": "ALTER TABLE \"public\".\"Account\" ADD COLUMN \"sessionsValidFrom\" timestamp(3)"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"sessionsValidFrom\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Account",
+          "sessionsValidFrom"
+        ]
+      }
+    ]
+  }
+]

@@ -127,6 +127,45 @@ export const inviteAcceptSchema = z
     path: ["confirmPassword"],
   });
 
+/**
+ * A person's own account details.
+ *
+ * The email is what they sign in with, so changing it is changing a
+ * credential — the action re-issues the session rather than leaving them
+ * holding one that names an address they no longer have.
+ */
+export const accountDetailsSchema = z.object({
+  fullName: requiredText("Full name", 120),
+  email: z.string().trim().toLowerCase().pipe(z.email("Enter a valid email address")),
+});
+
+/**
+ * Changing a password while signed in.
+ *
+ * The current password is required. Without it, anybody who finds an unlocked
+ * screen owns the account permanently rather than until it is locked again.
+ */
+export const passwordChangeSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Enter your current password"),
+    password: z.string().min(10, "Use at least 10 characters").max(200),
+    confirmPassword: z.string(),
+  })
+  .refine((v) => v.password === v.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  })
+  .refine((v) => v.password !== v.currentPassword, {
+    message: "Choose a password you have not used here before",
+    path: ["password"],
+  });
+
+/** The clinician details that print on a prescription or a certificate. */
+export const clinicianProfileSchema = z.object({
+  specialty: optionalText(120),
+  licenseNumber: optionalText(60),
+});
+
 export const loginSchema = z.object({
   email: z.string().trim().toLowerCase().min(1, "Email is required"),
   password: z.string().min(1, "Password is required"),

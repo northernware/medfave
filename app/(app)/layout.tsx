@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { logout } from "@/app/actions/auth";
 import { requireDoctor } from "@/lib/auth";
 import { Brand } from "@/components/brand";
@@ -46,7 +47,10 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
 function DoctorCard({ name, detail, initials }: { name: string; detail: string; initials: string }) {
   return (
     <div className="border-t border-border p-3">
-      <div className="flex items-center gap-2.5 rounded-lg px-2 py-2">
+      <Link
+        href="/account"
+        className="flex items-center gap-2.5 rounded-lg px-2 py-2 transition-colors hover:bg-surface-muted"
+      >
         <span
           aria-hidden="true"
           className="grid size-8 shrink-0 place-items-center rounded-full bg-surface-muted text-xs font-semibold text-ink-muted"
@@ -57,7 +61,7 @@ function DoctorCard({ name, detail, initials }: { name: string; detail: string; 
           <p className="truncate text-sm font-medium">{name}</p>
           <p className="truncate text-xs text-ink-faint">{detail}</p>
         </div>
-      </div>
+      </Link>
       <form action={logout}>
         <button className="mt-1 w-full rounded-lg px-2 py-1.5 text-left text-sm text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink">
           Sign out

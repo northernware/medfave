@@ -145,6 +145,16 @@
                   "kind": "scalar"
                 }
               },
+              "sessionsValidFrom": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
               "updatedAt": {
                 "nullable": false,
                 "type": {
@@ -309,6 +319,9 @@
                 },
                 "passwordHash": {
                   "column": "passwordHash"
+                },
+                "sessionsValidFrom": {
+                  "column": "sessionsValidFrom"
                 },
                 "updatedAt": {
                   "column": "updatedAt"
@@ -4776,6 +4789,14 @@
                   "nativeType": "text",
                   "nullable": false
                 },
+                "sessionsValidFrom": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
                 "updatedAt": {
                   "codecId": "pg/timestamp-string@1",
                   "nativeType": "timestamp",
@@ -8428,7 +8449,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "e75416a5a298c4b2d01a62239e29682e752b50c0147a20dbb7ca0ddcd9a0454d"
+    "storageHash": "b86db92d58069683062bf34dabdb270707fd6c634aa74011285cf01560cd52e9"
   },
   "capabilities": {
     "postgres": {

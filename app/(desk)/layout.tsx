@@ -32,7 +32,12 @@ export default async function DeskLayout({ children }: { children: ReactNode }) 
                 Clinical view
               </Link>
             ) : null}
-            <span className="text-[13px] text-ink-muted">{staff.fullName}</span>
+            <Link
+              href="/account"
+              className="text-[13px] text-ink-muted transition-colors hover:text-ink hover:underline"
+            >
+              {staff.fullName}
+            </Link>
             <form action={logout}>
               <button className="text-[13px] font-medium text-ink-muted hover:text-ink">
                 Sign out
