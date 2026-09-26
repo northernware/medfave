@@ -569,6 +569,7 @@ namespace public {
     bookingsMade Appointment[]       @relation(name: "Appointment_bookedById_fkey")
     requestsMade AppointmentRequest[] @relation(name: "AppointmentRequest_requestedById_fkey")
     requestsDecided AppointmentRequest[] @relation(name: "AppointmentRequest_decidedById_fkey")
+    passwordResets PasswordReset[]
 
     @@index([email], map: "Account_email_key", unique: true)
 
@@ -694,6 +695,29 @@ namespace public {
     @@index([appointmentId], map: "AppointmentRequest_appointmentId_idx")
 
     @@map("AppointmentRequest")
+  }
+
+
+  /// A one-time link for somebody who cannot get in.
+  ///
+  /// Same shape as PatientActivation on purpose — the token helpers, the
+  /// hash-only storage and the used/revoked/expired checks are all the same
+  /// problem, and a second way of doing it would be a second way to get it
+  /// wrong.
+  model PasswordReset {
+    id         String @id(map: "PasswordReset_pkey")
+    accountId  String
+    tokenHash  String
+    expiresAt  TimestampString(3)
+    usedAt     TimestampString(3)?
+    revokedAt  TimestampString(3)?
+    createdAt  TimestampString(3) @default(now())
+    account    Account @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "PasswordReset_accountId_fkey")
+
+    @@index([tokenHash], map: "PasswordReset_tokenHash_key", unique: true)
+    @@index([accountId], map: "PasswordReset_accountId_idx")
+
+    @@map("PasswordReset")
   }
 
   model Prescription {

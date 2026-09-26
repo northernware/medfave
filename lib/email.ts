@@ -183,6 +183,48 @@ export async function sendPatientActivation(options: {
 }
 
 /**
+ * A link for somebody who cannot get in.
+ *
+ * Says which clinic and which address it is for, because a bare "reset your
+ * password" is what a phishing message looks like. Says nothing else — a
+ * reset email is sent to an address that may not be under the account
+ * holder's control any more, which is exactly why it carries no clinical
+ * content and no detail about who they are to the clinic.
+ */
+export async function sendPasswordReset(options: {
+  to: string;
+  name: string;
+  link: string;
+  code: string;
+}): Promise<SendOutcome> {
+  const lines = [
+    `Hello ${options.name},`,
+    `Somebody asked to reset the MediKonek password for <strong>${options.to}</strong>.`,
+    `Open <a href="${options.link}">${options.link}</a>, or enter this code:`,
+  ];
+
+  return send({
+    to: options.to,
+    subject: "Reset your MediKonek password",
+    text: [
+      `Hello ${options.name},`,
+      ``,
+      `Somebody asked to reset the MediKonek password for ${options.to}.`,
+      ``,
+      `Open ${options.link}, or enter this code:`,
+      ``,
+      `    ${options.code}`,
+      ``,
+      `The link expires in one hour and can only be used once. Using it signs`,
+      `out every device currently signed in as you.`,
+      ``,
+      `If this was not you, ignore it — your password has not changed.`,
+    ].join("\n"),
+    html: layout("Reset your password", lines, options.code),
+  });
+}
+
+/**
  * Confirmation that a time has been booked.
  *
  * Says when, with whom, and where — and deliberately not what for. A service

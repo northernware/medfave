@@ -4,13 +4,30 @@ import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Sign in" };
 
-export default function LoginPage() {
+export default async function LoginPage({ searchParams }: PageProps<"/login">) {
+  const { reset } = await searchParams;
+
   return (
     <div className="rounded-xl border border-border bg-surface p-6 shadow-card sm:p-8">
       <h1 className="text-xl font-semibold tracking-tight">Sign in</h1>
       <p className="mt-1 text-sm text-ink-muted">Your patient list is waiting.</p>
 
+      {reset === "done" ? (
+        <p
+          role="status"
+          className="mt-4 rounded-lg border border-ok/40 bg-ok-tint px-3 py-2 text-sm text-ok-ink"
+        >
+          Your password has been changed. Sign in with the new one.
+        </p>
+      ) : null}
+
       <LoginForm />
+
+      <p className="mt-4 text-sm text-ink-muted">
+        <Link href="/forgot" className="font-medium text-accent-ink hover:underline">
+          Forgotten your password?
+        </Link>
+      </p>
 
       <p className="mt-6 text-sm text-ink-muted">
         No account yet?{" "}

@@ -18,6 +18,11 @@ export type FormState = {
   message?: string;
   fieldErrors?: Record<string, string[]>;
   /**
+   * Set when the action succeeded but stayed on the page, so a form can present
+   * `message` as a confirmation rather than styling it as a failure.
+   */
+  ok?: boolean;
+  /**
    * Possible duplicates found while registering. Presented for a person to
    * judge â records are never merged automatically, and the form resubmits with
    * `confirmDuplicate` once someone has decided this really is a new patient.
@@ -158,6 +163,29 @@ export const passwordChangeSchema = z
   .refine((v) => v.password !== v.currentPassword, {
     message: "Choose a password you have not used here before",
     path: ["password"],
+  });
+
+/**
+ * Asking for a reset link.
+ *
+ * An address and nothing else, and the action must answer the same way whether
+ * or not it belongs to anybody — a form that says "no such account" is a way to
+ * find out who a clinic's patients are.
+ */
+export const forgotPasswordSchema = z.object({
+  email: z.string().trim().toLowerCase().pipe(z.email("Enter a valid email address")),
+});
+
+/** Spending a reset code on a new password. No current password: that is the point. */
+export const passwordResetSchema = z
+  .object({
+    code: z.string().trim().min(4, "Enter the code from the email").max(40),
+    password: z.string().min(10, "Use at least 10 characters").max(200),
+    confirmPassword: z.string(),
+  })
+  .refine((v) => v.password === v.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
   });
 
 /** The clinician details that print on a prescription or a certificate. */

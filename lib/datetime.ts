@@ -55,6 +55,20 @@ export function instantToDb(at: Date): TimestampString<3> {
   return at.toISOString().slice(0, 23) as TimestampString<3>;
 }
 
+/**
+ * Whether a stored `timestamp(3)` is in the past.
+ *
+ * Use this rather than comparing a stored value against `instantToDb(new Date())`
+ * as text. Postgres hands the column back with a space between the date and the
+ * time ("2026-09-26 20:00:16.918") while `instantToDb` writes an ISO "T"; the two
+ * only sort correctly while the dates differ, so the naive comparison quietly
+ * declares anything expiring later today already expired. That is invisible on a
+ * fourteen-day code and fatal on a one-hour one.
+ */
+export function hasPassed(value: string, now: Date = new Date()) {
+  return instantFromDb(value).getTime() <= now.getTime();
+}
+
 /** A `date` value ("1990-05-04") as the UTC-midnight `Date` the app formats. */
 export function calendarDateFromDb(value: string): Date {
   const [y, m, d] = value.slice(0, 10).split("-").map(Number);
