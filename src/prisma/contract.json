@@ -354,6 +354,16 @@
                   "kind": "scalar"
                 }
               },
+              "confirmationSentAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
               "consultationStartedAt": {
                 "nullable": true,
                 "type": {
@@ -447,6 +457,16 @@
                   "kind": "scalar",
                   "typeParams": {
                     "typeName": "ReminderPreference"
+                  }
+                }
+              },
+              "reminderSentAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
                   }
                 }
               },
@@ -669,6 +689,9 @@
                 "clinicId": {
                   "column": "clinicId"
                 },
+                "confirmationSentAt": {
+                  "column": "confirmationSentAt"
+                },
                 "consultationStartedAt": {
                   "column": "consultationStartedAt"
                 },
@@ -704,6 +727,9 @@
                 },
                 "reminderPreference": {
                   "column": "reminderPreference"
+                },
+                "reminderSentAt": {
+                  "column": "reminderSentAt"
                 },
                 "room": {
                   "column": "room"
@@ -4805,6 +4831,14 @@
                   "nativeType": "text",
                   "nullable": true
                 },
+                "confirmationSentAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
                 "consultationStartedAt": {
                   "codecId": "pg/timestamp-string@1",
                   "nativeType": "timestamp",
@@ -4903,6 +4937,14 @@
                     "entityName": "ReminderPreference",
                     "namespaceId": "public",
                     "plane": "storage"
+                  }
+                },
+                "reminderSentAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 3
                   }
                 },
                 "room": {
@@ -8386,7 +8428,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "2e49b045bcc02cd7edd66eeba3dd8496713e77369e239480b253c5ccd52f86fe"
+    "storageHash": "e75416a5a298c4b2d01a62239e29682e752b50c0147a20dbb7ca0ddcd9a0454d"
   },
   "capabilities": {
     "postgres": {

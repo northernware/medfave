@@ -5,7 +5,15 @@ import { redirect } from "next/navigation";
 import { db, orm } from "@/src/prisma/db";
 import { requirePatientAccount, requireStaff } from "@/lib/auth";
 import { clinicDoctorId } from "@/lib/clinic";
-import { calendarDateToDb, fromDateInputValue, fromDateTimeLocalValue, instantToDb } from "@/lib/datetime";
+import {
+  calendarDateToDb,
+  formatDateTime,
+  fromDateInputValue,
+  fromDateTimeLocalValue,
+  instantFromDb,
+  instantToDb,
+} from "@/lib/datetime";
+import { appUrl, sendAppointmentConfirmation } from "@/lib/email";
 import { newId } from "@/lib/ids";
 import { ServiceType } from "@/lib/enums";
 import { SERVICE_MINUTES } from "@/lib/domain";
@@ -89,6 +97,38 @@ export async function requestAppointment(_prev: FormState, formData: FormData): 
   revalidatePath("/portal");
   revalidatePath("/desk/requests");
   redirect("/portal?requested=1");
+}
+
+/** Confirms an accepted request by email, on the same terms as any booking. */
+async function confirmAcceptedBooking(appointmentId: string) {
+  const appointment = await orm.Appointment
+    .select("id", "scheduledAt", "reminderPreference", "confirmationSentAt")
+    .include("patient", (p) => p.select("firstName", "email"))
+    .include("doctor", (d) => d.select("fullName"))
+    .include("clinic", (c) => c.select("name"))
+    .where((a) => a.id.eq(appointmentId))
+    .first();
+
+  if (!appointment) return;
+  if (appointment.reminderPreference !== "EMAIL") return;
+  if (!appointment.patient.email) return;
+  if (appointment.confirmationSentAt) return;
+
+  const outcome = await sendAppointmentConfirmation({
+    to: appointment.patient.email,
+    patientName: appointment.patient.firstName,
+    clinicName: appointment.clinic?.name ?? "your clinic",
+    doctorName: appointment.doctor.fullName,
+    when: formatDateTime(instantFromDb(appointment.scheduledAt)),
+    link: appUrl("/portal"),
+  });
+  if (!outcome.sent) {
+    console.error(`[email] confirmation for ${appointmentId}: ${outcome.reason}`);
+  }
+
+  await orm.Appointment
+    .where((a) => a.id.eq(appointmentId))
+    .update({ confirmationSentAt: instantToDb(new Date()) });
 }
 
 /** A patient changing their mind before the clinic has answered. */
@@ -240,6 +280,10 @@ export async function acceptRequest(formData: FormData) {
       `/desk/requests?refused=${encodeURIComponent("That time went while the request was waiting. Offer another.")}&id=${requestId}`,
     );
   }
+
+  // The patient asked for this one, so they are told it came through — on
+  // the same terms as any other booking.
+  await confirmAcceptedBooking(outcome.created!.id);
 
   revalidatePath("/desk/requests");
   revalidatePath("/desk/appointments");

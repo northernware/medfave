@@ -160,6 +160,13 @@ namespace public {
     /// at the moment it is registered — the queue is ordered by it, not by the
     /// scheduled time, because a walk-in has no meaningful scheduled time.
     arrivedAt                  TimestampString(3)?
+    /// When the booking confirmation went out, and when the reminder did.
+    ///
+    /// Recorded rather than inferred from the clock, because "has this already
+    /// been sent" is the only thing standing between a patient and the same
+    /// message four times. A null here means not yet; it is never re-cleared.
+    confirmationSentAt         TimestampString(3)?
+    reminderSentAt             TimestampString(3)?
     /// Set when the clinic marked this a no-show on its own, because nobody
     /// said anything about it for long enough after the scheduled time. Kept
     /// apart from a no-show a person recorded: the page can then say the

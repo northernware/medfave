@@ -4,6 +4,7 @@ import { setAppointmentStatus } from "@/app/actions/appointments";
 import { requireStaff } from "@/lib/auth";
 import { orm } from "@/src/prisma/db";
 import { sweepNoShows } from "@/lib/no-show";
+import { sendDueReminders } from "@/lib/reminders";
 import { clinicDoctors } from "@/lib/clinic";
 import {
   clinicDayRange,
@@ -39,6 +40,7 @@ export default async function DeskPage() {
   for (const doctor of await clinicDoctors(staff.clinicId)) {
     await sweepNoShows(doctor.id, now);
   }
+  await sendDueReminders(staff.clinicId, now);
 
   const [todaysRows, queueRows, pendingRequests] = await Promise.all([
     orm.Appointment

@@ -4,6 +4,7 @@ import { requireDoctor } from "@/lib/auth";
 import { orm } from "@/src/prisma/db";
 import { followUpsDue } from "@/lib/queries";
 import { sweepNoShows } from "@/lib/no-show";
+import { sendDueReminders } from "@/lib/reminders";
 import { RETURNED_BY_LABELS } from "@/lib/follow-up";
 import {
   clinicDayRange,
@@ -40,6 +41,9 @@ export default async function DashboardPage() {
   // would otherwise be counted as still to come on the very screen that says
   // what is still to come.
   await sweepNoShows(doctor.id, now);
+  // Tomorrow's reminders, on the same terms: no scheduler here, so this runs
+  // when somebody opens the clinic's own screens.
+  await sendDueReminders(doctor.clinicId, now);
 
   const [
     todaysRows,

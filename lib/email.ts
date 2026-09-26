@@ -183,6 +183,84 @@ export async function sendPatientActivation(options: {
 }
 
 /**
+ * Confirmation that a time has been booked.
+ *
+ * Says when, with whom, and where — and deliberately not what for. A service
+ * name is a clinical fact ("Prenatal and Postnatal Consultation" tells anyone
+ * who sees the screen a great deal), and mail sits in inboxes other people
+ * read over shoulders. Whoever booked it already knows why.
+ */
+export async function sendAppointmentConfirmation(options: {
+  to: string;
+  patientName: string;
+  clinicName: string;
+  doctorName: string;
+  when: string;
+  link: string;
+}): Promise<SendOutcome> {
+  const lines = [
+    `Hello ${options.patientName},`,
+    `Your appointment at <strong>${options.clinicName}</strong> is booked for <strong>${options.when}</strong> with ${options.doctorName}.`,
+    `If you cannot make it, please tell the clinic as early as you can so the time can go to somebody else.`,
+  ];
+
+  return send({
+    to: options.to,
+    subject: `Appointment booked — ${options.when}`,
+    text: [
+      `Hello ${options.patientName},`,
+      ``,
+      `Your appointment at ${options.clinicName} is booked for`,
+      `${options.when} with ${options.doctorName}.`,
+      ``,
+      `If you cannot make it, please tell the clinic as early as you can so`,
+      `the time can go to somebody else.`,
+      ``,
+      `See your appointments: ${options.link}`,
+    ].join("\n"),
+    html: layout("Your appointment is booked", lines),
+  });
+}
+
+/**
+ * The nudge the day before.
+ *
+ * Same restraint as the confirmation: a time, a clinician, a clinic. Sent once
+ * — see `reminderSentAt` — because the second identical reminder is the one
+ * that gets a sender marked as spam.
+ */
+export async function sendAppointmentReminder(options: {
+  to: string;
+  patientName: string;
+  clinicName: string;
+  doctorName: string;
+  when: string;
+  link: string;
+}): Promise<SendOutcome> {
+  const lines = [
+    `Hello ${options.patientName},`,
+    `A reminder that you have an appointment at <strong>${options.clinicName}</strong> tomorrow, <strong>${options.when}</strong>, with ${options.doctorName}.`,
+    `If you can no longer come, please let the clinic know today.`,
+  ];
+
+  return send({
+    to: options.to,
+    subject: `Reminder: your appointment tomorrow, ${options.when}`,
+    text: [
+      `Hello ${options.patientName},`,
+      ``,
+      `A reminder that you have an appointment at ${options.clinicName}`,
+      `tomorrow, ${options.when}, with ${options.doctorName}.`,
+      ``,
+      `If you can no longer come, please let the clinic know today.`,
+      ``,
+      `See your appointments: ${options.link}`,
+    ].join("\n"),
+    html: layout("Your appointment is tomorrow", lines),
+  });
+}
+
+/**
  * Where links in mail should point.
  *
  * Read from configuration rather than guessed from the request, because a

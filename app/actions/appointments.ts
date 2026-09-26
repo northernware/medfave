@@ -8,6 +8,7 @@ import { clinicDoctorId } from "@/lib/clinic";
 import { db, orm } from "@/src/prisma/db";
 import {
   clinicDayRange,
+  formatDateTime,
   fromDateTimeLocalValue,
   instantFromDb,
   instantToDb,
@@ -17,6 +18,7 @@ import { canMoveTo, SERVICE_MINUTES } from "@/lib/domain";
 import { formatSpan, minuteOfDay, occupiesSlot, overlaps } from "@/lib/scheduling";
 import { checkAvailability, durationFor } from "@/lib/availability";
 import { loadSchedule } from "@/lib/queries";
+import { appUrl, sendAppointmentConfirmation } from "@/lib/email";
 import { appointmentSchema, toFieldErrors, type FormState } from "@/lib/validation";
 
 /**
@@ -217,6 +219,51 @@ async function findClash(
   return null;
 }
 
+/**
+ * Tells the patient their time is booked, if they asked to be told.
+ *
+ * Only when the booking says EMAIL. A patient who chose no reminders, or SMS,
+ * has said something about how they want to be contacted, and booking them in
+ * is not a reason to overrule it. SMS and app notifications are recorded as
+ * preferences but nothing delivers them yet, so those stay silent rather than
+ * quietly becoming email.
+ *
+ * Never blocks the booking: the appointment is made either way, and a mail
+ * server having a bad afternoon is not a reason to fail a clinic's booking.
+ */
+async function confirmByEmail(appointmentId: string) {
+  const appointment = await orm.Appointment
+    .select("id", "scheduledAt", "reminderPreference", "confirmationSentAt")
+    .include("patient", (p) => p.select("firstName", "email"))
+    .include("doctor", (d) => d.select("fullName"))
+    .include("clinic", (c) => c.select("name"))
+    .where((a) => a.id.eq(appointmentId))
+    .first();
+
+  if (!appointment) return;
+  if (appointment.reminderPreference !== "EMAIL") return;
+  if (!appointment.patient.email) return;
+  if (appointment.confirmationSentAt) return;
+
+  const outcome = await sendAppointmentConfirmation({
+    to: appointment.patient.email,
+    patientName: appointment.patient.firstName,
+    clinicName: appointment.clinic?.name ?? "your clinic",
+    doctorName: appointment.doctor.fullName,
+    when: formatDateTime(instantFromDb(appointment.scheduledAt)),
+    link: appUrl("/portal"),
+  });
+  if (!outcome.sent) {
+    console.error(`[email] confirmation for ${appointmentId}: ${outcome.reason}`);
+  }
+
+  // Stamped either way, for the same reason the reminder is: a retry on every
+  // page load turns one failure into many.
+  await orm.Appointment
+    .where((a) => a.id.eq(appointmentId))
+    .update({ confirmationSentAt: instantToDb(new Date()) });
+}
+
 /** The message a losing racer sees. Names the time so it is actionable. */
 function clashMessage(clash: { startMinute: number; durationMinutes: number }): FormState {
   const span = formatSpan(clash.startMinute, clash.durationMinutes);
@@ -310,6 +357,7 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
 
   if (outcome.clash) return clashMessage(outcome.clash);
   const appointment = outcome.created;
+  await confirmByEmail(appointment.id);
   if (followUpFor) revalidatePath(`/records/${followUpFor}`);
 
   revalidatePath("/appointments");
