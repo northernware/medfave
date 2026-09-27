@@ -33,6 +33,9 @@ async function assertClinicPatient(clinicId: string, patientId: string) {
     .select("id")
     .where((p) => p.id.eq(patientId))
     .where((p) => p.clinicId.eq(clinicId))
+    // The picker leaves archived charts out; this is what stops a posted id
+    // booking one anyway. Restore the chart to book it.
+    .where((p) => p.archivedAt.isNull())
     .first();
   return patient !== null;
 }

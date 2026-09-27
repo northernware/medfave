@@ -111,9 +111,11 @@ export default async function DashboardPage() {
         .aggregate((agg) => ({ n: agg.count() })),
       orm.Household
         .where((h) => h.doctorId.eq(doctor.id))
+        .where((h) => h.archivedAt.isNull())
         .aggregate((agg) => ({ n: agg.count() })),
       orm.Patient
         .where((p) => p.household.some((h) => h.doctorId.eq(doctor.id)))
+        .where((p) => p.archivedAt.isNull())
         .aggregate((agg) => ({ n: agg.count() })),
     ]);
 

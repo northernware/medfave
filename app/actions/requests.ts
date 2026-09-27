@@ -57,6 +57,16 @@ export async function requestAppointment(_prev: FormState, formData: FormData): 
   const doctorId = await clinicDoctorId(patient.clinicId);
   if (!doctorId) return { message: "This clinic is not taking requests at the moment." };
 
+  // The login outlives an archived chart on purpose, but a request would land in
+  // the desk's queue for somebody the desk cannot find. Asked to ring instead.
+  const chart = await orm.Patient
+    .select("archivedAt")
+    .where((p) => p.id.eq(patient.patientId))
+    .first();
+  if (chart?.archivedAt) {
+    return { message: "Your record at this clinic is closed. Please contact the clinic to book." };
+  }
+
   // The clinic's own rules apply to a request as much as to a booking: asking
   // for a Sunday, or for a date beyond how far ahead the clinic books, is
   // something to say now rather than after somebody has read it.

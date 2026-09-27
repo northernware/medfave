@@ -33,6 +33,7 @@ export default async function DeskPatientPage({
       "reminderPreference",
       "patientNumber",
       "accountId",
+      "archivedAt",
       "emergencyContactName",
       "emergencyContactRelationship",
       "emergencyContactNumber",
@@ -81,19 +82,30 @@ export default async function DeskPatientPage({
           </>
         }
         actions={
-          <>
-            <Link
-              href={`/desk/appointments/new?patientId=${patient.id}`}
-              className={buttonClass("primary")}
-            >
-              Book
-            </Link>
-            <Link href={`/desk/patients/${patient.id}/edit`} className={buttonClass("secondary")}>
-              Edit details
-            </Link>
-          </>
+          patient.archivedAt ? null : (
+            <>
+              <Link
+                href={`/desk/appointments/new?patientId=${patient.id}`}
+                className={buttonClass("primary")}
+              >
+                Book
+              </Link>
+              <Link href={`/desk/patients/${patient.id}/edit`} className={buttonClass("secondary")}>
+                Edit details
+              </Link>
+            </>
+          )
         }
       />
+
+      {patient.archivedAt ? (
+        <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-[13px]">
+          <p className="font-medium">This chart is archived.</p>
+          <p className="mt-0.5 text-ink-muted">
+            It cannot be booked or edited until the clinician restores it.
+          </p>
+        </div>
+      ) : null}
 
       {/* Handed over in person, once. This is the only way a login ever reaches
           a chart, so it is issued to somebody the desk has identified. */}

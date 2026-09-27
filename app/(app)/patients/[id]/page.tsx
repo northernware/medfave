@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { deletePatient } from "@/app/actions/patients";
+import { archivePatient, deletePatient, restorePatient } from "@/app/actions/patients";
 import { requireDoctor } from "@/lib/auth";
 import { orm } from "@/src/prisma/db";
 import { appointmentListQuery, toAppointmentListItem } from "@/lib/queries";
 import { calendarDateFromDb, instantFromDb } from "@/lib/datetime";
-import { formatCalendarDate, formatDate } from "@/lib/datetime";
+import { formatCalendarDate, formatDate, formatDateTime } from "@/lib/datetime";
 import {
   ageFrom,
   bloodPressure,
@@ -31,9 +31,13 @@ export async function generateMetadata({ params }: PageProps<"/patients/[id]">):
   return { title: patient ? fullName(patient) : "Patient" };
 }
 
-export default async function PatientPage({ params }: PageProps<"/patients/[id]">) {
+export default async function PatientPage({
+  params,
+  searchParams,
+}: PageProps<"/patients/[id]">) {
   const doctor = await requireDoctor();
   const { id } = await params;
+  const { blocked } = await searchParams;
 
   const patient = await orm.Patient
     .include("household", (h) => h.select("id", "name", "contactNumber"))
@@ -64,6 +68,11 @@ export default async function PatientPage({ params }: PageProps<"/patients/[id]"
         .include("prescriptions", (rx) => rx.count())
         .orderBy((x) => x.visitDate.desc()),
     )
+    // Counted for one decision only: whether this chart can still be deleted,
+    // or has a history and can only be archived.
+    .include("appointments", (a) => a.count())
+    .include("documentRequests", (d) => d.count())
+    .include("appointmentRequests", (r) => r.count())
     .where((p) => p.id.eq(id))
     .where((p) => p.household.some((h) => h.doctorId.eq(doctor.id)))
     .first();
@@ -84,6 +93,20 @@ export default async function PatientPage({ params }: PageProps<"/patients/[id]"
   const visits = patient.medicalRecords.filter((r) => r.archivedAt === null);
   const archivedVisits = patient.medicalRecords.filter((r) => r.archivedAt !== null);
 
+  const archived = patient.archivedAt !== null;
+  const archivedBy = patient.archivedById
+    ? await orm.Account.select("fullName").where((a) => a.id.eq(patient.archivedById!)).first()
+    : null;
+  // The same test the delete action applies; the page only offers what the
+  // action would accept.
+  const hasHistory =
+    patient.medicalRecords.length > 0 ||
+    patient.appointments > 0 ||
+    patient.documentRequests > 0 ||
+    patient.appointmentRequests > 0 ||
+    patient.allergies.length + patient.conditions.length + patient.medications.length + patient.alerts.length > 0 ||
+    patient.accountId !== null;
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -99,6 +122,19 @@ export default async function PatientPage({ params }: PageProps<"/patients/[id]"
           </>
         }
         actions={
+          archived ? (
+            <>
+              <form action={restorePatient}>
+                <input type="hidden" name="patientId" value={patient.id} />
+                <button className={buttonClass("primary")}>Restore chart</button>
+              </form>
+              {/* A certificate or an abstract is often wanted precisely after a
+                  chart has been set aside, so this stays available. */}
+              <Link href={`/documents/new?patientId=${patient.id}`} className={buttonClass("secondary")}>
+                Request document
+              </Link>
+            </>
+          ) : (
           <>
             <Link href={`/records/new?patientId=${patient.id}`} className={buttonClass("primary")}>
               Document visit
@@ -113,8 +149,32 @@ export default async function PatientPage({ params }: PageProps<"/patients/[id]"
               Edit
             </Link>
           </>
+          )
         }
       />
+
+      {typeof blocked === "string" && blocked ? (
+        <p
+          role="alert"
+          className="rounded-lg border border-warn/40 bg-warn-soft px-4 py-3 text-[13px] text-warn-ink"
+        >
+          {blocked}
+        </p>
+      ) : null}
+
+      {archived ? (
+        <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-[13px]">
+          <p className="font-medium">
+            Archived {formatDateTime(instantFromDb(patient.archivedAt!))}
+            {archivedBy ? ` by ${archivedBy.fullName}` : ""}.
+          </p>
+          <p className="mt-0.5 text-ink-muted">
+            {patient.archiveReason ?? "No reason was given."} Everything below is kept and
+            readable; the chart is out of the working lists until it is restored.
+            {patient.accountId ? " Their portal login still works." : ""}
+          </p>
+        </div>
+      ) : null}
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* The timeline is what the doctor reads; it gets the width. */}
@@ -130,12 +190,14 @@ export default async function PatientPage({ params }: PageProps<"/patients/[id]"
                 : undefined
           }
           action={
-            <Link
-              href={`/records/new?patientId=${patient.id}`}
-              className="font-medium text-accent-ink hover:underline"
-            >
-              Document visit
-            </Link>
+            archived ? undefined : (
+              <Link
+                href={`/records/new?patientId=${patient.id}`}
+                className="font-medium text-accent-ink hover:underline"
+              >
+                Document visit
+              </Link>
+            )
           }
         />
         <Card>
@@ -144,9 +206,11 @@ export default async function PatientPage({ params }: PageProps<"/patients/[id]"
             title="No visits recorded"
             description="Document a consultation and it will build this patient's history."
             action={
-              <Link href={`/records/new?patientId=${patient.id}`} className={buttonClass("primary")}>
-                Document visit
-              </Link>
+              archived ? undefined : (
+                <Link href={`/records/new?patientId=${patient.id}`} className={buttonClass("primary")}>
+                  Document visit
+                </Link>
+              )
             }
           />
         ) : (
@@ -226,12 +290,14 @@ export default async function PatientPage({ params }: PageProps<"/patients/[id]"
         <SectionTitle
           title="Appointments"
           action={
-            <Link
-              href={`/appointments/new?patientId=${patient.id}`}
-              className="font-medium text-accent-ink hover:underline"
-            >
-              Book
-            </Link>
+            archived ? undefined : (
+              <Link
+                href={`/appointments/new?patientId=${patient.id}`}
+                className="font-medium text-accent-ink hover:underline"
+              >
+                Book
+              </Link>
+            )
           }
         />
         <Card>
@@ -334,16 +400,43 @@ export default async function PatientPage({ params }: PageProps<"/patients/[id]"
         </aside>
       </div>
 
-      <div className="lg:max-w-[calc(66.666%-0.75rem)]">
-        <DangerZone
-        action={deletePatient}
-        fieldName="patientId"
-        fieldValue={patient.id}
-        summary="Delete this patient"
-        warning={`This permanently removes ${fullName(patient)} along with ${patient.medicalRecords.length} medical record(s) and every appointment. It cannot be undone.`}
-          confirmLabel="Delete patient and all records"
-        />
-      </div>
+      {archived ? null : (
+        <div className="lg:max-w-[calc(66.666%-0.75rem)]">
+          {hasHistory ? (
+            <DangerZone
+              action={archivePatient}
+              fieldName="patientId"
+              fieldValue={patient.id}
+              variant="secondary"
+              summary="Archive this chart"
+              warning={`Takes ${fullName(patient)} out of the working lists. Every note, its history, prescriptions and issued documents are kept, and restoring brings it all back. Upcoming appointments and pending requests have to be dealt with first.`}
+              confirmLabel="Archive chart"
+            >
+              <label className="block">
+                <span className="mb-1.5 block text-sm font-medium">Reason</span>
+                <input
+                  name="archiveReason"
+                  required
+                  maxLength={300}
+                  placeholder="Moved away, deceased, duplicate of another chart…"
+                  className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink placeholder:text-ink-faint"
+                />
+              </label>
+            </DangerZone>
+          ) : (
+            // Nothing clinical is attached, so this is the registered-by-mistake
+            // case and deleting destroys nothing but the registration.
+            <DangerZone
+              action={deletePatient}
+              fieldName="patientId"
+              fieldValue={patient.id}
+              summary="Delete this registration"
+              warning={`${fullName(patient)} has no visits, appointments, requests or clinical lists, so deleting removes only the registration. Once anything is recorded, a chart can be archived but not deleted.`}
+              confirmLabel="Delete registration"
+            />
+          )}
+        </div>
+      )}
     </div>
   );
 }

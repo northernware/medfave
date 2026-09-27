@@ -10,13 +10,16 @@ export const metadata: Metadata = { title: "Households" };
 
 export default async function HouseholdsPage({ searchParams }: PageProps<"/households">) {
   const doctor = await requireDoctor();
-  const { q } = await searchParams;
+  const { q, view } = await searchParams;
   const query = typeof q === "string" ? q.trim() : "";
+  const archived = view === "archived";
 
   let householdQuery = orm.Household
-    .select("id", "name", "address", "contactNumber")
-    .include("patients", (p) => p.count())
+    .select("id", "name", "address", "contactNumber", "archiveReason")
+    // Members still in the working list; archived ones are counted out.
+    .include("patients", (p) => p.where((x) => x.archivedAt.isNull()).count())
     .where((h) => h.doctorId.eq(doctor.id))
+    .where((h) => (archived ? h.archivedAt.isNotNull() : h.archivedAt.isNull()))
     .orderBy((h) => h.name.asc());
 
   if (query) {
@@ -30,12 +33,18 @@ export default async function HouseholdsPage({ searchParams }: PageProps<"/house
     );
   }
 
-  const households = await householdQuery.all();
+  const [households, { archivedCount }] = await Promise.all([
+    householdQuery.all(),
+    orm.Household
+      .where((h) => h.doctorId.eq(doctor.id))
+      .where((h) => h.archivedAt.isNotNull())
+      .aggregate((a) => ({ archivedCount: a.count() })),
+  ]);
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Households"
+        title={archived ? "Archived households" : "Households"}
         subtitle="Every patient belongs to one. Each keeps their own record — the grouping links relatives, shared contact details and hereditary risk."
         actions={
           <Link href="/households/new" className={buttonClass("primary")}>
@@ -44,12 +53,39 @@ export default async function HouseholdsPage({ searchParams }: PageProps<"/house
         }
       />
 
-      <SearchForm action="/households" placeholder="Search households or surnames" defaultValue={query} />
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="min-w-0 flex-1">
+          <SearchForm
+            action="/households"
+            placeholder="Search households or surnames"
+            defaultValue={query}
+            keep={archived ? { view: "archived" } : undefined}
+          />
+        </div>
+        {archived ? (
+          <Link href="/households" className="text-[13px] font-medium text-accent-ink hover:underline">
+            Back to the working list
+          </Link>
+        ) : archivedCount > 0 ? (
+          <Link
+            href="/households?view=archived"
+            className="text-[13px] text-ink-muted hover:text-ink hover:underline"
+          >
+            {archivedCount} archived
+          </Link>
+        ) : null}
+      </div>
 
       <Card>
         {households.length === 0 ? (
           <EmptyState
-            title={query ? `No households match “${query}”` : "No households yet"}
+            title={
+              query
+                ? `No households match “${query}”`
+                : archived
+                  ? "No household is archived"
+                  : "No households yet"
+            }
             description={
               query
                 ? "Try a shorter search, or clear it to see everyone."
@@ -75,7 +111,9 @@ export default async function HouseholdsPage({ searchParams }: PageProps<"/house
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[13px] font-medium">{household.name}</span>
                     <span className="block truncate text-xs text-ink-muted">
-                      {household.address || household.contactNumber || "No address on file"}
+                      {archived
+                        ? household.archiveReason || "Archived"
+                        : household.address || household.contactNumber || "No address on file"}
                     </span>
                   </span>
                   <span className="tabular shrink-0 text-xs text-ink-muted">

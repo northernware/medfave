@@ -16,6 +16,7 @@ export default async function DeskNewPatientPage({ searchParams }: PageProps<"/d
   const households = await orm.Household
     .select("id", "name")
     .where((h) => h.clinicId.eq(staff.clinicId))
+    .where((h) => h.archivedAt.isNull())
     .orderBy((h) => h.name.asc())
     .all();
 

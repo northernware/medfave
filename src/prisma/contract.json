@@ -2333,6 +2333,30 @@
                   "kind": "scalar"
                 }
               },
+              "archiveReason": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "archivedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "archivedById": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "clinicId": {
                 "nullable": true,
                 "type": {
@@ -2469,6 +2493,15 @@
               "fields": {
                 "address": {
                   "column": "address"
+                },
+                "archiveReason": {
+                  "column": "archiveReason"
+                },
+                "archivedAt": {
+                  "column": "archivedAt"
+                },
+                "archivedById": {
+                  "column": "archivedById"
                 },
                 "clinicId": {
                   "column": "clinicId"
@@ -3273,6 +3306,30 @@
                   }
                 }
               },
+              "archiveReason": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "archivedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "archivedById": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "bloodType": {
                 "nullable": false,
                 "type": {
@@ -3649,6 +3706,15 @@
                 },
                 "allergyStatus": {
                   "column": "allergyStatus"
+                },
+                "archiveReason": {
+                  "column": "archiveReason"
+                },
+                "archivedAt": {
+                  "column": "archivedAt"
+                },
+                "archivedById": {
+                  "column": "archivedById"
                 },
                 "bloodType": {
                   "column": "bloodType"
@@ -6468,6 +6534,24 @@
                   "nativeType": "text",
                   "nullable": true
                 },
+                "archiveReason": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "archivedAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "archivedById": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "clinicId": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -7282,6 +7366,24 @@
                     "namespaceId": "public",
                     "plane": "storage"
                   }
+                },
+                "archiveReason": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "archivedAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "archivedById": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 },
                 "bloodType": {
                   "codecId": "pg/enum@1",
@@ -8707,7 +8809,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "e133f779980eb18bb2cf07d057f5a048c1a135d5c1d51e39100c2cf2b6a020ba"
+    "storageHash": "de655cbcb1bb114475992da00bf148113c9d29085aafc79d15ae38cffb15b364"
   },
   "capabilities": {
     "postgres": {

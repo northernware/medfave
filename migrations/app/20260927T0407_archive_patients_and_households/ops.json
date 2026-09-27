@@ -1,0 +1,254 @@
+[
+  {
+    "id": "column.public.Household.archiveReason",
+    "label": "Add column \"archiveReason\" to \"Household\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "archiveReason",
+        "table": "Household"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"archiveReason\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Household",
+          "archiveReason"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"archiveReason\"",
+        "sql": "ALTER TABLE \"public\".\"Household\" ADD COLUMN \"archiveReason\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"archiveReason\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Household",
+          "archiveReason"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Household.archivedAt",
+    "label": "Add column \"archivedAt\" to \"Household\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "archivedAt",
+        "table": "Household"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"archivedAt\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Household",
+          "archivedAt"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"archivedAt\"",
+        "sql": "ALTER TABLE \"public\".\"Household\" ADD COLUMN \"archivedAt\" timestamp(3)"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"archivedAt\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Household",
+          "archivedAt"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Household.archivedById",
+    "label": "Add column \"archivedById\" to \"Household\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "archivedById",
+        "table": "Household"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"archivedById\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Household",
+          "archivedById"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"archivedById\"",
+        "sql": "ALTER TABLE \"public\".\"Household\" ADD COLUMN \"archivedById\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"archivedById\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Household",
+          "archivedById"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Patient.archiveReason",
+    "label": "Add column \"archiveReason\" to \"Patient\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "archiveReason",
+        "table": "Patient"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"archiveReason\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Patient",
+          "archiveReason"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"archiveReason\"",
+        "sql": "ALTER TABLE \"public\".\"Patient\" ADD COLUMN \"archiveReason\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"archiveReason\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Patient",
+          "archiveReason"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Patient.archivedAt",
+    "label": "Add column \"archivedAt\" to \"Patient\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "archivedAt",
+        "table": "Patient"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"archivedAt\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Patient",
+          "archivedAt"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"archivedAt\"",
+        "sql": "ALTER TABLE \"public\".\"Patient\" ADD COLUMN \"archivedAt\" timestamp(3)"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"archivedAt\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Patient",
+          "archivedAt"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Patient.archivedById",
+    "label": "Add column \"archivedById\" to \"Patient\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "archivedById",
+        "table": "Patient"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"archivedById\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Patient",
+          "archivedById"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"archivedById\"",
+        "sql": "ALTER TABLE \"public\".\"Patient\" ADD COLUMN \"archivedById\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"archivedById\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Patient",
+          "archivedById"
+        ]
+      }
+    ]
+  }
+]

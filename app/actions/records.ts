@@ -213,11 +213,16 @@ async function writeConsultation(
   const { patientId, appointmentId, visitDate, followUpDate, ...rest } = parsed.data;
 
   const patient = await orm.Patient
-    .select("id")
+    .select("id", "archivedAt")
     .where((p) => p.id.eq(patientId))
     .where((p) => p.household.some((h) => h.doctorId.eq(doctorId)))
     .first();
   if (!patient) return { error: { message: "That patient is not on your list." } };
+  // Writing into a chart that has been set aside is a sign it should not have
+  // been; restoring it first makes that a decision rather than an accident.
+  if (patient.archivedAt) {
+    return { error: { message: "This chart is archived. Restore it before writing in it." } };
+  }
 
   const existing = recordId
     ? await orm.MedicalRecord

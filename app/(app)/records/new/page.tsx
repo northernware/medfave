@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { autosaveConsultation, saveMedicalRecord } from "@/app/actions/records";
 import { requireDoctor } from "@/lib/auth";
 import { orm } from "@/src/prisma/db";
@@ -21,7 +21,7 @@ export default async function NewRecordPage({ searchParams }: PageProps<"/record
   if (typeof patientId !== "string") notFound();
 
   const patient = await orm.Patient
-    .select("id", "firstName", "middleName", "lastName", "dateOfBirth", "sex", "allergyStatus")
+    .select("id", "firstName", "middleName", "lastName", "dateOfBirth", "sex", "allergyStatus", "archivedAt")
     .include("allergies", (a) => a.select("id", "label", "reaction", "severity", "notes"))
     .include("alerts", (x) => x.select("id", "label", "notes").orderBy((y) => y.label.asc()))
     .include("household", (h) => h.select("id", "name"))
@@ -29,6 +29,8 @@ export default async function NewRecordPage({ searchParams }: PageProps<"/record
     .where((p) => p.household.some((h) => h.doctorId.eq(doctor.id)))
     .first();
   if (!patient) notFound();
+  // Saving would be refused; better not to let a note be written first.
+  if (patient.archivedAt) redirect(`/patients/${patient.id}`);
 
   // Only visits that actually happened can be written up, so only those are
   // offered. A booking still to come has nothing to say yet.

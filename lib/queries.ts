@@ -57,6 +57,7 @@ export async function patientOptions(doctorId: string): Promise<PatientOption[]>
     .select("id", "firstName", "middleName", "lastName")
     .include("household", (h) => h.select("name"))
     .where((p) => p.household.some((h) => h.doctorId.eq(doctorId)))
+    .where((p) => p.archivedAt.isNull())
     .all();
 
   // The ORM orders by columns of the queried model, so the household name — which

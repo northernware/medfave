@@ -39,6 +39,7 @@ export default async function EditPatientPage({ params }: PageProps<"/patients/[
   const households = await orm.Household
     .select("id", "name")
     .where((h) => h.doctorId.eq(doctor.id))
+    .where((h) => h.archivedAt.isNull())
     .orderBy((h) => h.name.asc())
     .all();
 

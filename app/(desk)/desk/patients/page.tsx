@@ -20,8 +20,13 @@ export default async function DeskPatientsPage({ searchParams }: PageProps<"/des
   let list = orm.Patient
     .select("id", "firstName", "middleName", "lastName", "dateOfBirth", "contactNumber", "patientNumber")
     .include("household", (h) => h.select("id", "name"))
-    .where((p) => p.clinicId.eq(staff.clinicId));
-  let counted = orm.Patient.where((p) => p.clinicId.eq(staff.clinicId));
+    .where((p) => p.clinicId.eq(staff.clinicId))
+    // Archived charts are the clinician's to bring back, so the desk works from
+    // the live list only.
+    .where((p) => p.archivedAt.isNull());
+  let counted = orm.Patient
+    .where((p) => p.clinicId.eq(staff.clinicId))
+    .where((p) => p.archivedAt.isNull());
 
   if (term) {
     list = list.where((p) => p.lastName.ilike(`%${term}%`));

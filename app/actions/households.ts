@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireStaff } from "@/lib/auth";
+import { requireDoctor, requireStaff } from "@/lib/auth";
 import { clinicDoctorId } from "@/lib/clinic";
 import { orm } from "@/src/prisma/db";
 import { instantToDb } from "@/lib/datetime";
@@ -36,15 +36,22 @@ export async function createHousehold(_prev: FormState, formData: FormData): Pro
   if (!attributedTo) return { message: "This clinic has no clinician to register under." };
 
   const existing = await orm.Household
-    .select("id")
+    .select("id", "archivedAt")
     .where((h) => h.clinicId.eq(staff.clinicId))
     .where((h) => h.name.eq(parsed.data.name))
     .first();
   if (existing) {
-    return {
-      message: "You already have a household with that name.",
-      fieldErrors: { name: ["Already in use — try adding a distinguishing detail"] },
-    };
+    // An archived household still holds its name, and is usually the family
+    // coming back — restoring it keeps their history in one place.
+    return existing.archivedAt
+      ? {
+          message: "An archived household already has that name. Restore it rather than starting a new one.",
+          fieldErrors: { name: ["Archived household with this name"] },
+        }
+      : {
+          message: "You already have a household with that name.",
+          fieldErrors: { name: ["Already in use — try adding a distinguishing detail"] },
+        };
   }
 
   const now = instantToDb(new Date());
@@ -95,15 +102,102 @@ export async function updateHousehold(
   redirect(`/households/${householdId}`);
 }
 
-export async function deleteHousehold(formData: FormData) {
-  const staff = await requireStaff();
+const householdBlocked = (householdId: string, why: string) =>
+  redirect(`/households/${householdId}?blocked=${encodeURIComponent(why)}`);
+
+/**
+ * Sets a household aside once nobody in it is still in the working lists.
+ *
+ * Its members are dealt with one at a time first — archived, or moved to
+ * another household. Archiving a family in one go would hide every chart in it
+ * behind one click, and each of those is a decision about a person.
+ */
+export async function archiveHousehold(formData: FormData) {
+  const doctor = await requireDoctor();
+  const householdId = String(formData.get("householdId") ?? "");
+  const reason = String(formData.get("archiveReason") ?? "").trim().slice(0, 300);
+  if (!householdId) return;
+
+  const household = await orm.Household
+    .select("id", "archivedAt")
+    .include("patients", (p) => p.where((x) => x.archivedAt.isNull()).count())
+    .where((h) => h.id.eq(householdId))
+    .where((h) => h.clinicId.eq(doctor.clinicId))
+    .first();
+  if (!household || household.archivedAt) return;
+  if (!reason) householdBlocked(householdId, "Say why this household is being archived.");
+  if (household.patients > 0) {
+    householdBlocked(
+      householdId,
+      `${household.patients} ${household.patients === 1 ? "member is" : "members are"} still active. Archive or move each of them first.`,
+    );
+  }
+
+  const now = instantToDb(new Date());
+  await orm.Household.where((h) => h.id.eq(householdId)).update({
+    archivedAt: now,
+    archivedById: doctor.accountId,
+    archiveReason: reason,
+    updatedAt: now,
+  });
+
+  revalidatePath("/households");
+  revalidatePath(`/households/${householdId}`);
+  redirect(`/households/${householdId}`);
+}
+
+/** Brings a household back. Its members stay as they are; each is restored on their own. */
+export async function restoreHousehold(formData: FormData) {
+  const doctor = await requireDoctor();
   const householdId = String(formData.get("householdId") ?? "");
   if (!householdId) return;
 
-  await orm.Household
+  const household = await orm.Household
+    .select("id", "archivedAt")
     .where((h) => h.id.eq(householdId))
-    .where((h) => h.clinicId.eq(staff.clinicId))
-    .delete();
+    .where((h) => h.clinicId.eq(doctor.clinicId))
+    .first();
+  if (!household || !household.archivedAt) return;
+
+  await orm.Household.where((h) => h.id.eq(householdId)).update({
+    archivedAt: null,
+    archivedById: null,
+    archiveReason: null,
+    updatedAt: instantToDb(new Date()),
+  });
+
+  revalidatePath("/households");
+  revalidatePath(`/households/${householdId}`);
+  redirect(`/households/${householdId}`);
+}
+
+/**
+ * Deletes a household with nobody in it.
+ *
+ * Deleting a household cascades through every member's chart, so any member at
+ * all — archived ones included, since their history is exactly what archiving
+ * kept — is a refusal. An empty household is only ever a name and an address.
+ */
+export async function deleteHousehold(formData: FormData) {
+  const doctor = await requireDoctor();
+  const householdId = String(formData.get("householdId") ?? "");
+  if (!householdId) return;
+
+  const household = await orm.Household
+    .select("id")
+    .include("patients", (p) => p.count())
+    .where((h) => h.id.eq(householdId))
+    .where((h) => h.clinicId.eq(doctor.clinicId))
+    .first();
+  if (!household) return;
+  if (household.patients > 0) {
+    householdBlocked(
+      householdId,
+      `This household still has ${household.patients} ${household.patients === 1 ? "member" : "members"}, so it cannot be deleted. Move them elsewhere, or archive it instead.`,
+    );
+  }
+
+  await orm.Household.where((h) => h.id.eq(householdId)).delete();
 
   revalidatePath("/households");
   redirect("/households");

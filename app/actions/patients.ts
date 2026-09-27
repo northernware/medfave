@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { AllergySeverity } from "@/lib/enums";
-import { requireStaff } from "@/lib/auth";
+import { requireDoctor, requireStaff } from "@/lib/auth";
 import { clinicDoctorId } from "@/lib/clinic";
 import { db, orm } from "@/src/prisma/db";
 import { calendarDateToDb, instantToDb } from "@/lib/datetime";
@@ -19,6 +19,7 @@ import {
   type FormState,
 } from "@/lib/validation";
 import { findPossibleDuplicates } from "@/lib/queries";
+import { ACTIVE_STATUSES } from "@/lib/domain";
 
 /** Confirms the household belongs to this clinic before anything is written. */
 async function assertClinicHousehold(clinicId: string, householdId: string) {
@@ -26,6 +27,8 @@ async function assertClinicHousehold(clinicId: string, householdId: string) {
     .select("id")
     .where((h) => h.id.eq(householdId))
     .where((h) => h.clinicId.eq(clinicId))
+    // Nobody is registered into, or moved into, a household set aside.
+    .where((h) => h.archivedAt.isNull())
     .first();
   return household !== null;
 }
@@ -426,11 +429,14 @@ export async function updatePatient(
   }
 
   const owned = await orm.Patient
-    .select("id", "householdId")
+    .select("id", "householdId", "archivedAt")
     .where((p) => p.id.eq(patientId))
     .where((p) => p.clinicId.eq(staff.clinicId))
     .first();
   if (!owned) return { message: "That patient no longer exists." };
+  if (owned.archivedAt) {
+    return { message: "This chart is archived. It has to be restored before its details change." };
+  }
 
   const attributedTo = staff.doctorId ?? (await clinicDoctorId(staff.clinicId));
   if (!attributedTo) return { message: "This clinic has no clinician to register under." };
@@ -505,21 +511,185 @@ export async function updatePatient(
   redirect(`/patients/${patientId}`);
 }
 
-export async function deletePatient(formData: FormData) {
-  const staff = await requireStaff();
+/**
+ * Everything that makes a chart more than a registration.
+ *
+ * Deletion cascades through all of it — notes, their version history,
+ * prescriptions, issued certificates, the visit diary — so a chart holding any
+ * of it is archived, never deleted. What is left for deletion is the genuine
+ * "registered by mistake" case: a name and a date of birth with nothing
+ * attached. A portal login counts too, because deleting the chart would leave
+ * somebody's account pointing at nothing.
+ */
+async function clinicalHistory(clinicId: string, patientId: string) {
+  const patient = await orm.Patient
+    .select("id", "householdId", "accountId", "archivedAt")
+    .include("medicalRecords", (r) => r.count())
+    .include("appointments", (a) => a.count())
+    .include("documentRequests", (d) => d.count())
+    .include("appointmentRequests", (r) => r.count())
+    .include("allergies", (a) => a.count())
+    .include("conditions", (c) => c.count())
+    .include("medications", (m) => m.count())
+    .include("alerts", (a) => a.count())
+    .where((p) => p.id.eq(patientId))
+    .where((p) => p.clinicId.eq(clinicId))
+    .first();
+  if (!patient) return null;
+
+  const held = [
+    [patient.medicalRecords, "visit note"],
+    [patient.appointments, "appointment"],
+    [patient.documentRequests, "records request"],
+    [patient.appointmentRequests, "appointment request"],
+    [patient.allergies + patient.conditions + patient.medications + patient.alerts, "clinical list entry"],
+  ] as const;
+  const reasons = held
+    .filter(([n]) => n > 0)
+    .map(([n, what]) => `${n} ${what}${n === 1 ? "" : "s"}`);
+  if (patient.accountId) reasons.push("a portal login");
+
+  return { patient, reasons };
+}
+
+const blocked = (patientId: string, why: string) =>
+  redirect(`/patients/${patientId}?blocked=${encodeURIComponent(why)}`);
+
+/**
+ * Takes a chart out of the working lists without destroying anything in it.
+ *
+ * A clinician's decision. Setting a person aside hides their whole history from
+ * the desk and the consulting room, and that is not desk work.
+ *
+ * Refused while they still have a visit ahead or a request waiting: those sit
+ * in the diary and the desk's queue, and archiving the chart underneath them
+ * would leave bookings for somebody nobody can find. Cancelling them first is
+ * also what frees the slots.
+ */
+export async function archivePatient(formData: FormData) {
+  const doctor = await requireDoctor();
+  const patientId = String(formData.get("patientId") ?? "");
+  const reason = String(formData.get("archiveReason") ?? "").trim().slice(0, 300);
+  if (!patientId) return;
+
+  const patient = await orm.Patient
+    .select("id", "householdId", "archivedAt")
+    .where((p) => p.id.eq(patientId))
+    .where((p) => p.clinicId.eq(doctor.clinicId))
+    .first();
+  if (!patient || patient.archivedAt) return;
+  if (!reason) blocked(patientId, "Say why this chart is being archived.");
+
+  const now = instantToDb(new Date());
+  const [ahead, waiting] = await Promise.all([
+    orm.Appointment
+      .select("id")
+      .where((a) => a.patientId.eq(patientId))
+      .where((a) => a.clinicId.eq(doctor.clinicId))
+      .where((a) => a.scheduledAt.gte(now))
+      .where((a) => a.status.in(ACTIVE_STATUSES))
+      .all(),
+    orm.AppointmentRequest
+      .select("id")
+      .where((r) => r.patientId.eq(patientId))
+      .where((r) => r.status.eq("PENDING"))
+      .all(),
+  ]);
+  if (ahead.length > 0 || waiting.length > 0) {
+    const parts = [
+      ahead.length ? `${ahead.length} upcoming appointment${ahead.length === 1 ? "" : "s"}` : "",
+      waiting.length ? `${waiting.length} pending request${waiting.length === 1 ? "" : "s"}` : "",
+    ].filter(Boolean);
+    blocked(patientId, `This patient still has ${parts.join(" and ")}. Cancel or decline them first.`);
+  }
+
+  await orm.Patient.where((p) => p.id.eq(patientId)).update({
+    archivedAt: now,
+    archivedById: doctor.accountId,
+    archiveReason: reason,
+    updatedAt: now,
+  });
+
+  revalidatePath("/patients");
+  revalidatePath("/desk/patients");
+  revalidatePath(`/patients/${patientId}`);
+  revalidatePath(`/households/${patient.householdId}`);
+  redirect(`/patients/${patientId}`);
+}
+
+/**
+ * Puts an archived chart back into the lists, exactly as it was left.
+ *
+ * If the household it belongs to was archived as well, that comes back too: a
+ * restored person in a hidden household would still be nowhere to be found.
+ */
+export async function restorePatient(formData: FormData) {
+  const doctor = await requireDoctor();
   const patientId = String(formData.get("patientId") ?? "");
   if (!patientId) return;
 
   const patient = await orm.Patient
-    .select("householdId")
+    .select("id", "householdId", "archivedAt")
+    .include("household", (h) => h.select("id", "archivedAt"))
     .where((p) => p.id.eq(patientId))
-    .where((p) => p.clinicId.eq(staff.clinicId))
+    .where((p) => p.clinicId.eq(doctor.clinicId))
     .first();
-  if (!patient) return;
+  if (!patient || !patient.archivedAt) return;
 
+  const now = instantToDb(new Date());
+  await db.transaction(async (tx) => {
+    const t = tx.orm.public;
+    await t.Patient.where((p) => p.id.eq(patientId)).update({
+      archivedAt: null,
+      archivedById: null,
+      archiveReason: null,
+      updatedAt: now,
+    });
+    if (patient.household.archivedAt) {
+      await t.Household.where((h) => h.id.eq(patient.householdId)).update({
+        archivedAt: null,
+        archivedById: null,
+        archiveReason: null,
+        updatedAt: now,
+      });
+    }
+  });
+
+  revalidatePath("/patients");
+  revalidatePath("/desk/patients");
+  revalidatePath("/households");
+  revalidatePath(`/patients/${patientId}`);
+  revalidatePath(`/households/${patient.householdId}`);
+  redirect(`/patients/${patientId}`);
+}
+
+/**
+ * Deletes a chart that was registered by mistake, and nothing else.
+ *
+ * Anything with a history is refused and pointed at archiving instead; the
+ * list of what it holds is given, so the refusal explains itself.
+ */
+export async function deletePatient(formData: FormData) {
+  const doctor = await requireDoctor();
+  const patientId = String(formData.get("patientId") ?? "");
+  if (!patientId) return;
+
+  const found = await clinicalHistory(doctor.clinicId, patientId);
+  if (!found) return;
+  if (found.reasons.length > 0) {
+    blocked(
+      patientId,
+      `This chart holds ${found.reasons.join(", ")}, so it can be archived but not deleted.`,
+    );
+  }
+
+  const { householdId } = found.patient;
+  // A household naming this person as its contact is released by the
+  // database (SetNull); nothing else can hang off a chart with no history.
   await orm.Patient.where((p) => p.id.eq(patientId)).delete();
 
   revalidatePath("/patients");
-  revalidatePath(`/households/${patient.householdId}`);
-  redirect(`/households/${patient.householdId}`);
+  revalidatePath("/desk/patients");
+  revalidatePath(`/households/${householdId}`);
+  redirect(`/households/${householdId}`);
 }

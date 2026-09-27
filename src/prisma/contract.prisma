@@ -53,6 +53,13 @@ namespace public {
     // Who to call for this household, and the guardian for any dependants in it.
     // SetNull rather than Cascade: losing the contact must not take the household.
     primaryContactId String?
+    /// A household is set aside rather than deleted once anybody in it has a
+    /// history: deletion cascades through every member's chart. Archived
+    /// households leave the lists and stay readable and restorable.
+    /// `archivedById` is the Account that did it.
+    archivedAt    TimestampString(3)?
+    archivedById  String?
+    archiveReason String?
     createdAt     TimestampString(3) @default(now())
     updatedAt     TimestampString(3)
     patients      Patient[]
@@ -104,6 +111,14 @@ namespace public {
     /// a send, so a change here never rewrites what was promised for a visit
     /// that has already been reminded.
     reminderPreference pg.enum(ReminderPreference) @default("NONE")
+    /// A chart is not deleted once it holds anything clinical — deletion
+    /// cascades through every note, version, prescription and certificate.
+    /// Archiving takes it out of the working lists, keeps all of it, and says
+    /// who set it aside and why. `archivedById` is the Account that did it.
+    /// The patient's own login, if they have one, is left working.
+    archivedAt        TimestampString(3)?
+    archivedById      String?
+    archiveReason     String?
     createdAt         TimestampString(3)                @default(now())
     updatedAt         TimestampString(3)
     allergyStatus     pg.enum(ClinicalListStatus) @default("UNKNOWN")
