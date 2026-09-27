@@ -129,6 +129,24 @@ export function checkAvailability(
     return `That is further ahead than the clinic books (${schedule.maxLeadDays} days).`;
   }
 
+  return scheduleConflict(schedule, key, startMinute, durationMinutes);
+}
+
+/**
+ * Why the clinic's own calendar rules this slot out, or null if they don't.
+ *
+ * Only the calendar: closures, opening hours, breaks. The booking window —
+ * lead time, how far ahead — is about when something may be *booked*, and says
+ * nothing about a visit already in the diary. That is what lets the schedule
+ * page ask which existing bookings a change has stranded, with the same rules
+ * booking enforces rather than a second copy of them.
+ */
+export function scheduleConflict(
+  schedule: Schedule,
+  key: string,
+  startMinute: number,
+  durationMinutes: number,
+): string | null {
   const closure = fullDayClosure(schedule, key);
   if (closure) return `The clinic is closed that day — ${closure.reason}.`;
 

@@ -28,6 +28,9 @@ export default async function ManageLayout({ children }: { children: ReactNode }
               <Link href="/manage/clinic" className="text-ink-muted transition-colors hover:text-ink">
                 Details
               </Link>
+              <Link href="/manage/schedule" className="text-ink-muted transition-colors hover:text-ink">
+                Schedule
+              </Link>
               <Link href="/manage/staff" className="text-ink-muted transition-colors hover:text-ink">
                 Staff
               </Link>

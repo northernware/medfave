@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireClinicManager } from "@/lib/auth";
+import { describeWeek } from "@/lib/availability";
+import { clinicDoctorId } from "@/lib/clinic";
+import { loadSchedule } from "@/lib/queries";
 import { orm } from "@/src/prisma/db";
 import { Card, CardHeader, Detail, PageHeader, buttonClass } from "@/components/ui";
 
@@ -12,12 +15,7 @@ const ROLE_WORDS: Record<string, string> = {
   SECRETARY: "secretary",
 };
 
-/**
- * Where an administrator lands, and what running the clinic amounts to so far.
- *
- * Kept honest about its own gaps: opening hours are not editable yet, and saying
- * so here is better than a page that looks complete and is not.
- */
+/** Where an administrator lands: who works here, what the clinic is called, when it opens. */
 export default async function ManagePage() {
   const manager = await requireClinicManager();
 
@@ -41,6 +39,8 @@ export default async function ManagePage() {
     return acc;
   }, {});
   const waiting = liveInvites.filter((i) => !i.acceptedAt && !i.revokedAt).length;
+  const doctorId = await clinicDoctorId(manager.clinicId);
+  const week = doctorId ? describeWeek(await loadSchedule(doctorId)) : null;
 
   return (
     <div className="space-y-6">
@@ -86,10 +86,19 @@ export default async function ManagePage() {
           <Detail label="Address" value={clinic?.address} />
           <Detail label="Contact number" value={clinic?.contactNumber} />
         </dl>
-        <p className="border-t border-border px-5 py-3 text-xs text-ink-muted">
-          Opening hours, breaks and closures are not editable here yet; the clinic runs on the
-          application&rsquo;s defaults — Monday to Saturday, 8am to 5pm.
-        </p>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title="Schedule"
+          subtitle="Opening hours, breaks, closures and how long each visit takes."
+          action={
+            <Link href="/manage/schedule" className="font-medium text-accent-ink hover:underline">
+              Edit
+            </Link>
+          }
+        />
+        <p className="px-5 py-4 text-[13px]">{week ?? "No clinician yet, so no diary to set hours for."}</p>
       </Card>
     </div>
   );
