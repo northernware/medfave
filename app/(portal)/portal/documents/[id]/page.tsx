@@ -49,7 +49,7 @@ export default async function PortalDocumentPage({ params }: PageProps<"/portal/
         </dl>
       </Card>
 
-      <p className="text-[13px] text-ink-muted">
+      <p className="text-sm text-ink-muted">
         Prepared by {document.doctor.fullName}. For a printed and signed copy, ask the clinic.
       </p>
     </div>

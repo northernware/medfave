@@ -82,7 +82,7 @@ export default async function PortalPage({ searchParams }: PageProps<"/portal">)
       />
 
       {requested ? (
-        <div className="rounded-lg border border-ok/40 bg-ok-tint px-4 py-3 text-[13px]">
+        <div className="rounded-lg border border-ok/40 bg-ok-tint px-4 py-3 text-sm">
           <p className="font-medium text-ok-ink">Your request has been sent.</p>
           <p className="mt-0.5 text-ink-muted">
             The clinic will confirm a time. Until they do, the slot is not held for you.
@@ -105,7 +105,7 @@ export default async function PortalPage({ searchParams }: PageProps<"/portal">)
                   <span className="block text-sm font-medium">
                     {formatDateTime(instantFromDb(a.scheduledAt))}
                   </span>
-                  <span className="block truncate text-[13px] text-ink-muted">
+                  <span className="block truncate text-sm text-ink-muted">
                     {SERVICE_LABELS[a.service]} · {a.doctor.fullName}
                   </span>
                 </span>
@@ -128,7 +128,7 @@ export default async function PortalPage({ searchParams }: PageProps<"/portal">)
             {requests.map((r) => (
               <li key={r.id} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-5 py-3">
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[13px] font-medium">
+                  <span className="block text-sm font-medium">
                     {formatCalendarDate(calendarDateFromDb(r.preferredDate))}
                     {r.preferredTime ? ` at ${r.preferredTime}` : " · any time"}
                   </span>
@@ -171,14 +171,14 @@ export default async function PortalPage({ searchParams }: PageProps<"/portal">)
             {documents.map((d) => (
               <li key={d.id} className="flex flex-wrap items-baseline gap-x-3 px-5 py-3">
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[13px] font-medium">
+                  <span className="block text-sm font-medium">
                     {DOCUMENT_TYPE_LABELS[d.type]}
                   </span>
                   <span className="block truncate text-xs text-ink-muted">{d.purpose}</span>
                 </span>
                 <Link
                   href={`/portal/documents/${d.id}`}
-                  className="text-[13px] font-medium text-accent-ink hover:underline"
+                  className="text-sm font-medium text-accent-ink hover:underline"
                 >
                   Open
                 </Link>
@@ -215,10 +215,10 @@ export default async function PortalPage({ searchParams }: PageProps<"/portal">)
           <ul className="divide-y divide-border">
             {past.map((a) => (
               <li key={a.id} className="flex flex-wrap items-baseline gap-x-3 px-5 py-2.5">
-                <span className="tabular w-32 shrink-0 text-[13px]">
+                <span className="tabular w-32 shrink-0 text-sm">
                   {formatDate(instantFromDb(a.scheduledAt))}
                 </span>
-                <span className="min-w-0 flex-1 truncate text-[13px] text-ink-muted">
+                <span className="min-w-0 flex-1 truncate text-sm text-ink-muted">
                   {SERVICE_LABELS[a.service]} · {a.doctor.fullName}
                 </span>
                 <Badge tone={APPOINTMENT_STATUS_TONE[a.status]}>

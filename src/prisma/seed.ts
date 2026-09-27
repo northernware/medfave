@@ -23,10 +23,10 @@ import {
   VisitPriority,
 } from "../../lib/enums";
 
-const DEMO_EMAIL = "doctor@medikonek.com";
+const DEMO_EMAIL = "doctor@medfave.com";
 const DEMO_PASSWORD = "password";
-const SECRETARY_EMAIL = "desk@medikonek.com";
-const PATIENT_EMAIL = "patient@medikonek.com";
+const SECRETARY_EMAIL = "desk@medfave.com";
+const PATIENT_EMAIL = "patient@medfave.com";
 const CLINIC_NAME = "Northern Family Clinic";
 
 const DAY_MS = 86_400_000;
@@ -105,6 +105,13 @@ async function nextPatientNumber() {
   return `MK-${year}-${String(counter!.lastUsed).padStart(6, "0")}`;
 }
 
+/**
+ * Every clinical row belongs to exactly one clinic, and the database enforces
+ * it. The seed builds one clinic, so the helpers stamp its id on each row
+ * rather than every literal below repeating it.
+ */
+let seedClinicId = "";
+
 async function seedHousehold(
   data: Record<string, unknown> & { patients: PatientSeed[] },
 ) {
@@ -112,6 +119,7 @@ async function seedHousehold(
   const { patients, ...household } = data;
   const created = await orm.Household.create({
     ...household,
+    clinicId: seedClinicId,
     id: newId(),
     createdAt: now,
     updatedAt: now,
@@ -122,6 +130,7 @@ async function seedHousehold(
     const { allergies = [], conditions = [], medications = [], alerts = [], ...scalars } = patient;
     const row = await orm.Patient.create({
       ...scalars,
+      clinicId: seedClinicId,
       id: newId(),
       patientNumber: await nextPatientNumber(),
       householdId: created.id,
@@ -176,6 +185,7 @@ async function seedAppointments(rows: Record<string, unknown>[]) {
   for (const row of rows) {
     await orm.Appointment.create({
       ...row,
+      clinicId: seedClinicId,
       id: newId(),
       createdAt: now,
       updatedAt: now,
@@ -190,6 +200,7 @@ async function seedRecord(
   const { prescriptions = [], ...record } = data;
   const created = await orm.MedicalRecord.create({
     ...record,
+    clinicId: seedClinicId,
     id: newId(),
     createdAt: now,
     updatedAt: now,
@@ -240,6 +251,7 @@ async function main() {
     createdAt: seededAt,
     updatedAt: seededAt,
   });
+  seedClinicId = clinic.id;
 
   const doctorAccount = await orm.Account.select("id").create({
     id: newId(),

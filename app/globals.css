@@ -1,94 +1,127 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
-   MEDIKONEK palette — calm clinical slate with a teal accent. Every colour is
-   defined here in light form first, then overridden for dark, so nothing has
-   its only definition inside a media query.
+   medfave palette — "Pink leads. Plum grounds."
+
+   From the medfave identity guidelines (V1, September 2026):
+     Fuchsia     #E91E83  brand accent — logo, highlights, large graphic areas
+     Deep plum   #32132C  text and dark surfaces
+     Blush       #FDE7F1  panels and patterns
+     Warm white  #FFF9FC  primary canvas
+     Deep pink   #B51260  buttons and links (carries small white labels)
+   Suggested balance: 60% warm white, 20% plum, 15% blush, 5% fuchsia.
+
+   Bright fuchsia is never used for body text or small labels: white on it is
+   only 4.2:1. Controls take deep pink instead (6.5:1 with white). Pale pink
+   never carries text.
+
+   Clinical status colours are deliberately NOT pink. Danger is a true red, well
+   away from the brand hue, so an allergy or alert can never be mistaken for a
+   branded highlight — and a pink button never reads as a warning.
+
+   Every colour is defined here in light form first, then overridden for dark,
+   so nothing has its only definition inside a media query.
 --------------------------------------------------------------------------- */
 :root {
-  --canvas: oklch(0.985 0.004 240);
-  --surface: oklch(1 0 0);
-  --surface-muted: oklch(0.972 0.005 240);
-  --border: oklch(0.906 0.008 240);
-  --border-strong: oklch(0.845 0.012 240);
+  --brand: #e91e83;
+  --brand-plum: #32132c;
+  --brand-blush: #fde7f1;
+  /* The logo's own colours. Light: the primary lockup (fuchsia heart, plum
+     wordmark). Dark: the approved single-colour version, solid white. */
+  --logo-heart: #e91e83;
+  --logo-word: #32132c;
 
-  --ink: oklch(0.24 0.02 250);
-  --ink-muted: oklch(0.5 0.018 250);
-  --ink-faint: oklch(0.62 0.015 250);
+  --canvas: #fff9fc;
+  --surface: #ffffff;
+  --surface-muted: #fbeff4;
+  --border: #f0dce6;
+  --border-strong: #dfc2d1;
 
-  --accent: oklch(0.55 0.11 195);
-  --accent-hover: oklch(0.48 0.11 195);
-  --accent-soft: oklch(0.95 0.03 195);
-  --accent-ink: oklch(0.38 0.09 195);
-  --on-accent: oklch(1 0 0);
+  --ink: #32132c;
+  --ink-muted: #6b4f63;
+  --ink-faint: #7b6174;
 
-  --danger: oklch(0.55 0.19 22);
-  --danger-soft: oklch(0.96 0.03 22);
-  --danger-ink: oklch(0.44 0.17 22);
+  --accent: #b51260;
+  --accent-hover: #9c0f53;
+  --accent-soft: #fde7f1;
+  --accent-ink: #b51260;
+  --on-accent: #ffffff;
 
-  --warn: oklch(0.62 0.14 75);
-  --warn-soft: oklch(0.96 0.05 85);
-  --warn-ink: oklch(0.45 0.11 70);
+  --danger: oklch(0.56 0.2 29);
+  --danger-soft: oklch(0.965 0.025 29);
+  --danger-ink: oklch(0.47 0.18 29);
 
-  --ok: oklch(0.58 0.13 155);
-  --ok-soft: oklch(0.95 0.04 155);
-  --ok-ink: oklch(0.42 0.11 155);
+  --warn: oklch(0.66 0.14 70);
+  --warn-soft: oklch(0.965 0.05 85);
+  --warn-ink: oklch(0.47 0.11 65);
+
+  --ok: oklch(0.58 0.12 160);
+  --ok-soft: oklch(0.955 0.035 160);
+  --ok-ink: oklch(0.43 0.1 160);
 
   /* Tints for badges and rules — lighter than the -soft fills they replace, so a
      status reads as a marking on the surface rather than a second card. */
-  --accent-tint: oklch(0.968 0.018 195);
-  --danger-tint: oklch(0.974 0.018 22);
-  --warn-tint: oklch(0.975 0.03 85);
-  --ok-tint: oklch(0.968 0.024 155);
+  --accent-tint: #fdeef5;
+  --danger-tint: oklch(0.975 0.016 29);
+  --warn-tint: oklch(0.977 0.03 85);
+  --ok-tint: oklch(0.972 0.022 160);
 
   /* Elevation by role. Structure is carried by hairlines; a shadow is spent only
-     on things that genuinely float, which is what keeps panels from all reading
-     as the same object. */
-  --shadow-card: 0 1px 2px oklch(0.24 0.02 250 / 0.05), 0 1px 3px oklch(0.24 0.02 250 / 0.04);
-  --shadow-pop: 0 4px 12px oklch(0.24 0.02 250 / 0.1), 0 1px 3px oklch(0.24 0.02 250 / 0.06);
+     on things that genuinely float. Shadows are tinted plum, not grey, so they
+     sit in the warm canvas instead of dirtying it. */
+  --shadow-card: 0 1px 2px rgb(50 19 44 / 0.04), 0 2px 6px rgb(50 19 44 / 0.04);
+  --shadow-pop: 0 8px 24px rgb(50 19 44 / 0.1), 0 2px 6px rgb(50 19 44 / 0.06);
 
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
+  /* Softer corners than before: the identity is built from capsules. Buttons
+     go fully round; containers stay generous but calm. */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --canvas: oklch(0.19 0.014 250);
-    --surface: oklch(0.235 0.016 250);
-    --surface-muted: oklch(0.275 0.017 250);
-    --border: oklch(0.33 0.018 250);
-    --border-strong: oklch(0.42 0.02 250);
+    /* Plum grounds the dark theme too — surfaces are deep plum, not grey. */
+    --logo-heart: #ffffff;
+    --logo-word: #ffffff;
 
-    --ink: oklch(0.95 0.006 250);
-    --ink-muted: oklch(0.74 0.014 250);
-    --ink-faint: oklch(0.62 0.016 250);
+    --canvas: #1d0b19;
+    --surface: #271122;
+    --surface-muted: #33182d;
+    --border: #43233b;
+    --border-strong: #5b3551;
 
-    --accent: oklch(0.72 0.11 195);
-    --accent-hover: oklch(0.79 0.11 195);
-    --accent-soft: oklch(0.32 0.05 195);
-    --accent-ink: oklch(0.84 0.08 195);
-    --on-accent: oklch(0.18 0.03 220);
+    --ink: #fff1f7;
+    --ink-muted: #d8bccd;
+    --ink-faint: #af93a5;
 
-    --danger: oklch(0.68 0.17 22);
-    --danger-soft: oklch(0.32 0.07 22);
-    --danger-ink: oklch(0.85 0.09 22);
+    /* A lighter pink with plum labels: fuchsia with white text would fall
+       below 4.5:1 at button size. */
+    --accent: #ff6fae;
+    --accent-hover: #ff8fc0;
+    --accent-soft: #4a1a3b;
+    --accent-ink: #ff8ac0;
+    --on-accent: #32132c;
+
+    --danger: oklch(0.68 0.17 29);
+    --danger-soft: oklch(0.32 0.07 29);
+    --danger-ink: oklch(0.83 0.1 29);
 
     --warn: oklch(0.78 0.13 80);
     --warn-soft: oklch(0.33 0.06 75);
     --warn-ink: oklch(0.87 0.09 85);
 
-    --ok: oklch(0.72 0.13 155);
-    --ok-soft: oklch(0.3 0.06 155);
-    --ok-ink: oklch(0.85 0.1 155);
+    --ok: oklch(0.72 0.12 160);
+    --ok-soft: oklch(0.3 0.055 160);
+    --ok-ink: oklch(0.85 0.09 160);
 
-    --accent-tint: oklch(0.28 0.035 195);
-    --danger-tint: oklch(0.285 0.05 22);
+    --accent-tint: #3a1530;
+    --danger-tint: oklch(0.29 0.05 29);
     --warn-tint: oklch(0.29 0.045 75);
-    --ok-tint: oklch(0.275 0.04 155);
+    --ok-tint: oklch(0.28 0.04 160);
 
-    --shadow-card: 0 1px 2px oklch(0 0 0 / 0.3), 0 1px 3px oklch(0 0 0 / 0.2);
-    --shadow-pop: 0 4px 14px oklch(0 0 0 / 0.45), 0 1px 3px oklch(0 0 0 / 0.3);
+    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 2px 6px rgb(0 0 0 / 0.2);
+    --shadow-pop: 0 8px 24px rgb(0 0 0 / 0.45), 0 2px 6px rgb(0 0 0 / 0.3);
   }
 }
 
@@ -121,8 +154,15 @@
   --color-ok-soft: var(--ok-soft);
   --color-ok-ink: var(--ok-ink);
 
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --color-brand: var(--brand);
+  --color-brand-plum: var(--brand-plum);
+  --color-brand-blush: var(--brand-blush);
+
+  /* Two companion typefaces: Plus Jakarta Sans for headings, Inter for body
+     and labels. The logo's wordmark is artwork, not either of these. */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-jakarta), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 
   --color-accent-tint: var(--accent-tint);
   --color-danger-tint: var(--danger-tint);
@@ -135,6 +175,7 @@
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
   --radius-lg: var(--radius-lg);
+  --radius-xl: 20px;
 }
 
 body {
@@ -142,6 +183,18 @@ body {
   color: var(--ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+}
+
+/* Headings take the display face. Sizes are set where headings are used; the
+   guideline web scale is H1 48/56, H2 32/40, H3 24/32, body 16/24, label 14/20. */
+:where(h1, h2, h3) {
+  font-family: var(--font-display);
+}
+
+/* Plus Jakarta Sans sets a narrow word space; at heading sizes with tightened
+   tracking, "Good day" starts to read as one word. Open it back up. */
+:where(h1, h2, h3, .font-display) {
+  word-spacing: 0.08em;
 }
 
 /* Consistent focus ring across native controls and links. */
@@ -156,13 +209,28 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Figures that are read as data — counts, times, vitals — take the mono face so
-   digits share a width and columns line up down a list. Labels stay in the sans. */
+/* Figures that are read as data — counts, times, vitals — use Inter's tabular
+   figures so digits share a width and columns line up down a list. */
 .nums {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-variant-numeric: tabular-nums lining-nums;
-  font-feature-settings: "zero" 0;
+  font-feature-settings: "tnum" 1, "zero" 0;
   letter-spacing: -0.01em;
+}
+
+/* The heart + plus pattern: two hearts for every plus, all upright, evenly
+   spaced, never overlapping. Blush monochrome on warm white. Only ever on quiet
+   panels — text and the logo sit on unpatterned areas. */
+.brand-pattern {
+  background-color: var(--canvas);
+  background-image: url("/pattern-heart-plus.svg");
+  background-size: 180px 120px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .brand-pattern {
+    background-image: url("/pattern-heart-plus-dark.svg");
+  }
 }
 
 /* A status marking: a coloured dot beside text, so state never rests on the

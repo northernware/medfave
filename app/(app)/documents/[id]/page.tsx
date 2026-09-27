@@ -80,7 +80,7 @@ export default async function DocumentPage({ params, searchParams }: PageProps<"
       </div>
 
       {blocked ? (
-        <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-[13px]">
+        <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm">
           <p className="font-medium">That change is not available from here.</p>
           <p className="mt-0.5 text-ink-muted">
             The request has moved on since the page was loaded.
@@ -89,7 +89,7 @@ export default async function DocumentPage({ params, searchParams }: PageProps<"
       ) : null}
 
       {needs === "releasedTo" ? (
-        <div className="rounded-lg border border-danger/30 bg-danger-soft px-4 py-3 text-[13px]">
+        <div className="rounded-lg border border-danger/30 bg-danger-soft px-4 py-3 text-sm">
           <p className="font-medium text-danger-ink">Say who received it.</p>
           <p className="mt-0.5 text-ink-muted">
             A document leaving the clinic with no note of who took it answers none of the questions
@@ -98,13 +98,13 @@ export default async function DocumentPage({ params, searchParams }: PageProps<"
         </div>
       ) : null}
       {needs === "declineReason" ? (
-        <div className="rounded-lg border border-danger/30 bg-danger-soft px-4 py-3 text-[13px]">
+        <div className="rounded-lg border border-danger/30 bg-danger-soft px-4 py-3 text-sm">
           <p className="font-medium text-danger-ink">Say why it was declined.</p>
         </div>
       ) : null}
 
       {request.status === "RELEASED" ? (
-        <div className="rounded-lg border border-ok/40 bg-ok-tint px-4 py-3 text-[13px]">
+        <div className="rounded-lg border border-ok/40 bg-ok-tint px-4 py-3 text-sm">
           <p className="font-medium text-ok-ink">
             Released {formatDateTime(instantFromDb(request.releasedAt!))}
             {request.releasedBy ? ` by ${request.releasedBy.fullName}` : ""}.
@@ -113,7 +113,7 @@ export default async function DocumentPage({ params, searchParams }: PageProps<"
         </div>
       ) : null}
       {request.status === "DECLINED" ? (
-        <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-[13px]">
+        <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm">
           <p className="font-medium">Declined.</p>
           <p className="mt-0.5 text-ink-muted">{request.declineReason}</p>
         </div>

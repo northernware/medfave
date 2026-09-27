@@ -52,7 +52,7 @@ export default async function PortalDetailsPage({ searchParams }: PageProps<"/po
       />
 
       {saved === "contact" ? (
-        <div className="rounded-lg border border-ok/40 bg-ok-tint px-4 py-3 text-[13px]">
+        <div className="rounded-lg border border-ok/40 bg-ok-tint px-4 py-3 text-sm">
           <p className="font-medium text-ok-ink">
             Your contact details have been updated. The clinic sees the change straight away, and
             the visits already in your diary follow your reminder choice.

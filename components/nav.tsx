@@ -25,7 +25,7 @@ export function Nav({ orientation }: { orientation: "sidebar" | "bar" }) {
   return (
     <nav
       aria-label="Main"
-      className={sidebar ? "flex flex-col gap-0.5" : "flex gap-1 overflow-x-auto px-4 pb-2"}
+      className={sidebar ? "flex flex-col gap-1" : "flex gap-1.5 overflow-x-auto px-4 pb-3"}
     >
       {LINKS.map((link) => {
         const active = isActive(pathname, link.href);
@@ -35,24 +35,22 @@ export function Nav({ orientation }: { orientation: "sidebar" | "bar" }) {
             href={link.href}
             aria-current={active ? "page" : undefined}
             className={[
-              "relative flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium whitespace-nowrap transition-colors",
-              sidebar
-                ? "before:absolute before:left-0 before:top-1/2 before:h-4 before:w-0.5 before:-translate-y-1/2 before:rounded-full before:transition-colors"
-                : "",
+              "flex items-center gap-3 rounded-full py-2 text-sm leading-5 font-medium whitespace-nowrap transition-colors",
+              sidebar ? "px-3.5" : "px-3",
               active
-                ? "bg-surface-muted text-ink before:bg-accent"
-                : "text-ink-muted before:bg-transparent hover:bg-surface-muted hover:text-ink",
+                ? "bg-accent-soft font-semibold text-accent-ink"
+                : "text-ink-muted hover:bg-surface-muted hover:text-ink",
             ].join(" ")}
           >
             <svg
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="1.6"
+              strokeWidth="1.8"
               strokeLinecap="round"
               strokeLinejoin="round"
               aria-hidden="true"
-              className="size-4 shrink-0 opacity-80"
+              className="size-[18px] shrink-0"
             >
               <path d={link.icon} />
             </svg>

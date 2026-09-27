@@ -8,9 +8,9 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const { reset } = await searchParams;
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-6 shadow-card sm:p-8">
-      <h1 className="text-xl font-semibold tracking-tight">Sign in</h1>
-      <p className="mt-1 text-sm text-ink-muted">Your patient list is waiting.</p>
+    <div className="rounded-xl border border-border bg-surface p-7 shadow-card sm:p-10">
+      <h1 className="text-[32px] leading-10 font-semibold tracking-[-0.015em]">Sign in</h1>
+      <p className="mt-2 text-base leading-6 text-ink-muted">Welcome back. Your patient list is waiting.</p>
 
       {reset === "done" ? (
         <p

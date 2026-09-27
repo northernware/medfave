@@ -17,11 +17,11 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
 
   return (
     <div className="lg:flex lg:min-h-dvh">
-      <aside className="hidden lg:flex lg:w-[236px] lg:shrink-0 lg:flex-col lg:border-r lg:border-border lg:bg-surface">
-        <div className="px-4 py-4">
+      <aside className="hidden lg:sticky lg:top-0 lg:flex lg:h-dvh lg:w-[248px] lg:shrink-0 lg:flex-col lg:border-r lg:border-border lg:bg-surface">
+        <div className="px-5 pt-6 pb-5">
           <Brand />
         </div>
-        <div className="flex-1 px-2.5">
+        <div className="flex-1 overflow-y-auto px-3">
           <Nav orientation="sidebar" />
         </div>
         <DoctorCard name={doctor.fullName} detail={doctor.specialty ?? doctor.email} initials={initials} />
@@ -38,7 +38,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       </header>
 
       <main className="min-w-0 flex-1">
-        <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</div>
+        <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-10 lg:py-10">{children}</div>
       </main>
     </div>
   );
@@ -49,11 +49,11 @@ function DoctorCard({ name, detail, initials }: { name: string; detail: string; 
     <div className="border-t border-border p-3">
       <Link
         href="/account"
-        className="flex items-center gap-2.5 rounded-lg px-2 py-2 transition-colors hover:bg-surface-muted"
+        className="flex items-center gap-2.5 rounded-md px-2 py-2 transition-colors hover:bg-surface-muted"
       >
         <span
           aria-hidden="true"
-          className="grid size-8 shrink-0 place-items-center rounded-full bg-surface-muted text-xs font-semibold text-ink-muted"
+          className="grid size-9 shrink-0 place-items-center rounded-full bg-accent-soft font-display text-xs font-semibold text-accent-ink"
         >
           {initials}
         </span>
@@ -63,7 +63,7 @@ function DoctorCard({ name, detail, initials }: { name: string; detail: string; 
         </div>
       </Link>
       <form action={logout}>
-        <button className="mt-1 w-full rounded-lg px-2 py-1.5 text-left text-sm text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink">
+        <button className="mt-1 w-full rounded-full px-3 py-1.5 text-left text-sm text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink">
           Sign out
         </button>
       </form>

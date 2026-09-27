@@ -220,11 +220,11 @@ export default async function DashboardPage() {
                       {/* Arrival, and how long it has been — the two numbers the
                           desk is asked about. The wait stops at the moment the
                           doctor took them in, rather than climbing all visit. */}
-                      <span className="nums w-16 shrink-0 text-[13px] font-medium">
+                      <span className="nums w-16 shrink-0 text-sm font-medium">
                         {formatTime(a.arrivedAt ?? a.scheduledAt)}
                         {a.arrivedAt ? (
                           <span
-                            className={`tabular block font-sans text-[11px] font-normal ${
+                            className={`tabular block font-sans text-xs font-normal ${
                               seeing ? "text-ink-faint" : "text-ink-muted"
                             }`}
                           >
@@ -234,7 +234,7 @@ export default async function DashboardPage() {
                           </span>
                         ) : null}
                         {a.scheduledAt < today.start ? (
-                          <span className="tabular block font-sans text-[11px] font-normal text-warn-ink">
+                          <span className="tabular block font-sans text-xs font-normal text-warn-ink">
                             {formatDate(a.scheduledAt)}
                           </span>
                         ) : null}
@@ -242,7 +242,7 @@ export default async function DashboardPage() {
                       <span className="min-w-0 flex-1">
                         <Link
                           href={`/patients/${a.patient.id}`}
-                          className="block truncate text-[13px] font-medium hover:underline"
+                          className="block truncate text-sm font-medium hover:underline"
                         >
                           {fullName(a.patient)}
                         </Link>
@@ -304,11 +304,11 @@ export default async function DashboardPage() {
                       key={a.id}
                       className="flex flex-wrap items-center gap-3 px-4 py-2.5 transition-colors hover:bg-surface-muted"
                     >
-                      <span className="nums w-16 shrink-0 text-[13px] font-medium">
+                      <span className="nums w-16 shrink-0 text-sm font-medium">
                         {formatTime(a.scheduledAt)}
                       </span>
                       <Link href={`/appointments/${a.id}`} className="min-w-0 flex-1">
-                        <span className="block truncate text-[13px] font-medium">{fullName(a.patient)}</span>
+                        <span className="block truncate text-sm font-medium">{fullName(a.patient)}</span>
                         <span className="block truncate text-xs text-ink-muted">
                           {a.patient.household.name} · {a.reason}
                         </span>
@@ -352,7 +352,7 @@ export default async function DashboardPage() {
                 {drafts.map((r) => (
                   <div key={r.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5">
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[13px] font-medium">
+                      <span className="block truncate text-sm font-medium">
                         {r.chiefComplaint || "Untitled draft"}
                       </span>
                       <span className="block truncate text-xs text-ink-muted">
@@ -383,15 +383,15 @@ export default async function DashboardPage() {
                     const overdue = r.followUpDate! < today.start;
                     return (
                       <li key={r.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5">
-                        <span className="tabular w-28 shrink-0 text-[13px]">
+                        <span className="tabular w-28 shrink-0 text-sm">
                           <span className={overdue ? "font-medium text-danger-ink" : "text-ink-muted"}>
                             <span className="whitespace-nowrap">{formatCalendarDate(r.followUpDate!)}</span>
                           </span>
                           {overdue ? (
-                            <span className="block font-sans text-[11px] text-danger-ink">Overdue</span>
+                            <span className="block font-sans text-xs text-danger-ink">Overdue</span>
                           ) : null}
                           {r.followUpAppointment ? (
-                            <span className="block font-sans text-[11px] text-warn-ink">
+                            <span className="block font-sans text-xs text-warn-ink">
                               {RETURNED_BY_LABELS[
                                 r.followUpAppointment.status as "CANCELLED" | "NO_SHOW"
                               ] ?? "returned"}
@@ -399,7 +399,7 @@ export default async function DashboardPage() {
                           ) : null}
                         </span>
                         <Link href={`/records/${r.id}`} className="min-w-0 flex-1">
-                          <span className="block truncate text-[13px] font-medium">{fullName(r.patient)}</span>
+                          <span className="block truncate text-sm font-medium">{fullName(r.patient)}</span>
                           <span className="block truncate text-xs text-ink-muted">
                             From {formatDate(r.visitDate)} · {r.chiefComplaint}
                           </span>
@@ -425,13 +425,13 @@ export default async function DashboardPage() {
             <SectionTitle title="Practice" />
             <Card className="divide-y divide-border">
               <div className="flex items-baseline justify-between px-4 py-3">
-                <span className="text-[13px] text-ink-muted">Households</span>
+                <span className="text-sm text-ink-muted">Households</span>
                 <Link href="/households" className="nums text-[15px] font-semibold hover:underline">
                   {householdCount.n}
                 </Link>
               </div>
               <div className="flex items-baseline justify-between px-4 py-3">
-                <span className="text-[13px] text-ink-muted">Patients</span>
+                <span className="text-sm text-ink-muted">Patients</span>
                 <Link href="/patients" className="nums text-[15px] font-semibold hover:underline">
                   {patientCount.n}
                 </Link>
@@ -448,7 +448,7 @@ export default async function DashboardPage() {
                     <div className="flex items-baseline justify-between gap-2">
                       <Link
                         href={`/appointments/${a.id}`}
-                        className="truncate text-[13px] font-medium hover:underline"
+                        className="truncate text-sm font-medium hover:underline"
                       >
                         {fullName(a.patient)}
                       </Link>

@@ -109,14 +109,14 @@ export default async function HouseholdPage({
       {typeof blocked === "string" && blocked ? (
         <p
           role="alert"
-          className="rounded-lg border border-warn/40 bg-warn-soft px-4 py-3 text-[13px] text-warn-ink"
+          className="rounded-lg border border-warn/40 bg-warn-soft px-4 py-3 text-sm text-warn-ink"
         >
           {blocked}
         </p>
       ) : null}
 
       {archived ? (
-        <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-[13px]">
+        <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm">
           <p className="font-medium">
             Archived {formatDateTime(instantFromDb(household.archivedAt!))}
             {archivedBy ? ` by ${archivedBy.fullName}` : ""}.
@@ -233,7 +233,7 @@ export default async function HouseholdPage({
             {setAside.map((patient) => (
               <li key={patient.id} className="transition-colors hover:bg-surface-muted">
                 <Link href={`/patients/${patient.id}`} className="flex items-baseline gap-4 px-5 py-3">
-                  <span className="min-w-0 flex-1 truncate text-[13px] text-ink-muted">
+                  <span className="min-w-0 flex-1 truncate text-sm text-ink-muted">
                     {fullName(patient)}
                   </span>
                   <span className="tabular shrink-0 text-xs text-ink-faint">

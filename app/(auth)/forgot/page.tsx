@@ -6,8 +6,8 @@ export const metadata: Metadata = { title: "Forgotten password" };
 
 export default function ForgotPage() {
   return (
-    <div className="rounded-xl border border-border bg-surface p-6 shadow-card sm:p-8">
-      <h1 className="text-xl font-semibold tracking-tight">Forgotten password</h1>
+    <div className="rounded-xl border border-border bg-surface p-7 shadow-card sm:p-10">
+      <h1 className="text-[32px] leading-10 font-semibold tracking-[-0.015em]">Forgotten password</h1>
       <p className="mt-1 text-sm text-ink-muted">
         Enter the address you sign in with and we will send a link for setting a new password.
       </p>

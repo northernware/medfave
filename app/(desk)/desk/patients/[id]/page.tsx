@@ -99,7 +99,7 @@ export default async function DeskPatientPage({
       />
 
       {patient.archivedAt ? (
-        <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-[13px]">
+        <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm">
           <p className="font-medium">This chart is archived.</p>
           <p className="mt-0.5 text-ink-muted">
             It cannot be booked or edited until the clinician restores it.
@@ -111,7 +111,7 @@ export default async function DeskPatientPage({
           a chart, so it is issued to somebody the desk has identified. */}
       {code ? (
         <div className="rounded-lg border border-ok/40 bg-ok-tint px-4 py-3">
-          <p className="text-[13px] font-medium text-ok-ink">
+          <p className="text-sm font-medium text-ok-ink">
             Activation code — write it down now, it is not shown again.
           </p>
           <p className="tabular mt-1 text-lg font-semibold tracking-wider">{code}</p>
@@ -170,7 +170,7 @@ export default async function DeskPatientPage({
               <Badge dot tone="accent">
                 Code issued
               </Badge>
-              <span className="text-[13px] text-ink-muted">
+              <span className="text-sm text-ink-muted">
                 Expires {formatDateTime(instantFromDb(activation!.expiresAt))}
               </span>
               <form action={revokePatientActivation}>

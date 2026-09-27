@@ -32,7 +32,7 @@ export default async function ClinicDetailsPage({ searchParams }: PageProps<"/ma
       />
 
       {saved ? (
-        <div className="rounded-lg border border-ok/40 bg-ok-tint px-4 py-3 text-[13px]">
+        <div className="rounded-lg border border-ok/40 bg-ok-tint px-4 py-3 text-sm">
           <p className="font-medium text-ok-ink">
             Saved. New prescriptions, certificates and emails use these details from now on.
           </p>
@@ -60,8 +60,8 @@ export default async function ClinicDetailsPage({ searchParams }: PageProps<"/ma
         <div className="px-5 py-6">
           <div className="mx-auto max-w-md border-b-2 border-ink pb-3 text-center">
             <p className="text-base font-semibold">{clinic.name}</p>
-            {clinic.address ? <p className="text-[13px]">{clinic.address}</p> : null}
-            {clinic.contactNumber ? <p className="text-[13px]">Tel. {clinic.contactNumber}</p> : null}
+            {clinic.address ? <p className="text-sm">{clinic.address}</p> : null}
+            {clinic.contactNumber ? <p className="text-sm">Tel. {clinic.contactNumber}</p> : null}
           </div>
         </div>
       </Card>

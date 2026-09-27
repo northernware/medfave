@@ -41,13 +41,13 @@ export default async function DeskRequestsPage({ searchParams }: PageProps<"/des
       />
 
       {refused ? (
-        <div className="rounded-lg border border-danger/30 bg-danger-soft px-4 py-3 text-[13px]">
+        <div className="rounded-lg border border-danger/30 bg-danger-soft px-4 py-3 text-sm">
           <p className="font-medium text-danger-ink">That request could not be booked.</p>
           <p className="mt-0.5 text-ink-muted">{refused}</p>
         </div>
       ) : null}
       {needs === "time" ? (
-        <div className="rounded-lg border border-danger/30 bg-danger-soft px-4 py-3 text-[13px]">
+        <div className="rounded-lg border border-danger/30 bg-danger-soft px-4 py-3 text-sm">
           <p className="font-medium text-danger-ink">Give it a time.</p>
           <p className="mt-0.5 text-ink-muted">
             The patient asked for a day without naming an hour, so one has to be chosen here.
@@ -74,7 +74,7 @@ export default async function DeskRequestsPage({ searchParams }: PageProps<"/des
                     >
                       {fullName(r.patient)}
                     </Link>
-                    <p className="text-[13px] text-ink-muted">
+                    <p className="text-sm text-ink-muted">
                       {SERVICE_LABELS[r.service]} · {r.reason}
                     </p>
                     <p className="text-xs text-ink-faint">
@@ -82,7 +82,7 @@ export default async function DeskRequestsPage({ searchParams }: PageProps<"/des
                       {r.patient.contactNumber ? ` · ${r.patient.contactNumber}` : ""}
                     </p>
                   </div>
-                  <p className="tabular text-[13px]">
+                  <p className="tabular text-sm">
                     {formatCalendarDate(calendarDateFromDb(r.preferredDate))}
                     {r.preferredTime ? ` at ${r.preferredTime}` : " · any time"}
                   </p>
@@ -91,7 +91,7 @@ export default async function DeskRequestsPage({ searchParams }: PageProps<"/des
                 <div className="mt-3 flex flex-wrap items-end gap-2">
                   <form action={acceptRequest} className="flex flex-wrap items-end gap-2">
                     <input type="hidden" name="requestId" value={r.id} />
-                    <label className="text-[13px]">
+                    <label className="text-sm">
                       <span className="mb-1 block font-medium">Time</span>
                       <input
                         name="time"
@@ -105,7 +105,7 @@ export default async function DeskRequestsPage({ searchParams }: PageProps<"/des
 
                   <form action={declineRequest} className="flex flex-wrap items-end gap-2">
                     <input type="hidden" name="requestId" value={r.id} />
-                    <label className="min-w-48 flex-1 text-[13px]">
+                    <label className="min-w-48 flex-1 text-sm">
                       <span className="mb-1 block font-medium">Reason, if declining</span>
                       <input
                         name="decisionNote"
@@ -129,7 +129,7 @@ export default async function DeskRequestsPage({ searchParams }: PageProps<"/des
             {decided.map((r) => (
               <li key={r.id} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-5 py-3">
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[13px] font-medium">
+                  <span className="block truncate text-sm font-medium">
                     {fullName(r.patient)}
                   </span>
                   <span className="block truncate text-xs text-ink-muted">
@@ -141,7 +141,7 @@ export default async function DeskRequestsPage({ searchParams }: PageProps<"/des
                 {r.status === "ACCEPTED" && r.appointmentId ? (
                   <Link
                     href={`/desk/appointments/${r.appointmentId}`}
-                    className="text-[13px] font-medium text-accent-ink hover:underline"
+                    className="text-sm font-medium text-accent-ink hover:underline"
                   >
                     View booking
                   </Link>

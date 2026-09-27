@@ -43,12 +43,12 @@ export function PatientForm({
 
       {state.duplicates && state.duplicates.length > 0 ? (
         <div className="rounded-lg border border-warn/50 bg-warn-tint px-4 py-3">
-          <p className="text-[13px] font-medium text-warn-ink">
+          <p className="text-sm font-medium text-warn-ink">
             Check these before registering — they may be the same person.
           </p>
           <ul className="mt-2 space-y-1.5">
             {state.duplicates.map((d) => (
-              <li key={d.id} className="text-[13px]">
+              <li key={d.id} className="text-sm">
                 <Link href={`/patients/${d.id}`} className="font-medium underline">
                   {d.name}
                 </Link>
@@ -67,7 +67,7 @@ export function PatientForm({
           {/* Nothing is merged automatically — a person decides, deliberately.
               The value is the fingerprint of the details shown above, so editing
               any of them invalidates this approval on the server too. */}
-          <label className="mt-3 flex items-center gap-2 text-[13px]">
+          <label className="mt-3 flex items-center gap-2 text-sm">
             <input
               type="checkbox"
               name="confirmDuplicate"

@@ -129,7 +129,7 @@ export default async function RecordPage({ params }: PageProps<"/records/[id]">)
       />
 
       {archived ? (
-        <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-[13px]">
+        <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm">
           <p className="font-medium">
             Archived {formatDateTime(instantFromDb(record.archivedAt!))}
             {record.archivedBy ? ` by ${record.archivedBy.fullName}` : ""}.
@@ -147,7 +147,7 @@ export default async function RecordPage({ params }: PageProps<"/records/[id]">)
       {/* An unfinished note is not the record of the visit yet, and reading it
           as though it were is the mistake worth preventing. */}
       {draft ? (
-        <div className="rounded-lg border border-warn/40 bg-warn-tint px-4 py-3 text-[13px]">
+        <div className="rounded-lg border border-warn/40 bg-warn-tint px-4 py-3 text-sm">
           <p className="font-medium text-warn-ink">This consultation is still a draft.</p>
           <p className="mt-0.5 text-ink-muted">
             It saves as it is written and can be picked up again. The visit stays open until it is
@@ -315,7 +315,7 @@ export default async function RecordPage({ params }: PageProps<"/records/[id]">)
               return (
                 <li key={v.id} className="px-5 py-3.5">
                   <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                    <span className="text-[13px] font-medium">
+                    <span className="text-sm font-medium">
                       {v.version === 1 ? "Signed" : `Amendment ${v.version - 1}`}
                     </span>
                     <span className="text-xs text-ink-muted">
@@ -325,7 +325,7 @@ export default async function RecordPage({ params }: PageProps<"/records/[id]">)
                   </div>
 
                   {v.reason ? (
-                    <p className="mt-1 text-[13px] text-pretty">{v.reason}</p>
+                    <p className="mt-1 text-sm text-pretty">{v.reason}</p>
                   ) : null}
 
                   {changes.length > 0 ? (

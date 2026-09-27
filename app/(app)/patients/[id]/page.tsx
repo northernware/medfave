@@ -156,14 +156,14 @@ export default async function PatientPage({
       {typeof blocked === "string" && blocked ? (
         <p
           role="alert"
-          className="rounded-lg border border-warn/40 bg-warn-soft px-4 py-3 text-[13px] text-warn-ink"
+          className="rounded-lg border border-warn/40 bg-warn-soft px-4 py-3 text-sm text-warn-ink"
         >
           {blocked}
         </p>
       ) : null}
 
       {archived ? (
-        <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-[13px]">
+        <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm">
           <p className="font-medium">
             Archived {formatDateTime(instantFromDb(patient.archivedAt!))}
             {archivedBy ? ` by ${archivedBy.fullName}` : ""}.
@@ -227,11 +227,11 @@ export default async function PatientPage({
                 <li key={record.id} className="transition-colors hover:bg-surface-muted">
                   <Link href={`/records/${record.id}`} className="block px-4 py-3">
                     <div className="flex items-baseline gap-4">
-                      <span className="tabular w-24 shrink-0 text-[13px] text-ink-muted">
+                      <span className="tabular w-24 shrink-0 text-sm text-ink-muted">
                         {formatDate(instantFromDb(record.visitDate))}
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="block truncate text-[13px] font-medium">{record.chiefComplaint}</span>
+                        <span className="block truncate text-sm font-medium">{record.chiefComplaint}</span>
                         {record.assessment ? (
                           <span className="mt-0.5 block truncate text-xs text-ink-muted">
                             {record.assessment}
@@ -260,7 +260,7 @@ export default async function PatientPage({
             wrong. */}
         {archivedVisits.length > 0 ? (
           <details className="mt-3 rounded-lg border border-border bg-surface">
-            <summary className="cursor-pointer list-none px-4 py-2.5 text-[13px] font-medium text-ink-muted">
+            <summary className="cursor-pointer list-none px-4 py-2.5 text-sm font-medium text-ink-muted">
               {archivedVisits.length} archived{" "}
               {archivedVisits.length === 1 ? "visit" : "visits"}
             </summary>
@@ -271,10 +271,10 @@ export default async function PatientPage({
                     href={`/records/${record.id}`}
                     className="flex items-baseline gap-4 px-4 py-2.5 opacity-70"
                   >
-                    <span className="tabular w-24 shrink-0 text-[13px] text-ink-muted">
+                    <span className="tabular w-24 shrink-0 text-sm text-ink-muted">
                       {formatDate(instantFromDb(record.visitDate))}
                     </span>
-                    <span className="min-w-0 flex-1 truncate text-[13px]">
+                    <span className="min-w-0 flex-1 truncate text-sm">
                       {record.chiefComplaint || "Untitled draft"}
                     </span>
                     <Badge tone="neutral">Archived</Badge>
@@ -317,7 +317,7 @@ export default async function PatientPage({
           <AllergyBanner status={patient.allergyStatus} allergies={patient.allergies} />
       <Card className="p-4">
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3.5">
-          <Detail label="Patient number" value={<span className="nums">{patient.patientNumber ?? "—"}</span>} />
+          <Detail label="Patient number" value={<span className="nums whitespace-nowrap">{patient.patientNumber ?? "—"}</span>} />
           <Detail label="Date of birth" value={formatCalendarDate(calendarDateFromDb(patient.dateOfBirth))} />
           <Detail label="Blood type" value={BLOOD_TYPE_LABELS[patient.bloodType]} />
           <Detail label="Contact" value={patient.contactNumber ?? patient.household.contactNumber} />

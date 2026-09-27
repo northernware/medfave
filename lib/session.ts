@@ -2,6 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { SignJWT, jwtVerify } from "jose";
 
+// Kept from before the medfave rename: changing it would sign everybody out.
 const COOKIE_NAME = "medikonek_session";
 const MAX_AGE_SECONDS = 60 * 60 * 12; // a long clinic day, then re-auth
 

@@ -35,7 +35,7 @@ export function OpeningHoursForm({
           const problem = err?.[`day-${weekday}`]?.[0];
           return (
             <li key={weekday} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-3 py-2.5">
-              <label className="flex w-36 items-center gap-2 text-[13px] font-medium">
+              <label className="flex w-36 items-center gap-2 text-sm font-medium">
                 <input
                   type="checkbox"
                   name={`open-${weekday}`}
@@ -44,7 +44,7 @@ export function OpeningHoursForm({
                 />
                 {WEEKDAY_NAMES[weekday]}
               </label>
-              <span className="flex items-center gap-2 text-[13px] text-ink-muted">
+              <span className="flex items-center gap-2 text-sm text-ink-muted">
                 <TextInput
                   type="time"
                   step={300}
@@ -169,7 +169,7 @@ export function ServiceLengthsForm({
           const problem = err?.[`minutes-${s.value}`]?.[0];
           return (
             <li key={s.value} className="flex flex-wrap items-center gap-x-4 gap-y-1 px-3 py-2">
-              <label htmlFor={`minutes-${s.value}`} className="min-w-0 flex-1 text-[13px]">
+              <label htmlFor={`minutes-${s.value}`} className="min-w-0 flex-1 text-sm">
                 {s.label}
               </label>
               <span className="flex items-center gap-2 text-xs text-ink-muted">
