@@ -1,6 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
-  <g stroke="#e91e83" stroke-width="12.5" stroke-linecap="round">
-    <line x1="16" y1="23" x2="7.5" y2="14.5"/>
-    <line x1="16" y1="23" x2="24.5" y2="14.5"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!--
+    medfave favicon. Light: the primary logo, fuchsia heart on white.
+    Dark: the approved single-colour version, white heart on deep plum.
+    Browsers that support SVG favicons switch with the system theme.
+  -->
+  <style>
+    .tile { fill: #ffffff; }
+    .heart { stroke: #e91e83; }
+    @media (prefers-color-scheme: dark) {
+      .tile { fill: #32132c; }
+      .heart { stroke: #ffffff; }
+    }
+  </style>
+  <rect class="tile" width="64" height="64" rx="14"/>
+  <g transform="translate(11.39 7.85) scale(1.2881)" stroke="#e91e83" stroke-width="12.5" stroke-linecap="round" class="heart"><line x1="16" y1="23" x2="7.5" y2="14.5"/><line x1="16" y1="23" x2="24.5" y2="14.5"/></g>
 </svg>
