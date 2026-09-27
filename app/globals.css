@@ -197,6 +197,12 @@ body {
   word-spacing: 0.08em;
 }
 
+/* Browsers give a fieldset a min-width of its content, so one long allergy note
+   could push a whole form past a phone's edge. Let fieldsets shrink like divs. */
+fieldset {
+  min-inline-size: 0;
+}
+
 /* Consistent focus ring across native controls and links. */
 :where(a, button, input, select, textarea, summary):focus-visible {
   outline: 2px solid var(--accent);

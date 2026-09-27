@@ -34,9 +34,11 @@ const DETAIL_META: Record<DetailField, { label: string; placeholder: string }> =
 
 type Status = "RECORDED" | "NONE_KNOWN" | "UNKNOWN";
 
+// Matches the field style in components/form.tsx.
 const CONTROL =
-  "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink " +
-  "placeholder:text-ink-faint transition-colors hover:border-border-strong focus:border-accent";
+  "w-full rounded-md border border-border-strong bg-surface px-3.5 py-2.5 text-base leading-6 text-ink " +
+  "placeholder:text-ink-faint transition-colors hover:border-accent/50 " +
+  "focus:border-accent focus:ring-4 focus:ring-accent/10 focus:outline-none";
 
 /**
  * A search-and-tag picker for a clinical list.
@@ -280,7 +282,7 @@ export function ClinicalPicker({
                 {hasDetail ? (
                   <>
                     {summarise(item, detailFields) ? (
-                      <span className="truncate text-xs text-ink-muted">
+                      <span className="min-w-0 truncate text-xs text-ink-muted">
                         {summarise(item, detailFields)}
                       </span>
                     ) : null}

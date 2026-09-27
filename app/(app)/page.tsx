@@ -206,7 +206,7 @@ export default async function DashboardPage() {
         <Stat label="Upcoming" value={upcomingCount.n} hint="Booked after today" />
       </StatStrip>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Main column: what the doctor works through, in the order they work it. */}
         <div className="space-y-6 lg:col-span-2">
           {queue.length > 0 ? (

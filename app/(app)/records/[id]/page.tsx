@@ -240,11 +240,11 @@ export default async function RecordPage({ params }: PageProps<"/records/[id]">)
                       Book follow-up
                     </Link>
                     {/* The only way out of the queue without a completed visit. */}
-                    <form action={closeFollowUp.bind(null, record.id)} className="flex gap-1.5">
+                    <form action={closeFollowUp.bind(null, record.id)} className="flex flex-wrap gap-1.5">
                       <input
                         name="reason"
                         placeholder="Reason no longer needed"
-                        className="rounded-lg border border-border bg-surface px-2.5 py-1.5 text-xs"
+                        className="min-w-0 flex-1 rounded-md border border-border-strong bg-surface px-3 py-1.5 text-sm"
                       />
                       <button className={buttonClass("ghost")}>No longer required</button>
                     </form>

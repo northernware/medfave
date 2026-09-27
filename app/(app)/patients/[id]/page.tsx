@@ -176,7 +176,7 @@ export default async function PatientPage({
         </div>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* The timeline is what the doctor reads; it gets the width. */}
         <div className="space-y-6 lg:col-span-2">
       <section>
