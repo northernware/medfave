@@ -57,7 +57,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
       />
 
       {typeof saved === "string" && SAVED[saved] ? (
-        <div className="rounded-lg border border-ok/40 bg-ok-tint px-4 py-3 text-[13px]">
+        <div className="rounded-lg border border-ok/40 bg-ok-tint px-4 py-3 text-sm">
           <p className="font-medium text-ok-ink">{SAVED[saved]}</p>
         </div>
       ) : null}

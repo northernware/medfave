@@ -63,7 +63,7 @@ export default async function StaffPage({ searchParams }: PageProps<"/manage/sta
           did, so an invitation is never lost to a mail problem. */}
       {code ? (
         <div className="rounded-lg border border-ok/40 bg-ok-tint px-4 py-3">
-          <p className="text-[13px] font-medium text-ok-ink">
+          <p className="text-sm font-medium text-ok-ink">
             Invitation for {to} — copy it now, it is not shown again.
           </p>
           <p className="tabular mt-1 text-lg font-semibold tracking-wider">{code}</p>
@@ -87,7 +87,7 @@ export default async function StaffPage({ searchParams }: PageProps<"/manage/sta
           {members.map((m) => (
             <li key={m.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
               <span className="min-w-0 flex-1">
-                <span className="block text-[13px] font-medium">{m.account.fullName}</span>
+                <span className="block text-sm font-medium">{m.account.fullName}</span>
                 <span className="block truncate text-xs text-ink-muted">{m.account.email}</span>
               </span>
               <Badge tone={MANAGER_ROLES.includes(m.role) ? "accent" : "neutral"}>
@@ -129,7 +129,7 @@ export default async function StaffPage({ searchParams }: PageProps<"/manage/sta
             {live.map((i) => (
               <li key={i.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[13px] font-medium">{i.email}</span>
+                  <span className="block text-sm font-medium">{i.email}</span>
                   <span className="block text-xs text-ink-muted">
                     {ROLE_LABELS[i.role]} · expires {formatDateTime(instantFromDb(i.expiresAt))}
                   </span>

@@ -25,9 +25,9 @@ export function SearchForm({
         defaultValue={defaultValue}
         placeholder={placeholder}
         aria-label={placeholder}
-        className="w-full max-w-sm rounded-md border border-border bg-surface px-2.5 py-1.5 text-[13px] placeholder:text-ink-faint hover:border-border-strong focus:border-accent"
+        className="w-full max-w-sm rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm placeholder:text-ink-faint hover:border-border-strong focus:border-accent"
       />
-      <button className="rounded-md px-2.5 py-1.5 text-[13px] font-medium text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink">
+      <button className="rounded-md px-2.5 py-1.5 text-sm font-medium text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink">
         Search
       </button>
     </form>

@@ -8,8 +8,8 @@ export default async function RegisterPage({ searchParams }: PageProps<"/registe
   const { code } = await searchParams;
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-6 shadow-card sm:p-8">
-      <h1 className="text-xl font-semibold tracking-tight">Activate your account</h1>
+    <div className="rounded-xl border border-border bg-surface p-7 shadow-card sm:p-10">
+      <h1 className="text-[32px] leading-10 font-semibold tracking-[-0.015em]">Activate your account</h1>
       <p className="mt-1 text-sm text-ink-muted">
         For patients of the clinic. Your activation code is what connects this login to your own
         records — the clinic gives it to you once they have identified you.

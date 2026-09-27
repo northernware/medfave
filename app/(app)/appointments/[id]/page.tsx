@@ -107,7 +107,7 @@ export default async function AppointmentPage({
       {/* The clinic assumed this one rather than anybody deciding it, so it
           says so, and offers the move that is almost always wanted next. */}
       {appointment.autoNoShowAt ? (
-        <div className="rounded-lg border border-warn/40 bg-warn-tint px-4 py-3 text-[13px]">
+        <div className="rounded-lg border border-warn/40 bg-warn-tint px-4 py-3 text-sm">
           <p className="font-medium text-warn-ink">
             Marked as a no-show automatically{" "}
             {formatDateTime(instantFromDb(appointment.autoNoShowAt))}.
@@ -136,7 +136,7 @@ export default async function AppointmentPage({
       {/* Set when a status change was refused because it does not exist from
           where the visit currently is — a stale page, or a hand-made request. */}
       {typeof blocked === "string" && blocked ? (
-        <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-[13px]">
+        <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm">
           <p className="font-medium">That change is not available from here.</p>
           <p className="mt-0.5 text-ink-muted">
             The visit has moved on since the page was loaded. The buttons below are the moves it
@@ -149,7 +149,7 @@ export default async function AppointmentPage({
           slot. The status was left alone, and the booking in the way is named
           so the next move is obvious. */}
       {blocking ? (
-        <div className="rounded-lg border border-danger/30 bg-danger-soft px-4 py-3 text-[13px]">
+        <div className="rounded-lg border border-danger/30 bg-danger-soft px-4 py-3 text-sm">
           <p className="font-medium text-danger-ink">
             This appointment was left as it was — its slot is taken.
           </p>
@@ -295,7 +295,7 @@ export default async function AppointmentPage({
             </form>
           ))}
           {STATUS_TRANSITIONS[appointment.status].length === 0 ? (
-            <p className="text-[13px] text-ink-muted">
+            <p className="text-sm text-ink-muted">
               This visit is finished. Its record is where anything further belongs.
             </p>
           ) : null}

@@ -23,10 +23,10 @@ import {
   VisitPriority,
 } from "../../lib/enums";
 
-const DEMO_EMAIL = "doctor@medikonek.com";
+const DEMO_EMAIL = "doctor@medfave.com";
 const DEMO_PASSWORD = "password";
-const SECRETARY_EMAIL = "desk@medikonek.com";
-const PATIENT_EMAIL = "patient@medikonek.com";
+const SECRETARY_EMAIL = "desk@medfave.com";
+const PATIENT_EMAIL = "patient@medfave.com";
 const CLINIC_NAME = "Northern Family Clinic";
 
 const DAY_MS = 86_400_000;

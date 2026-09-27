@@ -148,7 +148,7 @@ export function AppointmentList({
                 day.isToday ? "bg-accent-tint" : "bg-surface-muted",
               ].join(" ")}
             >
-              <span className="text-[13px] font-semibold tracking-tight">{day.weekday}</span>
+              <span className="text-sm font-semibold tracking-tight">{day.weekday}</span>
               <span className="text-xs text-ink-muted">{day.date}</span>
               {day.relative ? (
                 <Badge tone={day.isToday ? "accent" : "neutral"}>{day.relative}</Badge>
@@ -213,14 +213,14 @@ function AppointmentRow({
           >
             {formatTime(appointment.scheduledAt)}
           </span>
-          <span className="tabular block text-[11px] text-ink-faint">
+          <span className="tabular block text-xs text-ink-faint">
             {appointment.durationMinutes} min
           </span>
         </span>
 
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-medium">{fullName(patient)}</span>
-          <span className="block truncate text-[13px] text-ink-muted">
+          <span className="block truncate text-sm text-ink-muted">
             {SERVICE_LABELS[appointment.service]} · {appointment.reason}
           </span>
           <span className="block truncate text-xs text-ink-faint">

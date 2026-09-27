@@ -91,7 +91,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
   return (
     // The month grid earns more width than the rest of the app, so on wide
     // screens this page reaches past the shell’s max-width.
-    <div className="space-y-6 xl:-mx-12 2xl:-mx-28">
+    <div className="space-y-6 2xl:-mx-16">
       <PageHeader
         title="Calendar"
         subtitle={`${appointments.length} booked across ${bookedDays} ${bookedDays === 1 ? "day" : "days"} this month`}
@@ -136,7 +136,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
             {WEEKDAY_LABELS.map((label) => (
               <div
                 key={label}
-                className="px-1 py-2 text-center text-xs font-semibold tracking-wide text-ink-faint uppercase"
+                className="px-1 py-2 text-center text-xs font-semibold text-ink-muted"
               >
                 <span className="sm:hidden">{label[0]}</span>
                 <span className="hidden sm:inline">{label}</span>

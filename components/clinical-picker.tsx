@@ -220,7 +220,7 @@ export function ClinicalPicker({
           >
             {matches.map((group) => (
               <li key={group.group}>
-                <p className="px-3 pt-2 pb-1 text-xs font-semibold tracking-wide text-ink-faint uppercase">
+                <p className="px-3 pt-2 pb-1 text-xs font-semibold text-ink-muted">
                   {group.group}
                 </p>
                 <ul>

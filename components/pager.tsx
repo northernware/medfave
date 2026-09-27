@@ -60,7 +60,7 @@ export function Pager({
               Previous
             </Link>
           ) : (
-            <span className="px-3 py-1.5 text-[13px] text-ink-faint">Previous</span>
+            <span className="px-3 py-1.5 text-sm text-ink-faint">Previous</span>
           )}
           <span className="tabular text-xs text-ink-muted">
             Page {page} of {pages}
@@ -70,7 +70,7 @@ export function Pager({
               Next
             </Link>
           ) : (
-            <span className="px-3 py-1.5 text-[13px] text-ink-faint">Next</span>
+            <span className="px-3 py-1.5 text-sm text-ink-faint">Next</span>
           )}
         </span>
       ) : null}

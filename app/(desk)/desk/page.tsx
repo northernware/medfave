@@ -126,10 +126,10 @@ export default async function DeskPage() {
               const withDoctor = a.status === "IN_CONSULTATION";
               return (
                 <div key={a.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5">
-                  <span className="nums w-16 shrink-0 text-[13px] font-medium">
+                  <span className="nums w-16 shrink-0 text-sm font-medium">
                     {formatTime(a.arrivedAt ?? a.scheduledAt)}
                     {a.arrivedAt ? (
-                      <span className="tabular block font-sans text-[11px] font-normal text-ink-muted">
+                      <span className="tabular block font-sans text-xs font-normal text-ink-muted">
                         {withDoctor
                           ? `waited ${minutesBetween(a.arrivedAt, a.consultationStartedAt ?? now)}m`
                           : `waiting ${minutesBetween(a.arrivedAt, now)}m`}
@@ -139,7 +139,7 @@ export default async function DeskPage() {
                   <span className="min-w-0 flex-1">
                     <Link
                       href={`/desk/appointments/${a.id}`}
-                      className="block truncate text-[13px] font-medium hover:underline"
+                      className="block truncate text-sm font-medium hover:underline"
                     >
                       {fullName(a.patient)}
                     </Link>
@@ -179,11 +179,11 @@ export default async function DeskPage() {
             <ul className="divide-y divide-border">
               {todays.map((a) => (
                 <li key={a.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5">
-                  <span className="nums w-16 shrink-0 text-[13px] font-medium">
+                  <span className="nums w-16 shrink-0 text-sm font-medium">
                     {formatTime(a.scheduledAt)}
                   </span>
                   <Link href={`/desk/appointments/${a.id}`} className="min-w-0 flex-1">
-                    <span className="block truncate text-[13px] font-medium">
+                    <span className="block truncate text-sm font-medium">
                       {fullName(a.patient)}
                     </span>
                     <span className="block truncate text-xs text-ink-muted">

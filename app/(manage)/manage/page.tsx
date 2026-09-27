@@ -62,7 +62,7 @@ export default async function ManagePage() {
           <Detail label="Desk" value={String(counts.SECRETARY ?? 0)} />
         </dl>
         {waiting > 0 ? (
-          <p className="border-t border-border px-5 py-3 text-[13px] text-ink-muted">
+          <p className="border-t border-border px-5 py-3 text-sm text-ink-muted">
             {waiting === 1 ? "One invitation is" : `${waiting} invitations are`} still outstanding.{" "}
             <Link href="/manage/staff" className="font-medium text-accent-ink hover:underline">
               See them
@@ -98,7 +98,7 @@ export default async function ManagePage() {
             </Link>
           }
         />
-        <p className="px-5 py-4 text-[13px]">{week ?? "No clinician yet, so no diary to set hours for."}</p>
+        <p className="px-5 py-4 text-sm">{week ?? "No clinician yet, so no diary to set hours for."}</p>
       </Card>
     </div>
   );

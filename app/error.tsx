@@ -12,7 +12,7 @@ export default function GlobalError({
   return (
     <div className="flex flex-1 items-center justify-center px-6 py-24">
       <div className="text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">Something went wrong</h1>
+        <h1 className="text-[32px] leading-10 font-semibold tracking-[-0.015em]">Something went wrong</h1>
         <p className="mt-2 text-sm text-pretty text-ink-muted">
           Nothing was saved. Try again, and if it keeps happening check the server logs.
         </p>

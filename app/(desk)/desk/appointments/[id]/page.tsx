@@ -89,7 +89,7 @@ export default async function DeskAppointmentPage({
       </div>
 
       {blocked === "role" ? (
-        <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-[13px]">
+        <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm">
           <p className="font-medium">That is not a front-desk change.</p>
           <p className="mt-0.5 text-ink-muted">
             Starting and finishing a consultation are the doctor&rsquo;s to record.
@@ -121,7 +121,7 @@ export default async function DeskAppointmentPage({
         {/* Scheduling notes are for the desk; internal notes are not shown
             here, and neither is anything clinical. */}
         {appointment.notes ? (
-          <div className="border-t border-border px-5 py-4 text-[13px]">
+          <div className="border-t border-border px-5 py-4 text-sm">
             <p className="font-medium">Scheduling notes</p>
             <p className="mt-1 text-ink-muted">{appointment.notes}</p>
           </div>

@@ -11,8 +11,8 @@ export default async function ResetPage({ searchParams }: PageProps<"/reset">) {
   // has been chosen would confirm that the address it went to has an account,
   // which is the one thing the form that sent it declines to say.
   return (
-    <div className="rounded-xl border border-border bg-surface p-6 shadow-card sm:p-8">
-      <h1 className="text-xl font-semibold tracking-tight">Set a new password</h1>
+    <div className="rounded-xl border border-border bg-surface p-7 shadow-card sm:p-10">
+      <h1 className="text-[32px] leading-10 font-semibold tracking-[-0.015em]">Set a new password</h1>
       <p className="mt-1 text-sm text-ink-muted">
         Choosing one signs out every device currently signed in as you.
       </p>

@@ -91,13 +91,13 @@ export default async function PatientsPage({ searchParams }: PageProps<"/patient
           />
         </div>
         {archived ? (
-          <Link href="/patients" className="text-[13px] font-medium text-accent-ink hover:underline">
+          <Link href="/patients" className="text-sm font-medium text-accent-ink hover:underline">
             Back to the working list
           </Link>
         ) : archivedCount > 0 ? (
           <Link
             href="/patients?view=archived"
-            className="text-[13px] text-ink-muted hover:text-ink hover:underline"
+            className="text-sm text-ink-muted hover:text-ink hover:underline"
           >
             {archivedCount} archived
           </Link>
@@ -138,7 +138,7 @@ export default async function PatientsPage({ searchParams }: PageProps<"/patient
                 <Link href={`/patients/${patient.id}`} className="flex items-baseline gap-4 px-4 py-2.5">
                   <span className="min-w-0 flex-1">
                     <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                      <span className="truncate text-[13px] font-medium">{fullName(patient)}</span>
+                      <span className="truncate text-sm font-medium">{fullName(patient)}</span>
                       {patient.allergies.length > 0 ? (
                         <Badge tone={patient.allergies.some((a) => a.severity === "SEVERE") ? "danger" : "warn"}>
                           {patient.allergies.length} {patient.allergies.length === 1 ? "allergy" : "allergies"}

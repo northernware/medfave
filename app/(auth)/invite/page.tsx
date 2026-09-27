@@ -18,8 +18,8 @@ export default async function InvitePage({ searchParams }: PageProps<"/invite">)
   const invite = typeof code === "string" && code ? await peekInvite(code) : null;
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-6 shadow-card sm:p-8">
-      <h1 className="text-xl font-semibold tracking-tight">Join a clinic</h1>
+    <div className="rounded-xl border border-border bg-surface p-7 shadow-card sm:p-10">
+      <h1 className="text-[32px] leading-10 font-semibold tracking-[-0.015em]">Join a clinic</h1>
       {invite ? (
         <p className="mt-1 text-sm text-ink-muted">
           You have been invited to {ROLE_WORDS[invite.role] ?? "staff"} at{" "}

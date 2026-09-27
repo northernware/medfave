@@ -112,7 +112,7 @@ export default async function DocumentsPage({ searchParams }: PageProps<"/docume
                     <span className="block truncate text-sm font-medium">
                       {DOCUMENT_TYPE_LABELS[r.type]}
                     </span>
-                    <span className="block truncate text-[13px] text-ink-muted">
+                    <span className="block truncate text-sm text-ink-muted">
                       {fullName(r.patient)}
                       {r.patient.patientNumber ? ` · ${r.patient.patientNumber}` : ""} · {r.purpose}
                     </span>

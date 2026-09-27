@@ -74,7 +74,7 @@ export default async function DeskPatientsPage({ searchParams }: PageProps<"/des
                 >
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium">{fullName(p)}</span>
-                    <span className="block truncate text-[13px] text-ink-muted">
+                    <span className="block truncate text-sm text-ink-muted">
                       {p.household.name} household · {ageFrom(calendarDateFromDb(p.dateOfBirth))}
                       {p.contactNumber ? ` · ${p.contactNumber}` : ""}
                     </span>

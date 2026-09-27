@@ -1,4 +1,4 @@
-# MEDIKONEK
+# medfave
 
 Appointments and medical records for family practice, organised by household.
 
@@ -18,7 +18,8 @@ contact number.
 
 - **Next.js 16** (App Router, Server Components, Server Actions) + React 19
 - **Prisma 8** (Prisma Next) against **PostgreSQL**, via `@prisma/orm-postgres`
-- **Tailwind CSS v4** with a light/dark clinical palette in `app/globals.css`
+- **Tailwind CSS v4** with the medfave brand palette (light and dark) in
+  `app/globals.css`; Plus Jakarta Sans and Inter self-hosted via Fontsource
 - **Auth**: email + bcrypt password, session as a signed JWT (`jose`) in an
   HttpOnly cookie
 - **Validation**: Zod schemas shared by every server action
@@ -39,7 +40,7 @@ Generate a session secret with:
 node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
 ```
 
-The seed creates a demo doctor — **doctor@medikonek.com** / **password** —
+The seed creates a demo doctor — **doctor@medfave.com** / **password** —
 with two households, seven patients, seventeen appointments spread across the
 month and a few past encounters.
 Delete it before going anywhere near real data.

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { HeartMark } from "./brand";
 
 type Tone = "accent" | "ok" | "warn" | "danger" | "neutral";
 
@@ -27,7 +28,7 @@ export function Badge({
   return (
     <span
       className={[
-        "inline-flex items-center rounded-md px-1.5 py-0.5 text-[11px] font-medium whitespace-nowrap",
+        "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium whitespace-nowrap",
         dot ? "dot" : "",
         TONE_CLASS[tone],
       ].join(" ")}
@@ -40,15 +41,17 @@ export function Badge({
 type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 
 const VARIANT_CLASS: Record<ButtonVariant, string> = {
-  primary: "bg-accent text-on-accent hover:bg-accent-hover",
-  secondary: "bg-surface text-ink border border-border hover:border-border-strong hover:bg-surface-muted",
+  primary: "bg-accent text-on-accent shadow-card hover:bg-accent-hover",
+  secondary: "bg-surface text-ink border border-border-strong hover:border-accent hover:text-accent-ink",
   ghost: "text-ink-muted hover:text-ink hover:bg-surface-muted",
-  danger: "text-danger-ink border border-border hover:border-danger hover:bg-danger-tint",
+  danger: "bg-surface text-danger-ink border border-border-strong hover:border-danger hover:bg-danger-tint",
 };
 
 export function buttonClass(variant: ButtonVariant = "primary", extra = "") {
   return [
-    "inline-flex items-center justify-center gap-2 rounded-md px-3 py-1.5 text-[13px] font-medium",
+    // Capsule-shaped, like the pills the identity is built from. Labels are
+    // 14/20 semibold per the type guidelines.
+    "inline-flex items-center justify-center gap-2 rounded-full px-4 py-2 text-sm leading-5 font-semibold",
     "transition-colors disabled:cursor-not-allowed disabled:opacity-55",
     VARIANT_CLASS[variant],
     extra,
@@ -94,12 +97,12 @@ export function CardHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-border px-4 py-2.5">
+    <div className="flex items-center justify-between gap-4 border-b border-border px-5 py-3.5">
       <div className="min-w-0">
-        <h2 className="text-[13px] font-semibold tracking-tight">{title}</h2>
-        {subtitle ? <p className="mt-0.5 text-xs text-ink-muted">{subtitle}</p> : null}
+        <h2 className="text-base leading-6 font-semibold tracking-[-0.01em]">{title}</h2>
+        {subtitle ? <p className="mt-0.5 text-sm text-ink-muted">{subtitle}</p> : null}
       </div>
-      {action ? <div className="shrink-0 text-[13px]">{action}</div> : null}
+      {action ? <div className="shrink-0 text-sm">{action}</div> : null}
     </div>
   );
 }
@@ -119,12 +122,12 @@ export function SectionTitle({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-2.5 flex items-baseline justify-between gap-4">
+    <div className="mb-3 flex items-baseline justify-between gap-4">
       <div className="flex items-baseline gap-2 min-w-0">
-        <h2 className="text-[11px] font-semibold tracking-[0.08em] text-ink-faint uppercase">{title}</h2>
-        {hint ? <span className="truncate text-xs text-ink-faint">{hint}</span> : null}
+        <h2 className="text-base leading-6 font-semibold tracking-[-0.01em] text-ink">{title}</h2>
+        {hint ? <span className="truncate text-sm text-ink-faint">{hint}</span> : null}
       </div>
-      {action ? <div className="shrink-0 text-[13px]">{action}</div> : null}
+      {action ? <div className="shrink-0 text-sm font-medium">{action}</div> : null}
     </div>
   );
 }
@@ -141,10 +144,10 @@ export function PageHeader({
   return (
     <header className="flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">
-        <h1 className="text-[26px] leading-tight font-semibold tracking-[-0.02em] text-balance">{title}</h1>
-        {subtitle ? <p className="mt-1 text-[13px] text-ink-muted">{subtitle}</p> : null}
+        <h1 className="text-[32px] leading-10 font-semibold tracking-[-0.015em] text-balance">{title}</h1>
+        {subtitle ? <p className="mt-1 text-[15px] leading-6 text-ink-muted">{subtitle}</p> : null}
       </div>
-      {actions ? <div className="flex shrink-0 gap-2">{actions}</div> : null}
+      {actions ? <div className="flex flex-wrap gap-2 sm:shrink-0">{actions}</div> : null}
     </header>
   );
 }
@@ -160,8 +163,9 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center gap-2.5 px-6 py-12 text-center">
-      <p className="text-[13px] font-medium">{title}</p>
-      {description ? <p className="max-w-sm text-[13px] text-ink-muted text-pretty">{description}</p> : null}
+      <HeartMark tone="accent" className="size-7 opacity-80" />
+      <p className="font-display text-base font-semibold">{title}</p>
+      {description ? <p className="max-w-sm text-sm text-ink-muted text-pretty">{description}</p> : null}
       {action ? <div className="mt-1">{action}</div> : null}
     </div>
   );
@@ -188,17 +192,17 @@ export function Stat({
   const hero = size === "hero";
   return (
     <div className="min-w-0">
-      <p className="text-[10px] font-semibold tracking-[0.09em] text-ink-faint uppercase">{label}</p>
+      <p className="text-sm font-medium text-ink-muted">{label}</p>
       <p
         className={[
-          "nums mt-1.5 font-semibold",
-          hero ? "text-[38px] leading-none" : "text-[22px] leading-none",
+          "nums mt-1.5 font-semibold tracking-[-0.02em]",
+          hero ? "text-[44px] leading-none" : "text-[28px] leading-none",
           tone === "danger" ? "text-danger-ink" : tone === "warn" ? "text-warn-ink" : "text-ink",
         ].join(" ")}
       >
         {value}
       </p>
-      {hint ? <p className="mt-1.5 text-xs text-ink-muted">{hint}</p> : null}
+      {hint ? <p className="mt-1.5 text-sm text-ink-faint">{hint}</p> : null}
     </div>
   );
 }
@@ -209,7 +213,7 @@ export function Stat({
  */
 export function StatStrip({ children }: { children: ReactNode }) {
   return (
-    <Card className="grid grid-cols-2 divide-x divide-y divide-border sm:grid-cols-4 sm:divide-y-0 [&>*]:px-4 [&>*]:py-3.5">
+    <Card className="grid grid-cols-2 divide-x divide-y divide-border sm:grid-cols-4 sm:divide-y-0 [&>*]:px-5 [&>*]:py-4">
       {children}
     </Card>
   );
@@ -227,8 +231,8 @@ export function Detail({
 }) {
   return (
     <div className={`min-w-0 ${className}`}>
-      <dt className="text-[10px] font-semibold tracking-[0.09em] text-ink-faint uppercase">{label}</dt>
-      <dd className="mt-1 text-[13px] text-pretty">{value ?? <span className="text-ink-faint">—</span>}</dd>
+      <dt className="text-sm text-ink-faint">{label}</dt>
+      <dd className="mt-0.5 text-sm leading-6 text-pretty">{value ?? <span className="text-ink-faint">—</span>}</dd>
     </div>
   );
 }
@@ -238,8 +242,8 @@ export function Prose({ label, text }: { label: string; text: string | null }) {
   if (!text) return null;
   return (
     <div>
-      <h3 className="text-[10px] font-semibold tracking-[0.09em] text-ink-faint uppercase">{label}</h3>
-      <p className="mt-1 text-[13px] leading-relaxed whitespace-pre-wrap text-pretty">{text}</p>
+      <h3 className="text-sm font-semibold text-ink-muted">{label}</h3>
+      <p className="mt-1 text-base leading-6 whitespace-pre-wrap text-pretty">{text}</p>
     </div>
   );
 }

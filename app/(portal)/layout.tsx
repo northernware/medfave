@@ -22,12 +22,12 @@ export default async function PortalLayout({ children }: { children: ReactNode }
           <div className="flex items-center gap-3">
             <Link
               href="/account"
-              className="text-[13px] text-ink-muted transition-colors hover:text-ink hover:underline"
+              className="text-sm text-ink-muted transition-colors hover:text-ink hover:underline"
             >
               {patient.fullName}
             </Link>
             <form action={logout}>
-              <button className="text-[13px] font-medium text-ink-muted hover:text-ink">
+              <button className="text-sm font-medium text-ink-muted hover:text-ink">
                 Sign out
               </button>
             </form>

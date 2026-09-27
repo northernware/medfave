@@ -17,8 +17,8 @@ export default async function NoAccessPage() {
   const viewer = await requireViewer();
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-6 shadow-card sm:p-8">
-      <h1 className="text-xl font-semibold tracking-tight">Nothing to show yet</h1>
+    <div className="rounded-xl border border-border bg-surface p-7 shadow-card sm:p-10">
+      <h1 className="text-[32px] leading-10 font-semibold tracking-[-0.015em]">Nothing to show yet</h1>
       <p className="mt-2 text-sm text-ink-muted">
         You are signed in as <strong>{viewer.email}</strong>, but this account is not connected to a
         clinic or to a patient record.

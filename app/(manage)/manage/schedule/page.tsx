@@ -124,7 +124,7 @@ export default async function SchedulePage({ searchParams }: PageProps<"/manage/
       />
 
       {typeof saved === "string" && SAVED[saved] ? (
-        <div className="rounded-lg border border-ok/40 bg-ok-tint px-4 py-3 text-[13px]">
+        <div className="rounded-lg border border-ok/40 bg-ok-tint px-4 py-3 text-sm">
           <p className="font-medium text-ok-ink">{SAVED[saved]}</p>
         </div>
       ) : null}
@@ -137,7 +137,7 @@ export default async function SchedulePage({ searchParams }: PageProps<"/manage/
           />
           <ul className="divide-y divide-border">
             {stranded.map((a) => (
-              <li key={a.id} className="flex flex-wrap items-baseline gap-x-3 px-5 py-2.5 text-[13px]">
+              <li key={a.id} className="flex flex-wrap items-baseline gap-x-3 px-5 py-2.5 text-sm">
                 <span className="tabular w-48 shrink-0">{formatDateTime(a.at)}</span>
                 <span className="min-w-0 flex-1 truncate">
                   {fullName(a.patient)} <span className="text-ink-muted">· {a.why}</span>
@@ -176,7 +176,7 @@ export default async function SchedulePage({ searchParams }: PageProps<"/manage/
         {breaks.length > 0 ? (
           <ul className="divide-y divide-border border-b border-border">
             {breaks.map((b) => (
-              <li key={b.id} className="flex flex-wrap items-center gap-3 px-5 py-2.5 text-[13px]">
+              <li key={b.id} className="flex flex-wrap items-center gap-3 px-5 py-2.5 text-sm">
                 <span className="min-w-0 flex-1">
                   <span className="font-medium">{b.label}</span>
                   <span className="text-ink-muted">
@@ -206,7 +206,7 @@ export default async function SchedulePage({ searchParams }: PageProps<"/manage/
         {closures.length > 0 ? (
           <ul className="divide-y divide-border border-b border-border">
             {closures.map((c) => (
-              <li key={c.id} className="flex flex-wrap items-center gap-3 px-5 py-2.5 text-[13px]">
+              <li key={c.id} className="flex flex-wrap items-center gap-3 px-5 py-2.5 text-sm">
                 <span className="min-w-0 flex-1">
                   <span className="font-medium">{c.reason}</span>
                   <span className="text-ink-muted">

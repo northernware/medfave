@@ -95,11 +95,14 @@ function layout(heading: string, lines: string[], code?: string) {
   const codeBlock = code
     ? `<p style="margin:20px 0;font:600 20px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em">${code}</p>`
     : "";
-  return `<!doctype html><html><body style="margin:0;background:#f6f7f9">
-<div style="max-width:520px;margin:0 auto;padding:32px 24px;font:14px/1.6 -apple-system,Segoe UI,Roboto,sans-serif;color:#1f2430">
-<h1 style="margin:0 0 16px;font-size:18px">${heading}</h1>
+  // medfave palette: warm white canvas, plum text, fuchsia only as a small
+  // accent rule — mail clients get no brand fonts, so system faces stand in.
+  return `<!doctype html><html><body style="margin:0;background:#fff9fc">
+<div style="max-width:520px;margin:0 auto;padding:32px 24px;font:15px/1.6 -apple-system,Segoe UI,Roboto,sans-serif;color:#32132c">
+<p style="margin:0 0 20px;font-weight:700;font-size:16px;color:#32132c"><span style="color:#e91e83">&#9829;</span> medfave</p>
+<h1 style="margin:0 0 16px;font-size:20px;line-height:1.3">${heading}</h1>
 ${body}${codeBlock}
-<p style="margin:24px 0 0;font-size:12px;color:#6b7280">
+<p style="margin:24px 0 0;padding-top:16px;border-top:1px solid #f0dce6;font-size:12px;color:#6b4f63">
 If you were not expecting this, you can ignore it — nothing happens until the code is used.
 </p>
 </div></body></html>`;
@@ -121,15 +124,15 @@ export async function sendStaffInvite(options: {
 }): Promise<SendOutcome> {
   const role = options.role.toLowerCase();
   const lines = [
-    `${options.invitedBy} has invited you to join <strong>${options.clinicName}</strong> on MediKonek as a ${role}.`,
+    `${options.invitedBy} has invited you to join <strong>${options.clinicName}</strong> on medfave as a ${role}.`,
     `Open <a href="${options.link}">${options.link}</a> and enter this code to set your password:`,
   ];
 
   return send({
     to: options.to,
-    subject: `Join ${options.clinicName} on MediKonek`,
+    subject: `Join ${options.clinicName} on medfave`,
     text: [
-      `${options.invitedBy} has invited you to join ${options.clinicName} on MediKonek as a ${role}.`,
+      `${options.invitedBy} has invited you to join ${options.clinicName} on medfave as a ${role}.`,
       ``,
       `Open ${options.link} and enter this code to set your password:`,
       ``,
@@ -158,7 +161,7 @@ export async function sendPatientActivation(options: {
 }): Promise<SendOutcome> {
   const lines = [
     `Hello ${options.patientName},`,
-    `<strong>${options.clinicName}</strong> has set up a MediKonek account for you, where you can see your appointments and ask for a booking.`,
+    `<strong>${options.clinicName}</strong> has set up a medfave account for you, where you can see your appointments and ask for a booking.`,
     `Open <a href="${options.link}">${options.link}</a> and enter this code:`,
   ];
 
@@ -168,7 +171,7 @@ export async function sendPatientActivation(options: {
     text: [
       `Hello ${options.patientName},`,
       ``,
-      `${options.clinicName} has set up a MediKonek account for you, where you can`,
+      `${options.clinicName} has set up a medfave account for you, where you can`,
       `see your appointments and ask for a booking.`,
       ``,
       `Open ${options.link} and enter this code:`,
@@ -199,17 +202,17 @@ export async function sendPasswordReset(options: {
 }): Promise<SendOutcome> {
   const lines = [
     `Hello ${options.name},`,
-    `Somebody asked to reset the MediKonek password for <strong>${options.to}</strong>.`,
+    `Somebody asked to reset the medfave password for <strong>${options.to}</strong>.`,
     `Open <a href="${options.link}">${options.link}</a>, or enter this code:`,
   ];
 
   return send({
     to: options.to,
-    subject: "Reset your MediKonek password",
+    subject: "Reset your medfave password",
     text: [
       `Hello ${options.name},`,
       ``,
-      `Somebody asked to reset the MediKonek password for ${options.to}.`,
+      `Somebody asked to reset the medfave password for ${options.to}.`,
       ``,
       `Open ${options.link}, or enter this code:`,
       ``,

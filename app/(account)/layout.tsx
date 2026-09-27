@@ -20,9 +20,9 @@ export default async function AccountLayout({ children }: { children: ReactNode 
         <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <Brand href="/account" />
           <div className="flex items-center gap-3">
-            <span className="text-[13px] text-ink-muted">{viewer.email}</span>
+            <span className="text-sm text-ink-muted">{viewer.email}</span>
             <form action={logout}>
-              <button className="text-[13px] font-medium text-ink-muted hover:text-ink">
+              <button className="text-sm font-medium text-ink-muted hover:text-ink">
                 Sign out
               </button>
             </form>
