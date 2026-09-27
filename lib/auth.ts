@@ -97,7 +97,8 @@ export type CurrentDoctor = {
   id: string;
   accountId: string;
   clinicId: string;
-  clinicName: string | null;
+  /** The clinic's own name — `Clinic.name`, the one copy there is. */
+  clinicName: string;
   email: string;
   fullName: string;
   specialty: string | null;
@@ -121,7 +122,7 @@ export async function requireDoctor(): Promise<CurrentDoctor> {
   }
 
   const doctor = await orm.Doctor
-    .select("id", "fullName", "specialty", "licenseNumber", "clinicName", "clinicId")
+    .select("id", "fullName", "specialty", "licenseNumber", "clinicId")
     .where((d) => d.id.eq(viewer.doctorId!))
     .first();
   // A clinician profile that has lost its clinic cannot be scoped, so it cannot
@@ -134,7 +135,11 @@ export async function requireDoctor(): Promise<CurrentDoctor> {
     id: doctor.id,
     accountId: viewer.accountId,
     clinicId: doctor.clinicId,
-    clinicName: doctor.clinicName ?? viewer.staff.clinicName,
+    // Not `Doctor.clinicName`: that column predates clinics and is no longer
+    // read. Two copies of one name is two answers the first time either changes,
+    // and it was this line that made the printed paper disagree with everything
+    // else.
+    clinicName: viewer.staff.clinicName,
     email: viewer.email,
     fullName: doctor.fullName,
     specialty: doctor.specialty,

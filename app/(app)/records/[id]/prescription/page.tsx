@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireDoctor } from "@/lib/auth";
+import { clinicLetterhead } from "@/lib/clinic";
 import { orm } from "@/src/prisma/db";
 import { calendarDateFromDb, instantFromDb } from "@/lib/datetime";
 import { formatCalendarDate, formatDate } from "@/lib/datetime";
@@ -13,6 +14,7 @@ export const metadata: Metadata = { title: "Prescription" };
 export default async function PrescriptionPage({ params }: PageProps<"/records/[id]/prescription">) {
   const doctor = await requireDoctor();
   const { id } = await params;
+  const clinic = await clinicLetterhead(doctor.clinicId);
 
   const record = await orm.MedicalRecord
     .include("patient", (p) =>
@@ -64,7 +66,9 @@ export default async function PrescriptionPage({ params }: PageProps<"/records/[
             <div>
               <p className="text-lg font-semibold">{doctor.fullName}</p>
               {doctor.specialty ? <p className="text-sm">{doctor.specialty}</p> : null}
-              {doctor.clinicName ? <p className="text-sm">{doctor.clinicName}</p> : null}
+              {clinic.name ? <p className="text-sm">{clinic.name}</p> : null}
+              {clinic.address ? <p className="text-sm">{clinic.address}</p> : null}
+              {clinic.contactNumber ? <p className="text-sm">Tel. {clinic.contactNumber}</p> : null}
               {doctor.licenseNumber ? (
                 <p className="mt-1 text-xs">PRC Licence No. {doctor.licenseNumber}</p>
               ) : null}

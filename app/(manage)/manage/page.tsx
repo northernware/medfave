@@ -15,9 +15,8 @@ const ROLE_WORDS: Record<string, string> = {
 /**
  * Where an administrator lands, and what running the clinic amounts to so far.
  *
- * Kept honest about its own gaps: the clinic's details and its opening hours are
- * still where they were before this section existed, and saying so here is
- * better than a page that looks complete and is not.
+ * Kept honest about its own gaps: opening hours are not editable yet, and saying
+ * so here is better than a page that looks complete and is not.
  */
 export default async function ManagePage() {
   const manager = await requireClinicManager();
@@ -76,6 +75,11 @@ export default async function ManagePage() {
         <CardHeader
           title="Clinic details"
           subtitle="What appears on letterheads and in invitations."
+          action={
+            <Link href="/manage/clinic" className="font-medium text-accent-ink hover:underline">
+              Edit
+            </Link>
+          }
         />
         <dl className="grid gap-4 px-5 py-4 sm:grid-cols-2">
           <Detail label="Name" value={clinic?.name} />
@@ -83,8 +87,8 @@ export default async function ManagePage() {
           <Detail label="Contact number" value={clinic?.contactNumber} />
         </dl>
         <p className="border-t border-border px-5 py-3 text-xs text-ink-muted">
-          Not editable here yet. Opening hours, breaks and closures are still the ones the
-          application falls back to — Monday to Saturday, 8am to 5pm.
+          Opening hours, breaks and closures are not editable here yet; the clinic runs on the
+          application&rsquo;s defaults — Monday to Saturday, 8am to 5pm.
         </p>
       </Card>
     </div>

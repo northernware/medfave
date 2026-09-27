@@ -84,21 +84,6 @@ const dateTimeLocal = (label: string) =>
 
 // --- Accounts ---------------------------------------------------------------
 
-export const registerSchema = z
-  .object({
-    fullName: requiredText("Full name", 120),
-    email: z.string().trim().toLowerCase().pipe(z.email("Enter a valid email address")),
-    password: z.string().min(10, "Use at least 10 characters").max(200),
-    confirmPassword: z.string(),
-    specialty: optionalText(120),
-    clinicName: optionalText(160),
-    licenseNumber: optionalText(60),
-  })
-  .refine((v) => v.password === v.confirmPassword, {
-    message: "Passwords do not match",
-    path: ["confirmPassword"],
-  });
-
 /**
  * Activating a patient login.
  *
@@ -187,6 +172,16 @@ export const passwordResetSchema = z
     message: "Passwords do not match",
     path: ["confirmPassword"],
   });
+
+/**
+ * The practice's own details: what its letterhead says and what its
+ * invitations and reminders call it.
+ */
+export const clinicDetailsSchema = z.object({
+  name: requiredText("Clinic name", 160),
+  address: optionalText(300),
+  contactNumber: optionalText(40),
+});
 
 /** The clinician details that print on a prescription or a certificate. */
 export const clinicianProfileSchema = z.object({

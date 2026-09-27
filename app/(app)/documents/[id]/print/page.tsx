@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireDoctor } from "@/lib/auth";
+import { clinicLetterhead, type ClinicLetterhead } from "@/lib/clinic";
 import { orm } from "@/src/prisma/db";
-import { calendarDateFromDb, formatDate, formatDateTime, instantFromDb } from "@/lib/datetime";
+import { calendarDateFromDb, formatDate, formatDateTime } from "@/lib/datetime";
 import { ageFrom, fullName, SEX_LABELS } from "@/lib/domain";
 import { DOCUMENT_TYPE_LABELS, parseDetails, type DocumentDetails } from "@/lib/documents";
 import type { DocumentType } from "@/lib/enums";
@@ -37,6 +38,7 @@ const text = (value: string | undefined) => value || "____________";
 export default async function DocumentPrintPage({ params }: PageProps<"/documents/[id]/print">) {
   const doctor = await requireDoctor();
   const { id } = await params;
+  const clinic = await clinicLetterhead(doctor.clinicId);
 
   const request = await orm.DocumentRequest
     .include("patient", (p) =>
@@ -85,6 +87,7 @@ export default async function DocumentPrintPage({ params }: PageProps<"/document
       <article className="document-sheet mx-auto w-full max-w-[210mm] rounded-xl border border-border bg-white p-10 text-black shadow-card print:rounded-none print:border-0 print:p-0 print:shadow-none">
         <Letterhead
           doctor={doctor}
+          clinic={clinic}
           title={DOCUMENT_TYPE_LABELS[request.type].toUpperCase()}
         />
 
@@ -100,7 +103,7 @@ export default async function DocumentPrintPage({ params }: PageProps<"/document
 
         <Body type={request.type} details={details} patient={fullName(patient)} purpose={request.purpose} />
 
-        <Footer doctor={doctor} issued={issued} purpose={request.purpose} />
+        <Footer doctor={doctor} clinic={clinic} issued={issued} purpose={request.purpose} />
       </article>
     </div>
   );
@@ -111,15 +114,24 @@ export default async function DocumentPrintPage({ params }: PageProps<"/document
 type Doctor = {
   fullName: string;
   specialty: string | null;
-  clinicName: string | null;
   licenseNumber: string | null;
 };
 
-function Letterhead({ doctor, title }: { doctor: Doctor; title: string }) {
+function Letterhead({
+  doctor,
+  clinic,
+  title,
+}: {
+  doctor: Doctor;
+  clinic: ClinicLetterhead;
+  title: string;
+}) {
   return (
     <header className="border-b-2 border-black pb-4 text-center">
-      <p className="text-lg font-semibold">{doctor.clinicName ?? doctor.fullName}</p>
-      {doctor.clinicName ? <p className="text-sm">{doctor.fullName}</p> : null}
+      <p className="text-lg font-semibold">{clinic.name || doctor.fullName}</p>
+      {clinic.address ? <p className="text-sm">{clinic.address}</p> : null}
+      {clinic.contactNumber ? <p className="text-sm">Tel. {clinic.contactNumber}</p> : null}
+      {clinic.name ? <p className="mt-2 text-sm">{doctor.fullName}</p> : null}
       {doctor.specialty ? <p className="text-sm">{doctor.specialty}</p> : null}
       <h2 className="mt-4 text-base font-bold tracking-[0.18em]">{title}</h2>
     </header>
@@ -177,11 +189,21 @@ function Clause({ label, children }: { label: string; children: React.ReactNode 
   );
 }
 
-function Footer({ doctor, issued, purpose }: { doctor: Doctor; issued: Date; purpose: string }) {
+function Footer({
+  doctor,
+  clinic,
+  issued,
+  purpose,
+}: {
+  doctor: Doctor;
+  clinic: ClinicLetterhead;
+  issued: Date;
+  purpose: string;
+}) {
   return (
     <footer className="mt-10">
       <p className="text-sm">
-        Issued on {formatDate(issued)} at {doctor.clinicName ?? "this clinic"} upon request, for{" "}
+        Issued on {formatDate(issued)} at {clinic.name || "this clinic"} upon request, for{" "}
         {purpose.toLowerCase()} and for no other purpose.
       </p>
       <div className="mt-12 flex justify-end">
