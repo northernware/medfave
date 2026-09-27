@@ -72,7 +72,7 @@ export async function issuePatientActivation(formData: FormData) {
     const outcome = await sendPatientActivation({
       to: patient.email,
       patientName: `${patient.firstName} ${patient.lastName}`,
-      clinicName: patient.clinic?.name ?? staff.clinicName,
+      clinicName: patient.clinic.name,
       code: token,
       link: appUrl(`/register?code=${encodeURIComponent(token)}`),
     });

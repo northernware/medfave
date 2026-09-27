@@ -44,7 +44,7 @@ namespace public {
     id            String       @id(map: "Household_pkey")
     /// Who owns this record. `doctorId` still says which clinician it was
     /// entered under; this is the boundary every query is scoped by.
-    clinicId      String?
+    clinicId      String
     doctorId      String
     name          String
     address       String?
@@ -65,7 +65,7 @@ namespace public {
     patients      Patient[]
     primaryContact Patient?    @relation("HouseholdPrimaryContact", fields: [primaryContactId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "Household_primaryContactId_fkey")
     doctor        Doctor       @relation(fields: [doctorId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "Household_doctorId_fkey")
-    clinic        Clinic?      @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "Household_clinicId_fkey")
+    clinic        Clinic       @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "Household_clinicId_fkey")
 
     @@index([doctorId], map: "Household_doctorId_idx")
     @@index([clinicId], map: "Household_clinicId_idx")
@@ -80,7 +80,7 @@ namespace public {
     /// Who holds this chart. Reachable through the household as well, but a
     /// person's own clinic is asked for on nearly every request the portal
     /// makes, and a join for it every time is a join too many.
-    clinicId          String?
+    clinicId          String
     /// The login that belongs to this person, once they have activated one.
     /// Null is ordinary and permanent for most patients: a chart does not need
     /// a login to be a chart.
@@ -139,7 +139,7 @@ namespace public {
     activations       PatientActivation[]
     appointmentRequests AppointmentRequest[]
     account           Account?                    @relation(fields: [accountId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "Patient_accountId_fkey")
-    clinic            Clinic?                     @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "Patient_clinicId_fkey")
+    clinic            Clinic                      @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "Patient_clinicId_fkey")
     primaryContactFor Household[]                 @relation("HouseholdPrimaryContact")
     household         Household                   @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "Patient_householdId_fkey")
 
@@ -154,7 +154,7 @@ namespace public {
 
   model Appointment {
     id                         String                      @id(map: "Appointment_pkey")
-    clinicId                   String?
+    clinicId                   String
     patientId                  String
     /// The clinician the visit is with — not necessarily whoever booked it.
     doctorId                   String
@@ -199,7 +199,7 @@ namespace public {
     /// once the patient is in the room instead of running until check-out.
     consultationStartedAt      TimestampString(3)?
     doctor                     Doctor                      @relation(fields: [doctorId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "Appointment_doctorId_fkey", index: false)
-    clinic                     Clinic?                     @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "Appointment_clinicId_fkey")
+    clinic                     Clinic                      @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "Appointment_clinicId_fkey")
     bookedBy                   Account?                    @relation(name: "Appointment_bookedById_fkey", fields: [bookedById], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "Appointment_bookedById_fkey")
     appointmentRequests        AppointmentRequest[]
     patient                    Patient                     @relation(fields: [patientId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "Appointment_patientId_fkey")
@@ -219,7 +219,7 @@ namespace public {
 
   model MedicalRecord {
     id                      String         @id(map: "MedicalRecord_pkey")
-    clinicId                String?
+    clinicId                String
     patientId               String
     /// The clinician who wrote it. Authorship, never a permission check.
     doctorId                String
@@ -273,7 +273,7 @@ namespace public {
 
     prescriptions           Prescription[]
     versions                MedicalRecordVersion[]
-    clinic                  Clinic?        @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "MedicalRecord_clinicId_fkey")
+    clinic                  Clinic         @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "MedicalRecord_clinicId_fkey")
     documentRequests        DocumentRequest[]
     finalizedBy             Doctor?        @relation(name: "MedicalRecord_finalizedById_fkey", fields: [finalizedById], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "MedicalRecord_finalizedById_fkey")
     archivedBy              Doctor?        @relation(name: "MedicalRecord_archivedById_fkey", fields: [archivedById], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "MedicalRecord_archivedById_fkey")
@@ -488,7 +488,7 @@ namespace public {
   /// much a part of the record as the document it produces.
   model DocumentRequest {
     id               String  @id(map: "DocumentRequest_pkey")
-    clinicId         String?
+    clinicId         String
     doctorId         String
     patientId        String
     /// The visit the document draws on, where it draws on one.
@@ -518,7 +518,7 @@ namespace public {
     createdAt        TimestampString(3) @default(now())
     updatedAt        TimestampString(3)
     doctor           Doctor        @relation(name: "DocumentRequest_doctorId_fkey", fields: [doctorId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "DocumentRequest_doctorId_fkey")
-    clinic           Clinic?       @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "DocumentRequest_clinicId_fkey")
+    clinic           Clinic        @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "DocumentRequest_clinicId_fkey")
     releasedBy       Doctor?       @relation(name: "DocumentRequest_releasedById_fkey", fields: [releasedById], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "DocumentRequest_releasedById_fkey")
     patient          Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "DocumentRequest_patientId_fkey")
     medicalRecord    MedicalRecord? @relation(fields: [medicalRecordId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "DocumentRequest_medicalRecordId_fkey")

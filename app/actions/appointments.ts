@@ -251,7 +251,7 @@ async function confirmByEmail(appointmentId: string) {
   const outcome = await sendAppointmentConfirmation({
     to: appointment.patient.email,
     patientName: appointment.patient.firstName,
-    clinicName: appointment.clinic?.name ?? "your clinic",
+    clinicName: appointment.clinic.name,
     doctorName: appointment.doctor.fullName,
     when: formatDateTime(instantFromDb(appointment.scheduledAt)),
     link: appUrl("/portal"),

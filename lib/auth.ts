@@ -69,7 +69,7 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
       : null,
     doctorId: account.doctorProfile?.id ?? null,
     patient: account.patientProfile
-      ? { id: account.patientProfile.id, clinicId: account.patientProfile.clinicId ?? "" }
+      ? { id: account.patientProfile.id, clinicId: account.patientProfile.clinicId }
       : null,
   };
 });
@@ -227,7 +227,9 @@ export type CurrentPatient = {
 /** The gate on the patient portal: one login, one chart, and only that one. */
 export async function requirePatientAccount(): Promise<CurrentPatient> {
   const viewer = await requireViewer();
-  if (!viewer.patient || !viewer.patient.clinicId) redirect(homeFor(viewer));
+  // A chart always has a clinic now — the database refuses one without — so
+  // having a chart is the whole test.
+  if (!viewer.patient) redirect(homeFor(viewer));
 
   return {
     accountId: viewer.accountId,

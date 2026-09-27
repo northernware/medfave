@@ -1,0 +1,387 @@
+[
+  {
+    "id": "data_migration.handle-nulls-Appointment-clinicId",
+    "label": "Data transform: handle-nulls-Appointment-clinicId",
+    "operationClass": "data",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [
+      {
+        "description": "Check handle-nulls-Appointment-clinicId has work to do",
+        "sql": "SELECT EXISTS (SELECT \"id\" AS \"id\" FROM \"public\".\"Appointment\" WHERE \"clinicId\" IS NULL LIMIT 1) AS ok",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "Run handle-nulls-Appointment-clinicId",
+        "sql": "DO $$ BEGIN RAISE EXCEPTION 'A clinic-owned row has no clinic. Run npm run db:backfill, then migrate again.'; END $$",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "Verify handle-nulls-Appointment-clinicId resolved all violations",
+        "sql": "SELECT NOT EXISTS (SELECT \"id\" AS \"id\" FROM \"public\".\"Appointment\" WHERE \"clinicId\" IS NULL LIMIT 1) AS ok",
+        "params": []
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.setNotNull.Appointment.clinicId",
+    "label": "Set NOT NULL on \"Appointment\".\"clinicId\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "clinicId",
+        "table": "Appointment"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"clinicId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Appointment",
+          "clinicId"
+        ]
+      },
+      {
+        "description": "ensure no NULL values in \"clinicId\"",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"public\".\"Appointment\" WHERE \"clinicId\" IS NULL) AS \"result\"",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "set NOT NULL on \"clinicId\"",
+        "sql": "ALTER TABLE \"public\".\"Appointment\" ALTER COLUMN \"clinicId\" SET NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"clinicId\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "Appointment",
+          "clinicId",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "data_migration.handle-nulls-DocumentRequest-clinicId",
+    "label": "Data transform: handle-nulls-DocumentRequest-clinicId",
+    "operationClass": "data",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [
+      {
+        "description": "Check handle-nulls-DocumentRequest-clinicId has work to do",
+        "sql": "SELECT EXISTS (SELECT \"id\" AS \"id\" FROM \"public\".\"DocumentRequest\" WHERE \"clinicId\" IS NULL LIMIT 1) AS ok",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "Run handle-nulls-DocumentRequest-clinicId",
+        "sql": "DO $$ BEGIN RAISE EXCEPTION 'A clinic-owned row has no clinic. Run npm run db:backfill, then migrate again.'; END $$",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "Verify handle-nulls-DocumentRequest-clinicId resolved all violations",
+        "sql": "SELECT NOT EXISTS (SELECT \"id\" AS \"id\" FROM \"public\".\"DocumentRequest\" WHERE \"clinicId\" IS NULL LIMIT 1) AS ok",
+        "params": []
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.setNotNull.DocumentRequest.clinicId",
+    "label": "Set NOT NULL on \"DocumentRequest\".\"clinicId\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "clinicId",
+        "table": "DocumentRequest"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"clinicId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "DocumentRequest",
+          "clinicId"
+        ]
+      },
+      {
+        "description": "ensure no NULL values in \"clinicId\"",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"public\".\"DocumentRequest\" WHERE \"clinicId\" IS NULL) AS \"result\"",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "set NOT NULL on \"clinicId\"",
+        "sql": "ALTER TABLE \"public\".\"DocumentRequest\" ALTER COLUMN \"clinicId\" SET NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"clinicId\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "DocumentRequest",
+          "clinicId",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "data_migration.handle-nulls-Household-clinicId",
+    "label": "Data transform: handle-nulls-Household-clinicId",
+    "operationClass": "data",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [
+      {
+        "description": "Check handle-nulls-Household-clinicId has work to do",
+        "sql": "SELECT EXISTS (SELECT \"id\" AS \"id\" FROM \"public\".\"Household\" WHERE \"clinicId\" IS NULL LIMIT 1) AS ok",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "Run handle-nulls-Household-clinicId",
+        "sql": "DO $$ BEGIN RAISE EXCEPTION 'A clinic-owned row has no clinic. Run npm run db:backfill, then migrate again.'; END $$",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "Verify handle-nulls-Household-clinicId resolved all violations",
+        "sql": "SELECT NOT EXISTS (SELECT \"id\" AS \"id\" FROM \"public\".\"Household\" WHERE \"clinicId\" IS NULL LIMIT 1) AS ok",
+        "params": []
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.setNotNull.Household.clinicId",
+    "label": "Set NOT NULL on \"Household\".\"clinicId\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "clinicId",
+        "table": "Household"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"clinicId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Household",
+          "clinicId"
+        ]
+      },
+      {
+        "description": "ensure no NULL values in \"clinicId\"",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"public\".\"Household\" WHERE \"clinicId\" IS NULL) AS \"result\"",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "set NOT NULL on \"clinicId\"",
+        "sql": "ALTER TABLE \"public\".\"Household\" ALTER COLUMN \"clinicId\" SET NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"clinicId\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "Household",
+          "clinicId",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "data_migration.handle-nulls-MedicalRecord-clinicId",
+    "label": "Data transform: handle-nulls-MedicalRecord-clinicId",
+    "operationClass": "data",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [
+      {
+        "description": "Check handle-nulls-MedicalRecord-clinicId has work to do",
+        "sql": "SELECT EXISTS (SELECT \"id\" AS \"id\" FROM \"public\".\"MedicalRecord\" WHERE \"clinicId\" IS NULL LIMIT 1) AS ok",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "Run handle-nulls-MedicalRecord-clinicId",
+        "sql": "DO $$ BEGIN RAISE EXCEPTION 'A clinic-owned row has no clinic. Run npm run db:backfill, then migrate again.'; END $$",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "Verify handle-nulls-MedicalRecord-clinicId resolved all violations",
+        "sql": "SELECT NOT EXISTS (SELECT \"id\" AS \"id\" FROM \"public\".\"MedicalRecord\" WHERE \"clinicId\" IS NULL LIMIT 1) AS ok",
+        "params": []
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.setNotNull.MedicalRecord.clinicId",
+    "label": "Set NOT NULL on \"MedicalRecord\".\"clinicId\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "clinicId",
+        "table": "MedicalRecord"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"clinicId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "MedicalRecord",
+          "clinicId"
+        ]
+      },
+      {
+        "description": "ensure no NULL values in \"clinicId\"",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"public\".\"MedicalRecord\" WHERE \"clinicId\" IS NULL) AS \"result\"",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "set NOT NULL on \"clinicId\"",
+        "sql": "ALTER TABLE \"public\".\"MedicalRecord\" ALTER COLUMN \"clinicId\" SET NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"clinicId\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "MedicalRecord",
+          "clinicId",
+          "NO"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "data_migration.handle-nulls-Patient-clinicId",
+    "label": "Data transform: handle-nulls-Patient-clinicId",
+    "operationClass": "data",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [
+      {
+        "description": "Check handle-nulls-Patient-clinicId has work to do",
+        "sql": "SELECT EXISTS (SELECT \"id\" AS \"id\" FROM \"public\".\"Patient\" WHERE \"clinicId\" IS NULL LIMIT 1) AS ok",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "Run handle-nulls-Patient-clinicId",
+        "sql": "DO $$ BEGIN RAISE EXCEPTION 'A clinic-owned row has no clinic. Run npm run db:backfill, then migrate again.'; END $$",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "Verify handle-nulls-Patient-clinicId resolved all violations",
+        "sql": "SELECT NOT EXISTS (SELECT \"id\" AS \"id\" FROM \"public\".\"Patient\" WHERE \"clinicId\" IS NULL LIMIT 1) AS ok",
+        "params": []
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.setNotNull.Patient.clinicId",
+    "label": "Set NOT NULL on \"Patient\".\"clinicId\"",
+    "operationClass": "destructive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "clinicId",
+        "table": "Patient"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"clinicId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Patient",
+          "clinicId"
+        ]
+      },
+      {
+        "description": "ensure no NULL values in \"clinicId\"",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"public\".\"Patient\" WHERE \"clinicId\" IS NULL) AS \"result\"",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "set NOT NULL on \"clinicId\"",
+        "sql": "ALTER TABLE \"public\".\"Patient\" ALTER COLUMN \"clinicId\" SET NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"clinicId\" is NOT NULL",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "Patient",
+          "clinicId",
+          "NO"
+        ]
+      }
+    ]
+  }
+]

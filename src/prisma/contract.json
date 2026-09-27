@@ -380,7 +380,7 @@
                 }
               },
               "clinicId": {
-                "nullable": true,
+                "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -2032,7 +2032,7 @@
           "DocumentRequest": {
             "fields": {
               "clinicId": {
-                "nullable": true,
+                "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -2358,7 +2358,7 @@
                 }
               },
               "clinicId": {
-                "nullable": true,
+                "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -2583,7 +2583,7 @@
                 }
               },
               "clinicId": {
-                "nullable": true,
+                "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -3341,7 +3341,7 @@
                 }
               },
               "clinicId": {
-                "nullable": true,
+                "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -5057,7 +5057,7 @@
                 "clinicId": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
-                  "nullable": true
+                  "nullable": false
                 },
                 "confirmationSentAt": {
                   "codecId": "pg/timestamp-string@1",
@@ -6236,7 +6236,7 @@
                 "clinicId": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
-                  "nullable": true
+                  "nullable": false
                 },
                 "createdAt": {
                   "codecId": "pg/timestamp-string@1",
@@ -6555,7 +6555,7 @@
                 "clinicId": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
-                  "nullable": true
+                  "nullable": false
                 },
                 "contactNumber": {
                   "codecId": "pg/text@1",
@@ -6744,7 +6744,7 @@
                 "clinicId": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
-                  "nullable": true
+                  "nullable": false
                 },
                 "createdAt": {
                   "codecId": "pg/timestamp-string@1",
@@ -7406,7 +7406,7 @@
                 "clinicId": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
-                  "nullable": true
+                  "nullable": false
                 },
                 "conditionStatus": {
                   "codecId": "pg/enum@1",
@@ -8809,7 +8809,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "de655cbcb1bb114475992da00bf148113c9d29085aafc79d15ae38cffb15b364"
+    "storageHash": "605d56444bc1f1b7a8069b89844cf5f88165e9da18a1d0f97b7250e926acfa06"
   },
   "capabilities": {
     "postgres": {
