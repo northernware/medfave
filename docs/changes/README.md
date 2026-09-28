@@ -1,6 +1,9 @@
 # Change notes
 
-One note per pull request, newest last by filename: `YYYY-MM-DD-<short-slug>.md`.
+One note per pull request, named `YYYY-MM-DD-HHMM-<short-slug>.md` in Philippine
+time (Asia/Manila), so the newest note sorts last. Under the title, a
+timestamp line: `Opened: YYYY-MM-DD HH:MM PHT`, plus `· Updated: …` on later
+pushes (`TZ=Asia/Manila date '+%Y-%m-%d %H:%M'`).
 Every developer and every agent (Claude, ChatGPT or Codex, or any other) writes
 one before pushing, in the same PR. **Read the newest few before starting work.**
 

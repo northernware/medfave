@@ -16,9 +16,13 @@ ChatGPT or Codex, or any other). The notes are how the rest of the team, and
 their agents, know what's going on. **Read the newest few before you start
 work.**
 
-- **One file per pull request:** `docs/changes/YYYY-MM-DD-<short-slug>.md`,
-  dated the day the PR opens. When you push more to the same PR, update that
-  file rather than adding another.
+- **One file per pull request:** `docs/changes/YYYY-MM-DD-HHMM-<short-slug>.md`,
+  stamped with the time the PR opens in Philippine time (Asia/Manila). Sorted
+  by name, the newest note sorts last. When you push more to the same PR,
+  update that file rather than adding another.
+- **Timestamp line under the title:** `Opened: YYYY-MM-DD HH:MM PHT`. On each
+  later push, add or bump `· Updated: YYYY-MM-DD HH:MM PHT`. Get the time
+  with `TZ=Asia/Manila date '+%Y-%m-%d %H:%M'`.
 - **Write it before you push, in the same PR,** with these sections:
   - **What:** what changed, in a few bullets.
   - **Why:** the reason, or the request it answers.
