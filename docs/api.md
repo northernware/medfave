@@ -85,5 +85,33 @@ the app warn before sending.
 
 ### Doctor
 
-Not built yet. Planned: today's queue, arrivals, patient lookup, booking a
-walk-in, and accepting or declining requests.
+For accounts that are a clinic's DOCTOR, with a clinician profile in that
+clinic, which is the same gate as the web's clinical pages. Other accounts get
+`403`. Everything is scoped to the doctor's clinic.
+
+An appointment is always this shape:
+
+```
+{ id, scheduledAt, durationMinutes, service, serviceLabel, reason, status, statusLabel,
+  source, arrivedAt, consultationStartedAt, patient: { id, fullName },
+  nextStatuses: [{ status, label }] }
+```
+
+`nextStatuses` lists the only moves the status endpoint will accept from where
+the visit is now.
+
+| | |
+| --- | --- |
+| `GET /doctor/day?date=YYYY-MM-DD` | `{ date, isToday, appointments[], queue[], pendingRequests }`. Today when `date` is left out. `queue` is who is here (checked in or with the doctor), in arrival order, and only for today. Marks overdue no-shows and sends tomorrow's reminders first, as the dashboard does. |
+| `GET /doctor/week?from=&days=` | `{ days: [{ date, count }] }`: visits still expected per day (7 by default, 31 at most) |
+| `GET /doctor/clinic` | Same shape as `/patient/clinic`, plus `breaks`, `slotStepMinutes` and `today` |
+| `GET /doctor/patients?q=` | `{ patients[] }`, each `{ id, fullName, patientNumber, household }`. Name or number match; at most 50; archived charts left out |
+| `GET /doctor/patients/:id` | `{ patient, upcoming[], past[] }`. Demographics, contact and household. Clinical notes stay on the web |
+| `POST /doctor/appointments` | `{ patientId, service, reason, date, time, walkIn? }` → `201 { id }`. A walk-in skips the booking lead time and joins the queue as checked in. `409` when the time was just taken |
+| `POST /doctor/appointments/:id/status` | `{ status }` → `{ id, status }`. `409` for a move `nextStatuses` doesn't allow, or when restoring a visit whose slot has since gone |
+| `GET /doctor/requests` | `{ requests[] }` waiting for an answer, oldest first, each with `patient: { id, fullName }` |
+| `POST /doctor/requests/:id/accept` | `{ time? }` → `{ id, status: "ACCEPTED", appointmentId }`. `time` is required when the patient asked for any time. `409` when the time is no longer free |
+| `POST /doctor/requests/:id/decline` | `{ note? }` → `{ id, status: "DECLINED" }`. The patient reads the note |
+
+Booking, status changes and accepting requests all run through
+`lib/booking.ts`, under the same lock and overlap check as the web forms.

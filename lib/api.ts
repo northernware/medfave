@@ -1,6 +1,13 @@
 import "server-only";
 import { viewerForSession, type CurrentPatient, type Viewer } from "@/lib/auth";
+import { describeWeek, durationFor, earliestBookableDay, latestBookableDay } from "@/lib/availability";
+import type { Actor } from "@/lib/booking";
+import { clinicDoctorId, clinicLetterhead } from "@/lib/clinic";
+import { dayKey } from "@/lib/datetime";
+import { SERVICES } from "@/lib/domain";
+import { loadSchedule } from "@/lib/queries";
 import { readAppToken } from "@/lib/session";
+import { orm } from "@/src/prisma/db";
 
 /*
  * The JSON API the mobile app talks to, under /api/v1.
@@ -51,6 +58,71 @@ export async function apiPatient(request: Request): Promise<CurrentPatient | Res
     clinicId: viewer.patient.clinicId,
     fullName: viewer.fullName,
     email: viewer.email,
+  };
+}
+
+/** A clinician, with what `lib/booking` needs to act for them. */
+export type ApiDoctor = Actor & { doctorId: string; fullName: string };
+
+/**
+ * The clinical gate, as `requireDoctor` on the web: a DOCTOR member of a
+ * clinic whose clinician profile belongs to that same clinic.
+ */
+export async function apiDoctor(request: Request): Promise<ApiDoctor | Response> {
+  const viewer = await apiViewer(request);
+  if (viewer instanceof Response) return viewer;
+  if (!viewer.staff || viewer.staff.role !== "DOCTOR" || !viewer.doctorId) {
+    return apiError(403, "This is for doctor accounts.");
+  }
+  const doctor = await orm.Doctor
+    .select("id", "clinicId")
+    .where((d) => d.id.eq(viewer.doctorId!))
+    .first();
+  // A clinician profile that has lost its clinic cannot be scoped, so it cannot be used.
+  if (!doctor?.clinicId || doctor.clinicId !== viewer.staff.clinicId) {
+    return apiError(403, "This is for doctor accounts.");
+  }
+  return {
+    accountId: viewer.accountId,
+    clinicId: doctor.clinicId,
+    role: viewer.staff.role,
+    doctorId: doctor.id,
+    fullName: viewer.fullName,
+  };
+}
+
+/**
+ * A clinic, and what a booking or request form needs to know about it: the
+ * services, the week's hours, closures ahead, and the range of dates it books.
+ * The server still checks every booking against the same rules; this lets the
+ * app say so first.
+ */
+export async function clinicBookingInfo(clinicId: string) {
+  const [letterhead, doctorId] = await Promise.all([clinicLetterhead(clinicId), clinicDoctorId(clinicId)]);
+  const schedule = doctorId ? await loadSchedule(doctorId) : null;
+  const today = dayKey(new Date());
+
+  return {
+    clinic: letterhead,
+    takingRequests: schedule !== null,
+    services: SERVICES.map((s) => ({
+      value: s.value,
+      label: s.label,
+      description: s.description,
+      minutes: schedule ? durationFor(schedule, s.value, s.minutes) : s.minutes,
+    })),
+    schedule: schedule
+      ? {
+          summary: describeWeek(schedule),
+          hours: schedule.hours,
+          breaks: schedule.breaks,
+          closures: schedule.closures.filter((c) => c.endsOn >= today),
+          slotStepMinutes: schedule.slotStepMinutes,
+          earliestDay: earliestBookableDay(schedule),
+          latestDay: latestBookableDay(schedule),
+          today,
+        }
+      : null,
   };
 }
 
