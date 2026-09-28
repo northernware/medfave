@@ -84,10 +84,10 @@ export async function requireViewer(): Promise<Viewer> {
 export function homeFor(viewer: Viewer) {
   if (viewer.staff?.role === "SECRETARY") return "/desk";
   // An administrator runs the clinic without practising in it, so the clinical
-  // section is not theirs. Sending them to "/" was an infinite redirect: the
+  // section is not theirs. Sending them to "/dashboard" was an infinite redirect: the
   // clinical gate bounced them straight back here.
   if (viewer.staff?.role === "ADMIN") return "/manage";
-  if (viewer.staff) return "/";
+  if (viewer.staff) return "/dashboard";
   if (viewer.patient) return "/portal";
   return "/no-access";
 }

@@ -19,7 +19,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
     <div className="lg:flex lg:min-h-dvh">
       <aside className="hidden lg:sticky lg:top-0 lg:flex lg:h-dvh lg:w-[248px] lg:shrink-0 lg:flex-col lg:border-r lg:border-border lg:bg-surface">
         <div className="px-5 pt-6 pb-5">
-          <Brand />
+          <Brand href="/dashboard" />
         </div>
         <div className="flex-1 overflow-y-auto px-3">
           <Nav orientation="sidebar" />
@@ -29,7 +29,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
 
       <header className="sticky top-0 z-10 border-b border-border bg-surface/95 backdrop-blur lg:hidden">
         <div className="flex items-center justify-between px-4 py-3">
-          <Brand />
+          <Brand href="/dashboard" />
           <form action={logout}>
             <button className="text-sm font-medium text-ink-muted hover:text-ink">Sign out</button>
           </form>
