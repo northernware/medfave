@@ -1,5 +1,5 @@
 import "server-only";
-import { viewerForSession, type CurrentPatient, type Viewer } from "@/lib/auth";
+import { patientContext, viewerForSession, type CurrentPatient, type Viewer } from "@/lib/auth";
 import { describeWeek, durationFor, earliestBookableDay, latestBookableDay } from "@/lib/availability";
 import type { Actor } from "@/lib/booking";
 import { clinicDoctorId, clinicLetterhead } from "@/lib/clinic";
@@ -47,18 +47,23 @@ export async function apiViewer(request: Request): Promise<Viewer | Response> {
   return viewer ?? apiError(401, "Sign in again.");
 }
 
-/** A patient's own login, scoped to their one chart. */
+/**
+ * A patient's own login, scoped to their chart at one clinic.
+ *
+ * The clinic comes from `?clinic=<clinicId>` or an `X-Clinic-Id` header; left
+ * out, the first of their clinics. Naming a clinic the login is not linked to
+ * is a 404, not a fallback — the app asked for somewhere it cannot go.
+ */
 export async function apiPatient(request: Request): Promise<CurrentPatient | Response> {
   const viewer = await apiViewer(request);
   if (viewer instanceof Response) return viewer;
-  if (!viewer.patient) return apiError(403, "This is for patient accounts.");
-  return {
-    accountId: viewer.accountId,
-    patientId: viewer.patient.id,
-    clinicId: viewer.patient.clinicId,
-    fullName: viewer.fullName,
-    email: viewer.email,
-  };
+  if (viewer.charts.length === 0) return apiError(403, "This is for patient accounts.");
+
+  const asked = new URL(request.url).searchParams.get("clinic") ?? request.headers.get("x-clinic-id");
+  if (asked && !viewer.charts.some((c) => c.clinicId === asked)) {
+    return apiError(404, "You are not linked to that clinic.");
+  }
+  return patientContext(viewer, asked)!;
 }
 
 /** A clinician, with what `lib/booking` needs to act for them. */
@@ -132,9 +137,20 @@ export function viewerSummary(viewer: Viewer) {
     id: viewer.accountId,
     email: viewer.email,
     fullName: viewer.fullName,
-    role: viewer.patient ? "patient" : viewer.doctorId ? "doctor" : viewer.staff ? "staff" : "none",
+    // Work comes first, as on the web (`homeFor`): a doctor who is also
+    // somebody's patient elsewhere opens the doctor side.
+    role: viewer.doctorId && viewer.staff?.role === "DOCTOR"
+      ? "doctor"
+      : viewer.charts.length > 0
+        ? "patient"
+        : viewer.staff
+          ? "staff"
+          : "none",
     clinic: viewer.staff ? { id: viewer.staff.clinicId, name: viewer.staff.clinicName, role: viewer.staff.role } : null,
-    patientId: viewer.patient?.id ?? null,
+    /** Every clinic this patient login is linked to, each with its own chart. */
+    charts: viewer.charts.map((c) => ({ patientId: c.id, clinic: { id: c.clinicId, name: c.clinicName } })),
+    /** The first chart's id. Kept for older app builds; use `charts`. */
+    patientId: viewer.charts[0]?.id ?? null,
     doctorId: viewer.doctorId,
   } as const;
 }

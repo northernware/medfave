@@ -83,7 +83,8 @@ namespace public {
     clinicId          String
     /// The login that belongs to this person, once they have activated one.
     /// Null is ordinary and permanent for most patients: a chart does not need
-    /// a login to be a chart.
+    /// a login to be a chart. One person may have a chart at several clinics,
+    /// all linked to the same login — but never two at the same clinic.
     accountId         String?
 
     // Human-readable identity, e.g. MK-2026-000123. Unique and searchable, and
@@ -144,7 +145,7 @@ namespace public {
     household         Household                   @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "Patient_householdId_fkey")
 
     @@index([patientNumber], map: "Patient_patientNumber_key", unique: true)
-    @@unique([accountId], map: "Patient_accountId_key")
+    @@unique([accountId, clinicId], map: "Patient_accountId_clinicId_key")
     @@index([householdId], map: "Patient_householdId_idx")
     @@index([clinicId], map: "Patient_clinicId_idx")
     @@index([lastName, firstName], map: "Patient_lastName_firstName_idx")
@@ -583,7 +584,8 @@ namespace public {
     updatedAt    TimestampString(3)
     memberships  ClinicMember[]
     doctorProfile Doctor?
-    patientProfile Patient?
+    /// Their chart at each clinic that has seen them; empty for staff-only accounts.
+    patientProfiles Patient[]
     invitesSent  StaffInvite[]       @relation(name: "StaffInvite_invitedById_fkey")
     invitesAccepted StaffInvite[]    @relation(name: "StaffInvite_acceptedById_fkey")
     activationsIssued PatientActivation[]

@@ -59,17 +59,29 @@ are `YYYY-MM-DD` and times of day `HH:MM`, both in clinic time (Asia/Manila).
 | `POST /auth/activate` | `{ code, fullName, email, password, confirmPassword }` → `201 { token, expiresAt, viewer }`. Turns the activation code the clinic gave a patient into their login. |
 | `GET /me` | `{ viewer }` |
 
-`viewer` is `{ id, email, fullName, role, clinic, patientId, doctorId }`, where
-`role` is `"patient"`, `"doctor"`, `"staff"` or `"none"`. The app opens the
-patient or doctor side from `role`.
+`viewer` is `{ id, email, fullName, role, clinic, charts, patientId, doctorId }`:
+
+- `role` is `"doctor"`, `"patient"`, `"staff"` or `"none"`. Work comes first:
+  a doctor who is also somebody's patient elsewhere is `"doctor"`. The app
+  opens the patient or doctor side from `role`.
+- `charts` is `[{ patientId, clinic: { id, name } }]`, one per clinic this
+  login is linked to. One login can be a patient at several clinics.
+- `patientId` is the first chart's id, kept for older app builds. Use `charts`.
 
 ### Patient
 
-Everything is scoped to the signed-in patient's own chart. A patient never
-sees the rest of their household. Other accounts get `403`.
+Everything is scoped to the signed-in patient's own chart **at one clinic**.
+A patient never sees the rest of their household, and a clinic's records are
+never mixed with another's. Other accounts get `403`.
+
+**Choosing the clinic:** pass `?clinic=<clinicId>` or an `X-Clinic-Id`
+header on any patient endpoint. Left out, it uses the first of `viewer.charts`.
+A clinic the login isn't linked to gets `404`.
 
 | | |
 | --- | --- |
+| `GET /patient/clinics` | `{ clinics: [{ id, name, patientId }] }`: every clinic this login is linked to |
+| `POST /patient/clinics` | `{ code }` → `201 { clinic: { id, name } }`. **Add a clinic:** redeems another clinic's activation code and links that clinic's chart to this login. Open to any signed-in account. `422` for an invalid code or a clinic already linked |
 | `GET /patient/appointments` | `{ upcoming[], past[] }`, each `{ id, scheduledAt, durationMinutes, service, serviceLabel, reason, status, statusLabel, visitType, doctor }` |
 | `GET /patient/requests` | `{ requests[] }`, each `{ id, preferredDate, preferredTime, service, serviceLabel, reason, status, decisionNote, createdAt }` |
 | `POST /patient/requests` | `{ service, preferredDate, preferredTime?, reason }` → `201 { id, status: "PENDING" }` |
