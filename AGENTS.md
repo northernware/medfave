@@ -16,6 +16,14 @@ Before planning a feature, read `PRODUCT.md` in
 for, the business model, the build order and the decisions still open. Don't
 build as if an open decision were settled.
 
+## Mobile API
+
+The mobile app talks to this app through the JSON API under `app/api/v1`,
+documented in `docs/api.md`. Keep that file in step with every change to the
+API. Business rules live in `lib/` (`lib/sign-in.ts`, `lib/requests.ts`) and are
+shared by the server actions and the API routes; don't copy a rule into a
+route handler.
+
 ## Brand and design reference
 
 The medfave look is defined in a separate repo,

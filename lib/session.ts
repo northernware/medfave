@@ -46,17 +46,61 @@ export async function createSession(accountId: string) {
  * a token older than that is refused. Without it, signing out only clears the
  * browser's own copy and a stolen cookie keeps working for its full life.
  */
-export async function readSession(): Promise<{ accountId: string; issuedAt: Date } | null> {
+export async function readSession(): Promise<Session | null> {
   const token = (await cookies()).get(COOKIE_NAME)?.value;
   if (!token) return null;
+  return verifyToken(token);
+}
+
+export type Session = { accountId: string; issuedAt: Date };
+
+/** Signature, expiry and shape. Nothing about who may do what — see `getViewer`. */
+async function verifyToken(token: string, audience?: string): Promise<Session | null> {
   try {
-    const { payload } = await jwtVerify(token, signingKey(), { algorithms: ["HS256"] });
+    const { payload } = await jwtVerify(token, signingKey(), {
+      algorithms: ["HS256"],
+      ...(audience ? { audience } : {}),
+    });
     if (typeof payload.accountId !== "string" || typeof payload.iat !== "number") return null;
+    // Each token works only where it was issued: a browser cookie carries no
+    // audience, so an app token pasted into one is refused too.
+    if (!audience && payload.aud !== undefined) return null;
     return { accountId: payload.accountId, issuedAt: new Date(payload.iat * 1000) };
   } catch {
     // Expired or tampered with — treat as signed out.
     return null;
   }
+}
+
+/*
+ * The mobile app's token.
+ *
+ * Same signature and the same single claim as the cookie, so the same checks
+ * apply: roles are read fresh on every request, and a password change ends it
+ * through `sessionsValidFrom`. Two differences. It lives longer, because asking
+ * somebody to sign in on their phone every twelve hours is how an app gets
+ * deleted. And it names its audience, so an app token is only accepted as a
+ * bearer token and a stolen browser cookie cannot be replayed against the API.
+ */
+const APP_AUDIENCE = "medfave-app";
+const APP_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
+
+export async function issueAppToken(accountId: string) {
+  const expiresAt = new Date(Date.now() + APP_MAX_AGE_SECONDS * 1000);
+  const token = await new SignJWT({ accountId })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setAudience(APP_AUDIENCE)
+    .setExpirationTime(expiresAt)
+    .sign(signingKey());
+  return { token, expiresAt };
+}
+
+/** The session an `Authorization: Bearer` header carries, if it is a valid app token. */
+export async function readAppToken(authorization: string | null): Promise<Session | null> {
+  const token = authorization?.match(/^Bearer\s+(.+)$/i)?.[1];
+  if (!token) return null;
+  return verifyToken(token, APP_AUDIENCE);
 }
 
 export async function destroySession() {
