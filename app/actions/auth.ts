@@ -9,36 +9,20 @@ import { hashToken, issueToken, normaliseToken } from "@/lib/tokens";
 import { appUrl, sendPasswordReset } from "@/lib/email";
 import { createSession, destroySession } from "@/lib/session";
 import { getViewer, homeFor } from "@/lib/auth";
+import { activatePatient, checkCredentials } from "@/lib/sign-in";
 import {
-  activationSchema,
   forgotPasswordSchema,
   inviteAcceptSchema,
-  loginSchema,
   passwordResetSchema,
   toFieldErrors,
   type FormState,
 } from "@/lib/validation";
 
-// Compared against when no account matches, so a wrong email and a wrong
-// password take the same amount of time to reject.
-const DECOY_HASH = "$2b$12$C6UzMDM.H6dfI/f/IKcEeO3jGZ5VZ0rJ8vJ8gXqU9O0F5nJ0lK7Zu";
-
 export async function login(_prev: FormState, formData: FormData): Promise<FormState> {
-  const parsed = loginSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return toFieldErrors(parsed.error);
+  const result = await checkCredentials(Object.fromEntries(formData));
+  if (!result.ok) return result;
 
-  const account = await orm.Account
-    .select("id", "passwordHash")
-    .where((a) => a.email.eq(parsed.data.email))
-    .first();
-
-  const matches = await bcrypt.compare(parsed.data.password, account?.passwordHash ?? DECOY_HASH);
-  if (!account || !matches) {
-    // Deliberately vague: never confirm which half was wrong.
-    return { message: "Email or password is incorrect." };
-  }
-
-  await createSession(account.id);
+  await createSession(result.accountId);
 
   // Each role has its own front door; landing on somebody else's and being
   // bounced is a worse first impression than arriving in the right place.
@@ -46,72 +30,15 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
   redirect(viewer ? homeFor(viewer) : "/login");
 }
 
-/**
- * Turns an activation code into a patient's own login.
- *
- * This is the only public sign-up there is, and all it can ever produce is a
- * patient account tied to the one chart the code names. A name and an email
- * are not evidence of identity, so nothing here matches on them: the clinic
- * identified somebody at the desk, issued a code for their record, and the
- * code is what carries that decision.
- */
+/** A patient's own login, from the code the clinic gave them. See `activatePatient`. */
 export async function activatePatientAccount(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const parsed = activationSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return toFieldErrors(parsed.error);
+  const result = await activatePatient(Object.fromEntries(formData));
+  if (!result.ok) return result;
 
-  const { code, email, password } = parsed.data;
-  const activation = await orm.PatientActivation
-    .select("id", "patientId", "clinicId", "expiresAt", "usedAt", "revokedAt")
-    .include("patient", (p) => p.select("id", "accountId"))
-    .where((a) => a.tokenHash.eq(hashToken(code)))
-    .first();
-
-  // One message for every way a code can fail. Saying which would let somebody
-  // sort real codes from invented ones.
-  const refuse: FormState = {
-    message: "That activation code is not valid. Ask the clinic for a new one.",
-    fieldErrors: { code: ["Not valid"] },
-  };
-  if (!activation || activation.usedAt || activation.revokedAt) return refuse;
-  if (hasPassed(activation.expiresAt)) return refuse;
-  if (activation.patient.accountId) return refuse;
-
-  const taken = await orm.Account.select("id").where((a) => a.email.eq(email)).first();
-  if (taken) {
-    return {
-      message: "That email already has an account.",
-      fieldErrors: { email: ["Already registered — sign in instead"] },
-    };
-  }
-
-  const now = instantToDb(new Date());
-  const accountId = await db.transaction(async (tx) => {
-    const t = tx.orm.public;
-
-    const account = await t.Account.select("id").create({
-      id: newId(),
-      email,
-      passwordHash: await bcrypt.hash(password, 12),
-      fullName: parsed.data.fullName,
-      createdAt: now,
-      updatedAt: now,
-    });
-
-    // The link, and the code spent. No clinic membership is created: being a
-    // patient of a clinic is not working there.
-    await t.Patient.where((p) => p.id.eq(activation.patientId)).update({
-      accountId: account.id,
-      updatedAt: now,
-    });
-    await t.PatientActivation.where((a) => a.id.eq(activation.id)).update({ usedAt: now });
-
-    return account.id;
-  });
-
-  await createSession(accountId);
+  await createSession(result.accountId);
   redirect("/portal");
 }
 

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { orm } from "@/src/prisma/db";
 import { instantFromDb } from "@/lib/datetime";
 import type { ClinicRole } from "@/lib/enums";
-import { readSession } from "./session";
+import { readSession, type Session } from "./session";
 
 /**
  * Who is signed in, and what that lets them reach.
@@ -30,6 +30,14 @@ export type Viewer = {
 export const getViewer = cache(async (): Promise<Viewer | null> => {
   const session = await readSession();
   if (!session) return null;
+  return viewerForSession(session);
+});
+
+/**
+ * Who a session belongs to, read from the database — for the browser's cookie
+ * and the app's bearer token alike, so both are held to the same rules.
+ */
+export async function viewerForSession(session: Session): Promise<Viewer | null> {
 
   const account = await orm.Account
     .select("id", "email", "fullName", "sessionsValidFrom")
@@ -72,7 +80,7 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
       ? { id: account.patientProfile.id, clinicId: account.patientProfile.clinicId }
       : null,
   };
-});
+}
 
 export async function requireViewer(): Promise<Viewer> {
   const viewer = await getViewer();
