@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { getViewer, homeFor } from "@/lib/auth";
 import { Brand, HeartMark } from "@/components/brand";
 import { buttonClass } from "@/components/ui";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export const metadata: Metadata = {
   title: { absolute: "medfave — appointments and records for family practice" },
@@ -31,6 +32,7 @@ export default async function LandingPage() {
                 Who it&rsquo;s for
               </a>
             </div>
+            <ThemeToggle />
             <Link href="/login" className={buttonClass("primary")}>
               Sign in
             </Link>

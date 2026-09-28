@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { cookies } from "next/headers";
+import { THEME_COOKIE, parseTheme } from "@/lib/theme";
 import "./globals.css";
 
 /*
@@ -29,16 +31,34 @@ export const metadata: Metadata = {
   description: "Appointments and medical records for family practice, organised by household.",
 };
 
-export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#fff9fc" },
-    { media: "(prefers-color-scheme: dark)", color: "#1d0b19" },
-  ],
-};
+const CANVAS = { light: "#fff9fc", dark: "#1d0b19" };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+async function currentTheme() {
+  return parseTheme((await cookies()).get(THEME_COOKIE)?.value);
+}
+
+/** The browser chrome takes the canvas colour: the chosen one, or the device's. */
+export async function generateViewport(): Promise<Viewport> {
+  const theme = await currentTheme();
+  return {
+    themeColor:
+      theme === "system"
+        ? [
+            { media: "(prefers-color-scheme: light)", color: CANVAS.light },
+            { media: "(prefers-color-scheme: dark)", color: CANVAS.dark },
+          ]
+        : CANVAS[theme],
+  };
+}
+
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const theme = await currentTheme();
   return (
-    <html lang="en" className={`${inter.variable} ${jakarta.variable} h-full antialiased`}>
+    <html
+      lang="en"
+      data-theme={theme === "system" ? undefined : theme}
+      className={`${inter.variable} ${jakarta.variable} h-full antialiased`}
+    >
       <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );
