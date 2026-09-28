@@ -25,6 +25,28 @@ function localNetworkOrigins() {
 const nextConfig: NextConfig = {
   reactCompiler: true,
   allowedDevOrigins: localNetworkOrigins(),
+
+  /*
+   * The mobile API answers any origin. It is authenticated by a bearer token the
+   * app sends, never by cookies, so a page on another site gains nothing it
+   * could not already do with a token it holds — and without this the app's
+   * web build (Expo web, on its own port) could not call it at all. The native
+   * apps ignore CORS either way. Applies to /api/v1 only; the web pages and
+   * their cookie sessions are untouched.
+   */
+  async headers() {
+    return [
+      {
+        source: "/api/v1/:path*",
+        headers: [
+          { key: "Access-Control-Allow-Origin", value: "*" },
+          { key: "Access-Control-Allow-Methods", value: "GET, POST, DELETE, OPTIONS" },
+          { key: "Access-Control-Allow-Headers", value: "Authorization, Content-Type" },
+          { key: "Access-Control-Max-Age", value: "86400" },
+        ],
+      },
+    ];
+  },
 };
 
 export default nextConfig;
