@@ -35,7 +35,7 @@ export default async function ManageLayout({ children }: { children: ReactNode }
                 Staff
               </Link>
               {manager.doctorId ? (
-                <Link href="/" className="text-ink-muted transition-colors hover:text-ink">
+                <Link href="/dashboard" className="text-ink-muted transition-colors hover:text-ink">
                   Consulting room
                 </Link>
               ) : null}

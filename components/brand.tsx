@@ -1,13 +1,32 @@
 import Link from "next/link";
+import {
+  HEART_CAPSULE,
+  HEART_VIEWBOX,
+  LOCKUP_HEART_TRANSFORM,
+  LOCKUP_VIEWBOX,
+  LOCKUP_WORDMARK_TRANSFORM,
+  WORDMARK,
+} from "./logo-paths";
 
 /*
- * The medfave pill-heart: two mirrored capsules that meet at their lower ends.
- *
- * Built from geometry, not traced from the logo artwork — the guidelines note
- * the selected logo is still a raster concept awaiting approved vector masters.
- * When those arrive, replace <HeartMark> and <Wordmark> here and nowhere else.
- * Per the guidelines: never stretch, rotate, outline, shadow or gradient it.
+ * The medfave logo, from the approved artwork in the brand repo
+ * (northernware/medfave-design). The shapes are copied in `logo-paths.ts`; the
+ * colours come from the theme (`--logo-heart`, `--logo-word`), so the lockup is
+ * fuchsia and plum on light and the single-colour white version on dark.
+ * Per the guidelines: never stretch, rotate, outline, shadow or gradient it,
+ * and never retype the wordmark in a font.
  */
+
+/** The two capsules of the pill-heart, drawn in the heart's own coordinates. */
+function Capsules({ fill }: { fill: string }) {
+  return (
+    <>
+      <path d={HEART_CAPSULE} fill={fill} transform="translate(50 70) rotate(-45)" />
+      <path d={HEART_CAPSULE} fill={fill} transform="translate(50 70) rotate(45)" />
+    </>
+  );
+}
+
 export function HeartMark({
   className = "size-8",
   title,
@@ -20,41 +39,36 @@ export function HeartMark({
 }) {
   return (
     <svg
-      viewBox="0 0 32 32"
+      viewBox={HEART_VIEWBOX}
       className={className}
       role={title ? "img" : undefined}
       aria-hidden={title ? undefined : true}
       aria-label={title}
     >
-      <g stroke={tone === "logo" ? "var(--logo-heart)" : "var(--accent)"} strokeWidth="12.5" strokeLinecap="round">
-        <line x1="16" y1="23" x2="7.5" y2="14.5" />
-        <line x1="16" y1="23" x2="24.5" y2="14.5" />
+      <Capsules fill={tone === "logo" ? "var(--logo-heart)" : "var(--accent)"} />
+    </svg>
+  );
+}
+
+/** Heart + wordmark, as one piece of artwork. Size it by height; width follows. */
+export function Lockup({ className = "h-7 w-auto" }: { className?: string }) {
+  return (
+    <svg viewBox={LOCKUP_VIEWBOX} className={className} aria-hidden="true">
+      <g transform={LOCKUP_HEART_TRANSFORM}>
+        <Capsules fill="var(--logo-heart)" />
+      </g>
+      <g transform={LOCKUP_WORDMARK_TRANSFORM}>
+        <path d={WORDMARK} fill="var(--logo-word)" fillRule="evenodd" />
       </g>
     </svg>
   );
 }
 
-/*
- * Placeholder wordmark. The real one is custom artwork; the guidelines say not
- * to recreate it by typing the name, so this is a stand-in in the heading face
- * until the approved lockup is supplied as SVG.
- */
-function Wordmark({ className = "" }: { className?: string }) {
-  return (
-    <span
-      className={`font-display text-[19px] leading-none font-semibold tracking-[-0.02em] text-[var(--logo-word)] ${className}`}
-    >
-      medfave
-    </span>
-  );
-}
-
 export function Brand({ href = "/", size = "default" }: { href?: string; size?: "default" | "large" }) {
-  const large = size === "large";
+  // The guidelines' minimum for the full logo is 140px wide: 26px tall here.
   return (
-    <Link href={href} aria-label="medfave home" className="inline-flex items-center gap-2">
-      <HeartMark className={large ? "size-10" : "size-7"} />
-      <Wordmark className={large ? "text-[24px]" : ""} />
+    <Link href={href} aria-label="medfave home" className="inline-flex items-center">
+      <Lockup className={size === "large" ? "h-9 w-auto" : "h-[26px] w-auto"} />
     </Link>
   );
 }

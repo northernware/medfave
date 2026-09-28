@@ -28,7 +28,7 @@ export default async function DeskLayout({ children }: { children: ReactNode }) 
           <div className="flex items-center gap-3">
             {/* A doctor covering the desk can get back to their own screens. */}
             {staff.role !== "SECRETARY" ? (
-              <Link href="/" className="text-sm font-medium text-accent-ink hover:underline">
+              <Link href="/dashboard" className="text-sm font-medium text-accent-ink hover:underline">
                 Clinical view
               </Link>
             ) : null}

@@ -486,7 +486,7 @@ function revalidateRecord(recordId: string, patientId: string) {
   revalidatePath(`/patients/${patientId}`);
   revalidatePath(`/records/${recordId}`);
   revalidatePath("/appointments");
-  revalidatePath("/");
+  revalidatePath("/dashboard");
 }
 
 /**
@@ -617,7 +617,7 @@ export async function closeFollowUp(recordId: string, formData: FormData): Promi
 
   revalidatePath(`/records/${recordId}`);
   revalidatePath(`/patients/${owned.patientId}`);
-  revalidatePath("/");
+  revalidatePath("/dashboard");
 }
 
 /** Puts a closed follow-up back into the queue. */
@@ -640,5 +640,5 @@ export async function reopenFollowUp(recordId: string): Promise<void> {
 
   revalidatePath(`/records/${recordId}`);
   revalidatePath(`/patients/${owned.patientId}`);
-  revalidatePath("/");
+  revalidatePath("/dashboard");
 }

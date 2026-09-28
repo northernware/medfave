@@ -380,7 +380,7 @@ export async function createAppointment(_prev: FormState, formData: FormData): P
 
   revalidatePath("/appointments");
   revalidatePath("/calendar");
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   revalidatePath(`/patients/${appointment.patientId}`);
   redirect(`/appointments/${appointment.id}`);
 }
@@ -431,7 +431,7 @@ export async function updateAppointment(
 
   revalidatePath("/appointments");
   revalidatePath("/calendar");
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   revalidatePath(`/appointments/${appointmentId}`);
   revalidatePath(`/patients/${parsed.data.patientId}`);
   redirect(`/appointments/${appointmentId}`);
@@ -496,7 +496,7 @@ export async function startConsultation(formData: FormData) {
 
   revalidatePath("/appointments");
   revalidatePath("/calendar");
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   revalidatePath(`/appointments/${appointmentId}`);
 
   // Straight to the notes: an existing record is resumed rather than duplicated.
@@ -589,7 +589,7 @@ export async function setAppointmentStatus(formData: FormData) {
 
   revalidatePath("/appointments");
   revalidatePath("/calendar");
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   revalidatePath(`/appointments/${appointmentId}`);
 }
 
@@ -605,6 +605,6 @@ export async function deleteAppointment(formData: FormData) {
 
   revalidatePath("/appointments");
   revalidatePath("/calendar");
-  revalidatePath("/");
+  revalidatePath("/dashboard");
   redirect("/appointments");
 }
