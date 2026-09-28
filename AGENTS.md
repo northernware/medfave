@@ -8,6 +8,14 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
+## Product direction
+
+Before planning a feature, read `PRODUCT.md` in
+[northernware/medfave-design](https://github.com/northernware/medfave-design)
+(`../medfave-design/PRODUCT.md` when cloned beside this repo): what medfave is
+for, the business model, the build order and the decisions still open. Don't
+build as if an open decision were settled.
+
 ## Brand and design reference
 
 The medfave look is defined in a separate repo,
