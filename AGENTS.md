@@ -8,6 +8,30 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
+## Change notes — required for every developer and every agent
+
+Every push that opens or updates a pull request includes a change note in
+`docs/changes/`. That applies to every developer and to every agent (Claude,
+ChatGPT or Codex, or any other). The notes are how the rest of the team, and
+their agents, know what's going on. **Read the newest few before you start
+work.**
+
+- **One file per pull request:** `docs/changes/YYYY-MM-DD-<short-slug>.md`,
+  dated the day the PR opens. When you push more to the same PR, update that
+  file rather than adding another.
+- **Write it before you push, in the same PR,** with these sections:
+  - **What:** what changed, in a few bullets.
+  - **Why:** the reason, or the request it answers.
+  - **Tested:** what was checked and how. Say plainly what wasn't.
+  - **Not done / next:** loose ends, follow-ups, open questions.
+  - **Heads-up:** anything that changes how others work, such as new env
+    vars, migrations, renamed routes, new conventions or new dependencies.
+    Leave it out when there's nothing.
+- **Keep it short.** The diff has the detail. Write for a developer or agent
+  picking this up cold.
+
+`docs/changes/README.md` repeats this for anyone who lands there first.
+
 ## Product direction
 
 Before planning a feature, read `PRODUCT.md` in
