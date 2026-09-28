@@ -48,9 +48,11 @@ build as if an open decision were settled.
 
 The mobile app talks to this app through the JSON API under `app/api/v1`,
 documented in `docs/api.md`. Keep that file in step with every change to the
-API. Business rules live in `lib/` (`lib/sign-in.ts`, `lib/requests.ts`) and are
-shared by the server actions and the API routes; don't copy a rule into a
-route handler.
+API. Business rules live in `lib/` (`lib/sign-in.ts`, `lib/requests.ts`,
+`lib/booking.ts`) and are shared by the server actions and the API routes;
+don't copy a rule into a route handler. Every write that claims an
+appointment slot goes through `lockDoctorSchedule` and `findClash` in
+`lib/booking.ts`.
 
 ## Brand and design reference
 

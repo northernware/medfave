@@ -1,7 +1,8 @@
 import "server-only";
 import { revalidatePath } from "next/cache";
-import { orm } from "@/src/prisma/db";
+import { db, orm } from "@/src/prisma/db";
 import type { CurrentPatient } from "@/lib/auth";
+import { confirmByEmail, findClash, lockDoctorSchedule, type Actor } from "@/lib/booking";
 import { clinicDoctorId } from "@/lib/clinic";
 import {
   calendarDateToDb,
@@ -121,6 +122,122 @@ export async function createAppointmentRequest(
   revalidatePath("/portal");
   revalidatePath("/desk/requests");
   return { ok: true, id };
+}
+
+/** Staff declining a request, with a reason the patient will read. False when there is no open request to decline. */
+export async function declineAppointmentRequest(actor: Actor, requestId: string, note: string): Promise<boolean> {
+  if (!requestId) return false;
+
+  const request = await orm.AppointmentRequest
+    .select("id", "status")
+    .where((r) => r.id.eq(requestId))
+    .where((r) => r.clinicId.eq(actor.clinicId))
+    .first();
+  if (!request || request.status !== "PENDING") return false;
+
+  const now = instantToDb(new Date());
+  await orm.AppointmentRequest.where((r) => r.id.eq(requestId)).update({
+    status: "DECLINED",
+    decisionNote: note.trim() || null,
+    decidedById: actor.accountId,
+    decidedAt: now,
+    updatedAt: now,
+  });
+
+  revalidatePath("/desk/requests");
+  revalidatePath("/portal");
+  return true;
+}
+
+export type AcceptResult =
+  | { ok: true; appointmentId: string }
+  | { ok: false; reason: "not-found" }
+  | { ok: false; reason: "needs-time" }
+  | { ok: false; reason: "refused"; message: string };
+
+/**
+ * Staff accepting a request, which is the moment a slot is actually taken.
+ *
+ * Because nothing was held, this can fail: the time may have gone while the
+ * request sat waiting. That is not an edge case to be papered over — it is the
+ * direct consequence of requests not reserving, and the clinic is told plainly
+ * so it can offer another time. `time` (HH:MM) overrides the patient's
+ * preference, and is required when they asked for "any time".
+ */
+export async function acceptAppointmentRequest(actor: Actor, requestId: string, time: string): Promise<AcceptResult> {
+  if (!requestId) return { ok: false, reason: "not-found" };
+
+  const request = await orm.AppointmentRequest
+    .select("id", "status", "patientId", "doctorId", "preferredDate", "preferredTime", "service", "reason")
+    .include("patient", (p) => p.select("reminderPreference"))
+    .where((r) => r.id.eq(requestId))
+    .where((r) => r.clinicId.eq(actor.clinicId))
+    .first();
+  if (!request || request.status !== "PENDING") return { ok: false, reason: "not-found" };
+
+  const chosen = time.trim() || request.preferredTime;
+  if (!chosen || !/^([01]\d|2[0-3]):[0-5]\d$/.test(chosen)) return { ok: false, reason: "needs-time" };
+
+  const schedule = await loadSchedule(request.doctorId);
+  const duration = durationFor(schedule, request.service, SERVICE_MINUTES[request.service]);
+  const at = fromDateTimeLocalValue(`${request.preferredDate}T${chosen}`);
+  if (!at) return { ok: false, reason: "needs-time" };
+
+  const problem = checkAvailability(schedule, at, duration, minuteOfDay(at));
+  if (problem) return { ok: false, reason: "refused", message: problem };
+
+  const now = instantToDb(new Date());
+
+  // The same lock and overlap check every other booking goes through.
+  const outcome = await db.transaction(async (tx) => {
+    await lockDoctorSchedule(tx, request.doctorId);
+    if (await findClash(tx, request.doctorId, at, duration)) return { taken: true as const, created: null };
+
+    const created = await tx.orm.public.Appointment.select("id").create({
+      id: newId(),
+      clinicId: actor.clinicId,
+      patientId: request.patientId,
+      doctorId: request.doctorId,
+      bookedById: actor.accountId,
+      scheduledAt: instantToDb(at),
+      durationMinutes: duration,
+      service: request.service,
+      reason: request.reason,
+      status: "CONFIRMED",
+      source: "PATIENT_PORTAL",
+      visitType: "IN_PERSON",
+      priority: "ROUTINE",
+      // The patient asked for this visit themselves, so their standing choice
+      // about hearing from the clinic is the only signal there is.
+      reminderPreference: request.patient.reminderPreference,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    await tx.orm.public.AppointmentRequest.where((r) => r.id.eq(requestId)).update({
+      status: "ACCEPTED",
+      appointmentId: created.id,
+      decidedById: actor.accountId,
+      decidedAt: now,
+      updatedAt: now,
+    });
+
+    return { taken: false as const, created };
+  });
+
+  if (outcome.taken) {
+    return { ok: false, reason: "refused", message: "That time went while the request was waiting. Offer another." };
+  }
+
+  // The patient asked for this one, so they are told it came through — on
+  // the same terms as any other booking.
+  await confirmByEmail(outcome.created.id);
+
+  revalidatePath("/desk/requests");
+  revalidatePath("/desk/appointments");
+  revalidatePath("/dashboard");
+  revalidatePath("/portal");
+  return { ok: true, appointmentId: outcome.created.id };
 }
 
 /**

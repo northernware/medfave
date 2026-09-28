@@ -1,23 +1,19 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { db, orm } from "@/src/prisma/db";
 import { requirePatientAccount, requireStaff } from "@/lib/auth";
 import {
-  formatDateTime,
-  fromDateTimeLocalValue,
-  instantFromDb,
-  instantToDb,
-} from "@/lib/datetime";
-import { appUrl, sendAppointmentConfirmation } from "@/lib/email";
-import { newId } from "@/lib/ids";
-import { SERVICE_MINUTES } from "@/lib/domain";
-import { checkAvailability, durationFor } from "@/lib/availability";
-import { minuteOfDay } from "@/lib/scheduling";
-import { loadSchedule } from "@/lib/queries";
-import { createAppointmentRequest, withdrawAppointmentRequest } from "@/lib/requests";
+  acceptAppointmentRequest,
+  createAppointmentRequest,
+  declineAppointmentRequest,
+  withdrawAppointmentRequest,
+} from "@/lib/requests";
 import type { FormState } from "@/lib/validation";
+
+/*
+ * The rules live in `lib/requests.ts`, shared with the app's API. These
+ * actions read the form, call them, and decide where the browser goes next.
+ */
 
 /** A patient asking for a time. See `createAppointmentRequest`. */
 export async function requestAppointment(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -32,180 +28,34 @@ export async function requestAppointment(_prev: FormState, formData: FormData): 
   redirect("/portal?requested=1");
 }
 
-/** Confirms an accepted request by email, on the same terms as any booking. */
-async function confirmAcceptedBooking(appointmentId: string) {
-  const appointment = await orm.Appointment
-    .select("id", "scheduledAt", "reminderPreference", "confirmationSentAt")
-    .include("patient", (p) => p.select("firstName", "email"))
-    .include("doctor", (d) => d.select("fullName"))
-    .include("clinic", (c) => c.select("name"))
-    .where((a) => a.id.eq(appointmentId))
-    .first();
-
-  if (!appointment) return;
-  if (appointment.reminderPreference !== "EMAIL") return;
-  if (!appointment.patient.email) return;
-  if (appointment.confirmationSentAt) return;
-
-  const outcome = await sendAppointmentConfirmation({
-    to: appointment.patient.email,
-    patientName: appointment.patient.firstName,
-    clinicName: appointment.clinic.name,
-    doctorName: appointment.doctor.fullName,
-    when: formatDateTime(instantFromDb(appointment.scheduledAt)),
-    link: appUrl("/portal"),
-  });
-  if (!outcome.sent) {
-    console.error(`[email] confirmation for ${appointmentId}: ${outcome.reason}`);
-  }
-
-  await orm.Appointment
-    .where((a) => a.id.eq(appointmentId))
-    .update({ confirmationSentAt: instantToDb(new Date()) });
-}
-
 /** A patient changing their mind before the clinic has answered. */
 export async function withdrawRequest(formData: FormData) {
   const patient = await requirePatientAccount();
   await withdrawAppointmentRequest(patient, String(formData.get("requestId") ?? ""));
 }
 
-/**
- * Staff declining a request, with a reason the patient will read.
- */
+/** Staff declining a request, with a reason the patient will read. */
 export async function declineRequest(formData: FormData) {
   const staff = await requireStaff();
-  const requestId = String(formData.get("requestId") ?? "");
-  const note = String(formData.get("decisionNote") ?? "").trim();
-  if (!requestId) return;
-
-  const request = await orm.AppointmentRequest
-    .select("id", "status")
-    .where((r) => r.id.eq(requestId))
-    .where((r) => r.clinicId.eq(staff.clinicId))
-    .first();
-  if (!request || request.status !== "PENDING") return;
-
-  const now = instantToDb(new Date());
-  await orm.AppointmentRequest.where((r) => r.id.eq(requestId)).update({
-    status: "DECLINED",
-    decisionNote: note || null,
-    decidedById: staff.accountId,
-    decidedAt: now,
-    updatedAt: now,
-  });
-
-  revalidatePath("/desk/requests");
-  revalidatePath("/portal");
-  redirect("/desk/requests");
+  const declined = await declineAppointmentRequest(
+    staff,
+    String(formData.get("requestId") ?? ""),
+    String(formData.get("decisionNote") ?? ""),
+  );
+  if (declined) redirect("/desk/requests");
 }
 
-/**
- * Staff accepting a request, which is the moment a slot is actually taken.
- *
- * Because nothing was held, this can fail: the time may have gone while the
- * request sat waiting. That is not an edge case to be papered over — it is the
- * direct consequence of requests not reserving, and the clinic is told plainly
- * so it can offer another time.
- */
+/** Staff accepting a request, which is the moment a slot is actually taken. See `acceptAppointmentRequest`. */
 export async function acceptRequest(formData: FormData) {
   const staff = await requireStaff();
   const requestId = String(formData.get("requestId") ?? "");
-  const time = String(formData.get("time") ?? "").trim();
-  if (!requestId) return;
+  const result = await acceptAppointmentRequest(staff, requestId, String(formData.get("time") ?? ""));
+  if (result.ok) redirect(`/desk/appointments/${result.appointmentId}`);
 
-  const request = await orm.AppointmentRequest
-    .select("id", "status", "patientId", "doctorId", "preferredDate", "preferredTime", "service", "reason")
-    .include("patient", (p) => p.select("reminderPreference"))
-    .where((r) => r.id.eq(requestId))
-    .where((r) => r.clinicId.eq(staff.clinicId))
-    .first();
-  if (!request || request.status !== "PENDING") return;
-
-  const chosen = time || request.preferredTime;
-  if (!chosen || !/^([01]\d|2[0-3]):[0-5]\d$/.test(chosen)) {
-    redirect(`/desk/requests?needs=time&id=${requestId}`);
+  switch (result.reason) {
+    case "needs-time":
+      redirect(`/desk/requests?needs=time&id=${requestId}`);
+    case "refused":
+      redirect(`/desk/requests?refused=${encodeURIComponent(result.message)}&id=${requestId}`);
   }
-
-  const schedule = await loadSchedule(request.doctorId);
-  const duration = durationFor(schedule, request.service, SERVICE_MINUTES[request.service]);
-  const at = fromDateTimeLocalValue(`${request.preferredDate}T${chosen}`);
-  if (!at) redirect(`/desk/requests?needs=time&id=${requestId}`);
-
-  const problem = checkAvailability(schedule, at!, duration, minuteOfDay(at!));
-  if (problem) redirect(`/desk/requests?refused=${encodeURIComponent(problem)}&id=${requestId}`);
-
-  const now = instantToDb(new Date());
-
-  // The same lock and overlap check every other booking goes through. Imported
-  // rather than reimplemented: a second copy of this logic is a second chance
-  // to get it wrong.
-  const outcome = await db.transaction(async (tx) => {
-    const plan = db.raw.sql`SELECT id FROM "Doctor" WHERE id = ${request.doctorId} FOR UPDATE`
-      .affectedCount()
-      .build();
-    await tx.execute(plan as never);
-
-    const sameDay = await tx.orm.public.Appointment
-      .select("id", "scheduledAt", "durationMinutes", "status")
-      .where((a) => a.doctorId.eq(request.doctorId))
-      .where((a) => a.scheduledAt.gte(instantToDb(new Date(at!.getTime() - 12 * 60 * 60 * 1000))))
-      .where((a) => a.scheduledAt.lte(instantToDb(new Date(at!.getTime() + 12 * 60 * 60 * 1000))))
-      .all();
-
-    const start = minuteOfDay(at!);
-    for (const existing of sameDay) {
-      if (existing.status === "CANCELLED" || existing.status === "NO_SHOW") continue;
-      const otherStart = minuteOfDay(new Date(existing.scheduledAt.replace(" ", "T") + "Z"));
-      if (start < otherStart + existing.durationMinutes && start + duration > otherStart) {
-        return { taken: true as const, created: null };
-      }
-    }
-
-    const created = await tx.orm.public.Appointment.select("id").create({
-      id: newId(),
-      clinicId: staff.clinicId,
-      patientId: request.patientId,
-      doctorId: request.doctorId,
-      bookedById: staff.accountId,
-      scheduledAt: instantToDb(at!),
-      durationMinutes: duration,
-      service: request.service,
-      reason: request.reason,
-      status: "CONFIRMED",
-      source: "PATIENT_PORTAL",
-      visitType: "IN_PERSON",
-      priority: "ROUTINE",
-      // The patient asked for this visit themselves, so their standing choice
-      // about hearing from the clinic is the only signal there is.
-      reminderPreference: request.patient.reminderPreference,
-      createdAt: now,
-      updatedAt: now,
-    });
-
-    await tx.orm.public.AppointmentRequest.where((r) => r.id.eq(requestId)).update({
-      status: "ACCEPTED",
-      appointmentId: created.id,
-      decidedById: staff.accountId,
-      decidedAt: now,
-      updatedAt: now,
-    });
-
-    return { taken: false as const, created };
-  });
-
-  if (outcome.taken) {
-    redirect(
-      `/desk/requests?refused=${encodeURIComponent("That time went while the request was waiting. Offer another.")}&id=${requestId}`,
-    );
-  }
-
-  // The patient asked for this one, so they are told it came through — on
-  // the same terms as any other booking.
-  await confirmAcceptedBooking(outcome.created!.id);
-
-  revalidatePath("/desk/requests");
-  revalidatePath("/desk/appointments");
-  revalidatePath("/portal");
-  redirect(`/desk/appointments/${outcome.created!.id}`);
 }
