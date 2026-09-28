@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { redirect } from "next/navigation";
 import { getViewer, homeFor } from "@/lib/auth";
 import { Brand } from "@/components/brand";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default async function AuthLayout({ children }: { children: ReactNode }) {
   // Somebody already signed in has no business on the sign-in page, and where
@@ -30,8 +31,9 @@ export default async function AuthLayout({ children }: { children: ReactNode }) 
       </aside>
 
       <div className="flex min-h-dvh flex-col">
-        <div className="px-6 pt-6 sm:px-10 sm:pt-8">
+        <div className="flex items-center justify-between gap-4 px-6 pt-6 sm:px-10 sm:pt-8">
           <Brand href="/login" />
+          <ThemeToggle />
         </div>
         <div className="flex flex-1 items-start justify-center px-4 pt-8 pb-16 sm:items-center sm:px-10 sm:pt-0 sm:pb-24">
           <div className="w-full max-w-md">{children}</div>

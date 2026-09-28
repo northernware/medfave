@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { logout } from "@/app/actions/auth";
 import { requireViewer } from "@/lib/auth";
 import { Brand } from "@/components/brand";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 /**
  * A shell of its own, because this page belongs to no role.
@@ -21,6 +22,7 @@ export default async function AccountLayout({ children }: { children: ReactNode 
           <Brand href="/account" />
           <div className="flex items-center gap-3">
             <span className="text-sm text-ink-muted">{viewer.email}</span>
+            <ThemeToggle />
             <form action={logout}>
               <button className="text-sm font-medium text-ink-muted hover:text-ink">
                 Sign out
