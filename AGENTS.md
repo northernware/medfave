@@ -8,6 +8,22 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
+## Before you start: pull first
+
+Other developers and their agents push to these repos too. Before any work,
+and again right after anything is merged to `main`:
+
+1. **Pull:** `git fetch --all --prune`, then `git switch main && git pull --ff-only`.
+   Branch from that fresh `main`, never from a stale one.
+2. **See what changed:** `gh pr list` for open PRs, and the newest notes in
+   `docs/changes/`, here and in the other two medfave repos.
+3. **Touching the database** (medfave-web): check `migrations/` for new
+   migrations and run `npm run db:verify`. **Never `db:update` the shared dev
+   database from unmerged work.** Plan a migration with `npm run db:plan`,
+   push the branch, and apply it with `npm run db:migrate`. A schema pushed
+   straight from a local branch leaves the database in a state nobody else
+   can see or migrate from.
+
 ## Change notes — required for every developer and every agent
 
 Every push that opens or updates a pull request includes a change note in
