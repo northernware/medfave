@@ -1,5 +1,6 @@
 import "server-only";
 import { cache } from "react";
+import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { orm } from "@/src/prisma/db";
 import { instantFromDb } from "@/lib/datetime";
@@ -22,9 +23,15 @@ export type Viewer = {
   staff: { clinicId: string; clinicName: string; role: ClinicRole } | null;
   /** The clinician profile, when this account is one. */
   doctorId: string | null;
-  /** The chart this login belongs to, when it has been activated against one. */
-  patient: { id: string; clinicId: string } | null;
+  /**
+   * This person's chart at each clinic that has linked them, sorted by clinic
+   * name. Empty for a staff-only account. One login, many clinics — but each
+   * clinic's chart is its own, and nothing here merges them.
+   */
+  charts: PatientChart[];
 };
+
+export type PatientChart = { id: string; clinicId: string; clinicName: string };
 
 /** Cached per request, so a layout and its pages share one lookup. */
 export const getViewer = cache(async (): Promise<Viewer | null> => {
@@ -45,7 +52,7 @@ export async function viewerForSession(session: Session): Promise<Viewer | null>
       m.select("clinicId", "role").include("clinic", (c) => c.select("name")),
     )
     .include("doctorProfile", (d) => d.select("id"))
-    .include("patientProfile", (p) => p.select("id", "clinicId"))
+    .include("patientProfiles", (p) => p.select("id", "clinicId").include("clinic", (c) => c.select("name")))
     .where((a) => a.id.eq(session.accountId))
     .first();
   if (!account) return null;
@@ -76,9 +83,9 @@ export async function viewerForSession(session: Session): Promise<Viewer | null>
         }
       : null,
     doctorId: account.doctorProfile?.id ?? null,
-    patient: account.patientProfile
-      ? { id: account.patientProfile.id, clinicId: account.patientProfile.clinicId }
-      : null,
+    charts: account.patientProfiles
+      .map((p) => ({ id: p.id, clinicId: p.clinicId, clinicName: p.clinic.name }))
+      .sort((a, b) => a.clinicName.localeCompare(b.clinicName)),
   };
 }
 
@@ -96,7 +103,7 @@ export function homeFor(viewer: Viewer) {
   // clinical gate bounced them straight back here.
   if (viewer.staff?.role === "ADMIN") return "/manage";
   if (viewer.staff) return "/dashboard";
-  if (viewer.patient) return "/portal";
+  if (viewer.charts.length > 0) return "/portal";
   return "/no-access";
 }
 
@@ -226,24 +233,48 @@ export async function requireClinicManager(): Promise<CurrentManager> {
 
 export type CurrentPatient = {
   accountId: string;
+  /** The chart being acted on — at `clinicId`, and only that one. */
   patientId: string;
   clinicId: string;
+  clinicName: string;
   fullName: string;
   email: string;
+  /** Every clinic this login is linked to, for a switcher. */
+  charts: PatientChart[];
 };
 
-/** The gate on the patient portal: one login, one chart, and only that one. */
+/** The cookie that remembers which of a patient's clinics the portal shows. */
+export const PORTAL_CLINIC_COOKIE = "portal_clinic";
+
+/**
+ * One chart of a patient's, and the context around it.
+ *
+ * `clinicId` picks which, when the login is linked to several clinics; an
+ * unknown or missing one falls back to the first. Every query made with the
+ * result is scoped to that one chart, so a patient at two clinics sees each
+ * clinic's records separately and never together.
+ */
+export function patientContext(viewer: Viewer, clinicId?: string | null): CurrentPatient | null {
+  const chart = viewer.charts.find((c) => c.clinicId === clinicId) ?? viewer.charts[0];
+  if (!chart) return null;
+  return {
+    accountId: viewer.accountId,
+    patientId: chart.id,
+    clinicId: chart.clinicId,
+    clinicName: chart.clinicName,
+    fullName: viewer.fullName,
+    email: viewer.email,
+    charts: viewer.charts,
+  };
+}
+
+/** The gate on the patient portal: the chart at the clinic the patient has chosen, and only that one. */
 export async function requirePatientAccount(): Promise<CurrentPatient> {
   const viewer = await requireViewer();
   // A chart always has a clinic now — the database refuses one without — so
   // having a chart is the whole test.
-  if (!viewer.patient) redirect(homeFor(viewer));
-
-  return {
-    accountId: viewer.accountId,
-    patientId: viewer.patient.id,
-    clinicId: viewer.patient.clinicId,
-    fullName: viewer.fullName,
-    email: viewer.email,
-  };
+  const chosen = (await cookies()).get(PORTAL_CLINIC_COOKIE)?.value;
+  const patient = patientContext(viewer, chosen);
+  if (!patient) redirect(homeFor(viewer));
+  return patient;
 }

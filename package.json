@@ -17,7 +17,8 @@
     "db:seed": "tsx src/prisma/seed.ts",
     "postinstall": "prisma skills sync",
     "db:backfill-numbers": "tsx src/prisma/backfill-patient-numbers.ts",
-    "db:backfill": "tsx src/prisma/backfill-accounts.ts"
+    "db:backfill": "tsx src/prisma/backfill-accounts.ts",
+    "db:seed-second-clinic": "tsx src/prisma/seed-second-clinic.ts"
   },
   "dependencies": {
     "@fontsource-variable/inter": "^5.3.0",
