@@ -21,6 +21,13 @@ Authorization: Bearer <token>
   cookies.
 - Signing out is the app deleting its token.
 
+## Cross-origin
+
+`/api/v1` answers any origin (CORS `*`). That's safe because it is
+authenticated by the bearer token, never by cookies. It lets the app's web
+build call it; the native apps don't use CORS. Web pages don't send these
+headers.
+
 ## Errors
 
 Every error is JSON:
