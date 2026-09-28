@@ -1,6 +1,6 @@
 # Sign-in page: /register link labelled as patient activation
 
-PR #15 (merged). Written afterwards.
+Opened: 2026-09-28 15:31 PHT · PR #15 (merged) · note written afterwards
 
 ## What
 The sign-in page's `/register` link said "Register your practice". It now says "Patient with an activation code? Activate your account", with a line saying clinic staff join by invitation.

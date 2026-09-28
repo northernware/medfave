@@ -1,6 +1,6 @@
 # AGENTS.md points to PRODUCT.md
 
-PR #17 (merged). Written afterwards.
+Opened: 2026-09-28 17:15 PHT · PR #17 (merged) · note written afterwards
 
 ## What
 `AGENTS.md` gained a "Product direction" section pointing to `PRODUCT.md` in medfave-design.
