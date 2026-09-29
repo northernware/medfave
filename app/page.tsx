@@ -85,15 +85,19 @@ function Hero() {
           hereditary risk at a glance — while every patient keeps a chart of their own.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <Link href="/login" className={buttonClass("primary", "px-6 py-3 text-base")}>
-            Sign in to your clinic
+          <Link href="/signup?as=doctor" className={buttonClass("primary", "px-6 py-3 text-base")}>
+            I&rsquo;m a doctor
           </Link>
-          <Link href="/register" className={buttonClass("secondary", "px-6 py-3 text-base")}>
+          <Link href="/signup" className={buttonClass("secondary", "px-6 py-3 text-base")}>
             I&rsquo;m a patient
           </Link>
         </div>
         <p className="mt-4 text-sm text-ink-faint">
-          Patients: your clinic gives you an activation code to connect this login to your records.
+          Free to start. Already on medfave?{" "}
+          <Link href="/login" className="font-medium text-accent-ink hover:underline">
+            Sign in
+          </Link>
+          .
         </p>
       </div>
 
@@ -310,22 +314,22 @@ function Closing() {
             Ready when your clinic is.
           </h2>
           <p className="mt-2 text-base leading-6 text-white/80">
-            Staff join by invitation from their clinic manager. Patients activate with the code their
-            clinic gives them.
+            Doctors sign up and set up their clinic; we check every licence first. Patients sign up,
+            or activate with the code their clinic gives them.
           </p>
         </div>
         <div className="flex flex-wrap gap-3">
           <Link
-            href="/login"
+            href="/signup"
             className="inline-flex items-center justify-center rounded-full bg-white px-6 py-3 text-base font-semibold text-brand-plum transition-colors hover:bg-brand-blush"
           >
-            Sign in
+            Create an account
           </Link>
           <Link
-            href="/register"
+            href="/login"
             className="inline-flex items-center justify-center rounded-full border border-white/40 px-6 py-3 text-base font-semibold text-white transition-colors hover:bg-white/10"
           >
-            Activate a patient account
+            Sign in
           </Link>
         </div>
       </div>

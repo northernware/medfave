@@ -580,6 +580,18 @@ namespace public {
     /// makes either of them actually evict anybody. Null means every session
     /// is still good, which is the ordinary case.
     sessionsValidFrom TimestampString(3)?
+    /// When they proved they read this inbox. Null until they follow the link
+    /// sent at sign-up. Accounts made before open sign-up were stamped by the
+    /// migration that added this: staff were invited to their address, and
+    /// patients activated with a code from a desk that had identified them.
+    emailVerifiedAt TimestampString(3)?
+    /// What they said they were at sign-up. Only picks what they are shown
+    /// next; it grants nothing — access comes from memberships and charts.
+    signupRole   pg.enum(SignupRole)?
+    /// Consent to the privacy notice, which the Data Privacy Act requires for
+    /// health data: when, and which version of the notice they agreed to.
+    consentedAt  TimestampString(3)?
+    consentVersion String?
     createdAt    TimestampString(3) @default(now())
     updatedAt    TimestampString(3)
     memberships  ClinicMember[]
@@ -593,6 +605,7 @@ namespace public {
     requestsMade AppointmentRequest[] @relation(name: "AppointmentRequest_requestedById_fkey")
     requestsDecided AppointmentRequest[] @relation(name: "AppointmentRequest_decidedById_fkey")
     passwordResets PasswordReset[]
+    emailVerifications EmailVerification[]
 
     @@index([email], map: "Account_email_key", unique: true)
 
@@ -743,6 +756,35 @@ namespace public {
     @@map("PasswordReset")
   }
 
+  /// A link sent to prove an account's email address. Hashed like every other
+  /// token: a copy of this table is not a set of working links.
+  model EmailVerification {
+    id         String @id(map: "EmailVerification_pkey")
+    accountId  String
+    tokenHash  String
+    expiresAt  TimestampString(3)
+    usedAt     TimestampString(3)?
+    revokedAt  TimestampString(3)?
+    createdAt  TimestampString(3) @default(now())
+    account    Account @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "EmailVerification_accountId_fkey")
+
+    @@index([tokenHash], map: "EmailVerification_tokenHash_key", unique: true)
+    @@index([accountId], map: "EmailVerification_accountId_idx")
+
+    @@map("EmailVerification")
+  }
+
+  /// Attempts counted per key (an action plus an email or an address) in a
+  /// fixed window. Kept in the database because the app runs as many short-lived
+  /// serverless instances that share nothing else.
+  model RateLimitBucket {
+    key         String @id(map: "RateLimitBucket_pkey")
+    windowStart TimestampString(3)
+    count       Int    @default(0)
+
+    @@map("RateLimitBucket")
+  }
+
   model Prescription {
     id              String        @id(map: "Prescription_pkey")
     medicalRecordId String
@@ -879,6 +921,11 @@ namespace public {
     MINOR_INJURY_WOUND_CARE = "MINOR_INJURY_WOUND_CARE"
     TELECONSULTATION = "TELECONSULTATION"
     REFERRAL_CONSULTATION = "REFERRAL_CONSULTATION"
+  }
+
+  native_enum SignupRole {
+    PATIENT = "PATIENT"
+    DOCTOR = "DOCTOR"
   }
 
   native_enum Sex {

@@ -15,6 +15,12 @@ export const ClinicRole = {
 } as const;
 export type ClinicRole = (typeof ClinicRole)[keyof typeof ClinicRole];
 
+export const SignupRole = {
+  PATIENT: "PATIENT",
+  DOCTOR: "DOCTOR",
+} as const;
+export type SignupRole = (typeof SignupRole)[keyof typeof SignupRole];
+
 export const AppointmentRequestStatus = {
   PENDING: "PENDING",
   ACCEPTED: "ACCEPTED",
