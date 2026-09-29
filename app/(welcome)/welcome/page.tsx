@@ -49,7 +49,7 @@ export default async function WelcomePage() {
             subtitle="We check your PRC licence before your clinic can see patients — that keeps Medfave for real doctors only. Usually within a day."
           />
           <PracticeForm name={viewer.fullName} />
-          <p className="px-5 pb-5 text-sm text-ink-muted">
+          <p className="border-t border-border px-5 py-4 text-sm text-ink-muted sm:px-6">
             Joining a clinic that&rsquo;s already on Medfave? Ask them to invite you instead.
           </p>
         </Card>
