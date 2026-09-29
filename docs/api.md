@@ -60,7 +60,29 @@ are `YYYY-MM-DD` and times of day `HH:MM`, both in clinic time (Asia/Manila).
 | `POST /auth/resend-verification` | → `{ sent }`. A new verification link to the signed-in account's email |
 | `POST /auth/login` | `{ email, password }` → `{ token, expiresAt, viewer }` |
 | `POST /auth/activate` | `{ code, fullName, email, password, confirmPassword }` → `201 { token, expiresAt, viewer }`. Turns the activation code the clinic gave a patient into their login. |
+| `GET /auth/providers` | → `{ google }`. Whether "Continue with Google" is set up on this server; show the button only when `true` |
+| `POST /auth/google/exchange` | `{ code, verifier }` → `{ token, expiresAt, viewer }`. The end of a Google sign-in; see below |
 | `GET /me` | `{ viewer }` |
+
+**Continue with Google.** The server does the OAuth; the app opens it in a
+browser session (`WebBrowser.openAuthSessionAsync`) and never sees Google's
+tokens.
+
+1. Make a random `verifier` (43+ characters, base64url) and its
+   `challenge = base64url(sha256(verifier))`.
+2. Open `GET /auth/google?app=<return link>&challenge=<challenge>` (a page,
+   not under `/api/v1`), adding `&as=doctor` when the person chose doctor. The
+   return link must use the `medfave://` scheme; in development `exp://` and
+   `http://localhost` are allowed too.
+3. The person picks a Google account. Somebody new also chooses patient or
+   doctor and agrees to the privacy notice on a Medfave page in that same
+   browser session.
+4. The browser comes back to the return link with `?code=…` (good for two
+   minutes), or `?error=cancelled | unverified | failed | unavailable`.
+5. `POST /auth/google/exchange` with the `code` and the `verifier`.
+
+A Google account whose verified email matches an existing account signs in to
+that account; there is never a second account for one email.
 
 `viewer` is `{ id, email, fullName, role, clinic, charts, emailVerified, signupRole, patientId, doctorId }`:
 

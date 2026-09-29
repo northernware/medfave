@@ -570,7 +570,9 @@ namespace public {
   model Account {
     id           String @id(map: "Account_pkey")
     email        String
-    passwordHash String
+    /// Null for an account that has only ever signed in with Google. "Forgot
+    /// password" sets one.
+    passwordHash String?
     fullName     String
     /// Sessions issued before this instant stop being accepted.
     ///
@@ -606,6 +608,7 @@ namespace public {
     requestsDecided AppointmentRequest[] @relation(name: "AppointmentRequest_decidedById_fkey")
     passwordResets PasswordReset[]
     emailVerifications EmailVerification[]
+    identities   AccountIdentity[]
 
     @@index([email], map: "Account_email_key", unique: true)
 
@@ -774,6 +777,27 @@ namespace public {
     @@map("EmailVerification")
   }
 
+  /// A sign-in from another provider (Google) linked to an account.
+  ///
+  /// Matched on the provider's own id for the person (`subject`), never on the
+  /// email: an address can change hands, the subject can't. One account can
+  /// hold several; one subject belongs to one account.
+  model AccountIdentity {
+    id        String @id(map: "AccountIdentity_pkey")
+    accountId String
+    provider  pg.enum(IdentityProvider)
+    subject   String
+    /// The address the provider gave when this was linked, for the record.
+    email     String
+    createdAt TimestampString(3) @default(now())
+    account   Account @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "AccountIdentity_accountId_fkey")
+
+    @@index([provider, subject], map: "AccountIdentity_provider_subject_key", unique: true)
+    @@index([accountId], map: "AccountIdentity_accountId_idx")
+
+    @@map("AccountIdentity")
+  }
+
   /// Attempts counted per key (an action plus an email or an address) in a
   /// fixed window. Kept in the database because the app runs as many short-lived
   /// serverless instances that share nothing else.
@@ -921,6 +945,10 @@ namespace public {
     MINOR_INJURY_WOUND_CARE = "MINOR_INJURY_WOUND_CARE"
     TELECONSULTATION = "TELECONSULTATION"
     REFERRAL_CONSULTATION = "REFERRAL_CONSULTATION"
+  }
+
+  native_enum IdentityProvider {
+    GOOGLE = "GOOGLE"
   }
 
   native_enum SignupRole {

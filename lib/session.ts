@@ -103,6 +103,31 @@ export async function readAppToken(authorization: string | null): Promise<Sessio
   return verifyToken(token, APP_AUDIENCE);
 }
 
+/*
+ * Short-lived signed claims that are not sessions: the Google sign-in's state
+ * cookie, a sign-up waiting on its consent, the one-time code handed back to
+ * the app. Each names its own audience, so none of them is accepted as a
+ * session or an app token, or as one another.
+ */
+export async function sealClaims(claims: Record<string, unknown>, audience: string, seconds: number) {
+  return new SignJWT(claims)
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setAudience(audience)
+    .setExpirationTime(new Date(Date.now() + seconds * 1000))
+    .sign(signingKey());
+}
+
+export async function openClaims(token: string | undefined, audience: string): Promise<Record<string, unknown> | null> {
+  if (!token) return null;
+  try {
+    const { payload } = await jwtVerify(token, signingKey(), { algorithms: ["HS256"], audience });
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
 export async function destroySession() {
   (await cookies()).delete(COOKIE_NAME);
 }

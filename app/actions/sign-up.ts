@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { getViewer, homeFor, requireViewer } from "@/lib/auth";
 import { clientAddress, hit, LIMITS, TOO_MANY } from "@/lib/rate-limit";
+import { appReturnUrl, completeGoogleSignUp, issueHandoff } from "@/lib/google";
 import { createSession } from "@/lib/session";
 import { createAccount, sendVerification, verifyEmail } from "@/lib/sign-up";
 import type { FormState } from "@/lib/validation";
@@ -13,6 +14,18 @@ export async function signUp(_prev: FormState, formData: FormData): Promise<Form
   const result = await createAccount(Object.fromEntries(formData));
   if (!result.ok) return result;
 
+  await createSession(result.accountId);
+  const viewer = await getViewer();
+  redirect(viewer ? homeFor(viewer) : "/login");
+}
+
+/** The last step of a Google sign-up: role and consent. Back to the app if it started there. See `completeGoogleSignUp`. */
+export async function finishGoogleSignUp(_prev: FormState, formData: FormData): Promise<FormState> {
+  if (!(await hit(`sign-up:address:${await clientAddress()}`, LIMITS.signUpAddress))) return { message: TOO_MANY };
+  const result = await completeGoogleSignUp(Object.fromEntries(formData));
+  if (!result.ok) return result;
+
+  if (result.app) redirect(appReturnUrl(result.app, { code: await issueHandoff(result.accountId, result.app) }));
   await createSession(result.accountId);
   const viewer = await getViewer();
   redirect(viewer ? homeFor(viewer) : "/login");

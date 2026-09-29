@@ -1,0 +1,226 @@
+[
+  {
+    "id": "createNativeEnumType.IdentityProvider",
+    "label": "Create enum type \"IdentityProvider\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "type",
+        "name": "IdentityProvider"
+      }
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "create enum type \"IdentityProvider\"",
+        "sql": "CREATE TYPE \"public\".\"IdentityProvider\" AS ENUM ('GOOGLE')",
+        "params": []
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "table.AccountIdentity",
+    "label": "Create table \"AccountIdentity\"",
+    "summary": "Creates table \"AccountIdentity\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "AccountIdentity"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"AccountIdentity\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AccountIdentity\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"AccountIdentity\"",
+        "sql": "CREATE TABLE \"public\".\"AccountIdentity\" (\n  \"accountId\" text NOT NULL,\n  \"createdAt\" timestamp(3) DEFAULT (now()) NOT NULL,\n  \"email\" text NOT NULL,\n  \"id\" text NOT NULL,\n  \"provider\" \"IdentityProvider\" NOT NULL,\n  \"subject\" text NOT NULL,\n  CONSTRAINT \"AccountIdentity_pkey\" PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"AccountIdentity\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AccountIdentity\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.dropNotNull.Account.passwordHash",
+    "label": "Drop NOT NULL on \"Account\".\"passwordHash\"",
+    "operationClass": "widening",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "passwordHash",
+        "table": "Account"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"passwordHash\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Account",
+          "passwordHash"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop NOT NULL on \"passwordHash\"",
+        "sql": "ALTER TABLE \"public\".\"Account\" ALTER COLUMN \"passwordHash\" DROP NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"passwordHash\" is nullable",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "Account",
+          "passwordHash",
+          "YES"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.AccountIdentity.AccountIdentity_accountId_idx",
+    "label": "Create index \"AccountIdentity_accountId_idx\" on \"AccountIdentity\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "AccountIdentity_accountId_idx",
+        "table": "AccountIdentity"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"AccountIdentity_accountId_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AccountIdentity_accountId_idx\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"AccountIdentity_accountId_idx\"",
+        "sql": "CREATE INDEX \"AccountIdentity_accountId_idx\" ON \"public\".\"AccountIdentity\" (\"accountId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"AccountIdentity_accountId_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AccountIdentity_accountId_idx\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.AccountIdentity.AccountIdentity_provider_subject_key",
+    "label": "Create index \"AccountIdentity_provider_subject_key\" on \"AccountIdentity\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "AccountIdentity_provider_subject_key",
+        "table": "AccountIdentity"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"AccountIdentity_provider_subject_key\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AccountIdentity_provider_subject_key\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"AccountIdentity_provider_subject_key\"",
+        "sql": "CREATE UNIQUE INDEX \"AccountIdentity_provider_subject_key\" ON \"public\".\"AccountIdentity\" (\"provider\", \"subject\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"AccountIdentity_provider_subject_key\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AccountIdentity_provider_subject_key\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.AccountIdentity.AccountIdentity_accountId_fkey",
+    "label": "Add foreign key \"AccountIdentity_accountId_fkey\" on \"AccountIdentity\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "AccountIdentity_accountId_fkey",
+        "table": "AccountIdentity"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"AccountIdentity_accountId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AccountIdentity_accountId_fkey",
+          "public",
+          "\"public\".\"AccountIdentity\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"AccountIdentity_accountId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"AccountIdentity\"\nADD CONSTRAINT \"AccountIdentity_accountId_fkey\"\nFOREIGN KEY (\"accountId\")\nREFERENCES \"public\".\"Account\" (\"id\")\nON DELETE CASCADE\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"AccountIdentity_accountId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AccountIdentity_accountId_fkey",
+          "public",
+          "\"public\".\"AccountIdentity\""
+        ]
+      }
+    ]
+  }
+]

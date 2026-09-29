@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { GoogleButton, OrDivider } from "@/components/google-button";
+import { googleConfigured } from "@/lib/google";
 import { SignUpForm } from "./sign-up-form";
 
 export const metadata: Metadata = { title: "Create your account" };
@@ -13,6 +15,13 @@ export default async function SignUpPage({ searchParams }: PageProps<"/signup">)
       <p className="mt-1 text-sm text-ink-muted">
         For patients and for doctors. Your account alone shows no medical records — a clinic links you to yours.
       </p>
+
+      {googleConfigured() ? (
+        <div className="mt-6">
+          <GoogleButton as={as === "doctor" ? "doctor" : undefined} />
+          <OrDivider />
+        </div>
+      ) : null}
 
       <SignUpForm role={as === "doctor" ? "DOCTOR" : "PATIENT"} />
 

@@ -78,6 +78,9 @@ export async function changePassword(_prev: FormState, formData: FormData): Prom
     .first();
   if (!account) redirect("/login");
 
+  if (!account.passwordHash) {
+    return { message: "You sign in with Google, so there's no current password. To add one, use “Forgot password” on the sign-in page." };
+  }
   const matches = await bcrypt.compare(parsed.data.currentPassword, account.passwordHash);
   if (!matches) {
     return {
