@@ -35,7 +35,7 @@ export type Viewer = {
   emailVerified: boolean;
   /** What they said they were at sign-up. Picks their welcome; grants nothing. */
   signupRole: SignupRole | null;
-  /** Their licence check, when they have a clinician profile. */
+  /** Their license check, when they have a clinician profile. */
   verification: { status: VerificationStatus; declineReason: string | null } | null;
   /**
    * Whether their clinic is open for clinical work: it has a verified doctor.
@@ -127,7 +127,7 @@ export async function requireViewer(): Promise<Viewer> {
 
 /** Where an account belongs when it lands on the wrong door. */
 export function homeFor(viewer: Viewer) {
-  // A clinic waiting on its licence check: its doctor sets it up from Manage,
+  // A clinic waiting on its license check: its doctor sets it up from Manage,
   // where the check's status is. Nobody else can be a member yet.
   if (viewer.staff && !viewer.clinicOpen) return viewer.staff.role === "SECRETARY" ? "/welcome" : "/manage";
   if (viewer.staff?.role === "SECRETARY") return "/desk";
@@ -174,7 +174,7 @@ export async function requireDoctor(): Promise<CurrentDoctor> {
     .select("id", "fullName", "specialty", "licenseNumber", "clinicId", "verificationStatus")
     .where((d) => d.id.eq(viewer.doctorId!))
     .first();
-  // Nothing clinical until a Medfave admin has checked the licence.
+  // Nothing clinical until a Medfave admin has checked the license.
   if (doctor?.verificationStatus !== "VERIFIED") redirect("/manage");
   // A clinician profile that has lost its clinic cannot be scoped, so it cannot
   // be used.
@@ -241,7 +241,7 @@ export type CurrentManager = {
   email: string;
   /** Set when this manager is also the clinic's clinician. */
   doctorId: string | null;
-  /** False while the clinic waits on its licence check: no staff invitations yet. */
+  /** False while the clinic waits on its license check: no staff invitations yet. */
   clinicOpen: boolean;
 };
 

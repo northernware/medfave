@@ -4,9 +4,9 @@ import { createPractice } from "@/lib/practice";
 
 /**
  * A signed-up doctor creates their clinic, as `/welcome` does on the web. The
- * clinic opens once a Medfave admin verifies the licence.
+ * clinic opens once a Medfave admin verifies the license.
  *
- * Body: `{ licenceName, licenseNumber, specialty?, clinicName, address, contactNumber }`.
+ * Body: `{ licenseName, licenseNumber, specialty?, clinicName, address, contactNumber }`.
  */
 export async function POST(request: Request) {
   const viewer = await apiViewer(request);

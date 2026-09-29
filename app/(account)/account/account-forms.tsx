@@ -79,7 +79,7 @@ export function ClinicianProfileForm({
           />
         </Field>
         <Field
-          label="PRC licence number"
+          label="PRC license number"
           htmlFor="licenseNumber"
           error={err?.licenseNumber}
           hint="Printed beneath your signature."

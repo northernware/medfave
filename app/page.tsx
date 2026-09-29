@@ -314,7 +314,7 @@ function Closing() {
             Ready when your clinic is.
           </h2>
           <p className="mt-2 text-base leading-6 text-white/80">
-            Doctors sign up and set up their clinic; we check every licence first. Patients sign up,
+            Doctors sign up and set up their clinic; we check every license first. Patients sign up,
             or activate with the code their clinic gives them.
           </p>
         </div>

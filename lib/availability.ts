@@ -187,25 +187,39 @@ function label(m: number) {
 }
 
 /** "Monday to Saturday, 8:00 AM to 5:00 PM" — the clinic's week, in words. */
-export function describeWeek(schedule: Schedule) {
-  if (schedule.hours.length === 0) return "No opening hours set";
-
+/**
+ * The week as lines, one per run of consecutive days that share their hours:
+ * "Monday to Friday, 9:00 AM to 5:00 PM", "Saturday, 9:00 AM to 12:00 PM".
+ */
+export function weekLines(schedule: Schedule): string[] {
   const NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   const days = [...schedule.hours].sort((a, b) => a.weekday - b.weekday);
-
-  // Contiguous weekdays sharing the same hours read as a range; anything else
-  // is listed, so an unusual week is described accurately rather than tidily.
-  const sameHours = days.every(
-    (d) => d.openMinute === days[0].openMinute && d.closeMinute === days[0].closeMinute,
-  );
+  if (days.length === 0) return [];
+  // Scattered days that all share their hours read best as one list.
+  const sameHours = days.every((d) => d.openMinute === days[0].openMinute && d.closeMinute === days[0].closeMinute);
   const contiguous = days.every((d, i) => i === 0 || d.weekday === days[i - 1].weekday + 1);
-
-  const when = `${label(days[0].openMinute)} to ${label(days[0].closeMinute)}`;
-  if (sameHours && contiguous && days.length > 1) {
-    return `${NAMES[days[0].weekday]} to ${NAMES[days[days.length - 1].weekday]}, ${when}`;
+  if (sameHours && !contiguous) {
+    return [`${days.map((d) => NAMES[d.weekday]).join(", ")}, ${label(days[0].openMinute)} to ${label(days[0].closeMinute)}`];
   }
-  if (sameHours) return `${days.map((d) => NAMES[d.weekday]).join(", ")}, ${when}`;
-  return days
-    .map((d) => `${NAMES[d.weekday]} ${label(d.openMinute)}–${label(d.closeMinute)}`)
-    .join("; ");
+  const runs: (typeof days)[] = [];
+  for (const d of days) {
+    const run = runs[runs.length - 1];
+    const prev = run?.[run.length - 1];
+    if (prev && prev.weekday === d.weekday - 1 && prev.openMinute === d.openMinute && prev.closeMinute === d.closeMinute) {
+      run.push(d);
+    } else {
+      runs.push([d]);
+    }
+  }
+  return runs.map((run) => {
+    const first = run[0];
+    const last = run[run.length - 1];
+    const which = run.length === 1 ? NAMES[first.weekday] : `${NAMES[first.weekday]} to ${NAMES[last.weekday]}`;
+    return `${which}, ${label(first.openMinute)} to ${label(first.closeMinute)}`;
+  });
+}
+
+export function describeWeek(schedule: Schedule) {
+  if (schedule.hours.length === 0) return "No opening hours set";
+  return weekLines(schedule).join("; ");
 }

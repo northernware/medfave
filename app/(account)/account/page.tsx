@@ -24,7 +24,7 @@ const SAVED: Record<string, string> = {
  * A doctor, a secretary and a patient all need the same three things — a name,
  * a sign-in address and a password — so they share a page rather than each
  * getting a variant of it. The only role-dependent part is the clinician
- * block, which exists because a licence number prints on paper.
+ * block, which exists because a license number prints on paper.
  */
 export default async function AccountPage({ searchParams }: PageProps<"/account">) {
   const viewer = await requireViewer();

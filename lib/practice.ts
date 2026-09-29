@@ -7,25 +7,25 @@ import { newId } from "@/lib/ids";
 import { toFieldErrors, type FormState } from "@/lib/validation";
 
 /*
- * A doctor sets up their own practice, and Medfave checks their licence
+ * A doctor sets up their own practice, and Medfave checks their license
  * (plans/registration.md, phase 2). Until a platform admin verifies them, the
  * clinic can be set up (hours, details) but nothing clinical opens: no
  * patients, bookings or staff. Shared by the web and, later, the app.
  */
 
 /** A PRC registration number: seven digits, leading zeros included, as on the ID card. */
-const LICENCE = /^\d{7}$/;
+const LICENSE = /^\d{7}$/;
 
-/** Where an admin checks a licence by hand. The PRC has no API. */
+/** Where an admin checks a license by hand. The PRC has no API. */
 export const PRC_LOOKUP_URL = "https://online1.prc.gov.ph/Verification";
 
 const doctorFields = {
-  licenceName: z.string().trim().min(2, "Enter your name as it is on your PRC licence").max(120),
+  licenseName: z.string().trim().min(2, "Enter your name as it is on your PRC license").max(120),
   specialty: z.string().trim().max(80).optional().transform((v) => v || null),
   licenseNumber: z
     .string()
     .transform((v) => v.replace(/[\s-]/g, ""))
-    .pipe(z.string().regex(LICENCE, "Seven digits, as on your PRC ID — include any leading zeros")),
+    .pipe(z.string().regex(LICENSE, "Seven digits, as on your PRC ID — include any leading zeros")),
 };
 
 export const practiceSchema = z.object({
@@ -66,11 +66,11 @@ export function namesMatch(a: string, b: string) {
 }
 
 /** The automatic checks, as the admin queue shows them beside the doctor. */
-export function automaticChecks(d: { emailVerified: boolean; licenseNumber: string | null; licenceName: string; accountName: string }) {
+export function automaticChecks(d: { emailVerified: boolean; licenseNumber: string | null; licenseName: string; accountName: string }) {
   return [
     { label: "Email confirmed", ok: d.emailVerified },
-    { label: "Licence number is in the PRC format", ok: LICENCE.test(d.licenseNumber ?? "") },
-    { label: "Name on the licence matches the account", ok: namesMatch(d.licenceName, d.accountName) },
+    { label: "License number is in the PRC format", ok: LICENSE.test(d.licenseNumber ?? "") },
+    { label: "Name on the license matches the account", ok: namesMatch(d.licenseName, d.accountName) },
   ];
 }
 
@@ -117,7 +117,7 @@ export async function createPractice(accountId: string, input: Record<string, un
       id: doctorId,
       clinicId,
       accountId,
-      fullName: p.licenceName,
+      fullName: p.licenseName,
       specialty: p.specialty,
       licenseNumber: p.licenseNumber,
       verificationStatus: "PENDING",
@@ -130,7 +130,7 @@ export async function createPractice(accountId: string, input: Record<string, un
     await t.ClinicBreak.create({ id: newId(), doctorId, weekday: null, ...DEFAULT_LUNCH });
   });
 
-  await notifyAdmins({ doctorName: p.licenceName, clinicName: p.clinicName, licenseNumber: p.licenseNumber });
+  await notifyAdmins({ doctorName: p.licenseName, clinicName: p.clinicName, licenseNumber: p.licenseNumber });
   return { ok: true, clinicId };
 }
 
@@ -148,7 +148,7 @@ export async function resubmitPractice(doctorId: string, input: Record<string, u
 
   const now = instantToDb(new Date());
   await orm.Doctor.where((d) => d.id.eq(doctorId)).update({
-    fullName: parsed.data.licenceName,
+    fullName: parsed.data.licenseName,
     specialty: parsed.data.specialty,
     licenseNumber: parsed.data.licenseNumber,
     verificationStatus: "PENDING",
@@ -157,7 +157,7 @@ export async function resubmitPractice(doctorId: string, input: Record<string, u
     updatedAt: now,
   });
   await notifyAdmins({
-    doctorName: parsed.data.licenceName,
+    doctorName: parsed.data.licenseName,
     clinicName: doctor.clinic?.name ?? "",
     licenseNumber: parsed.data.licenseNumber,
   });

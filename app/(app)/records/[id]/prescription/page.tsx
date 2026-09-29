@@ -70,7 +70,7 @@ export default async function PrescriptionPage({ params }: PageProps<"/records/[
               {clinic.address ? <p className="text-sm">{clinic.address}</p> : null}
               {clinic.contactNumber ? <p className="text-sm">Tel. {clinic.contactNumber}</p> : null}
               {doctor.licenseNumber ? (
-                <p className="mt-1 text-xs">PRC Licence No. {doctor.licenseNumber}</p>
+                <p className="mt-1 text-xs">PRC License No. {doctor.licenseNumber}</p>
               ) : null}
             </div>
             <p className="text-right text-sm">

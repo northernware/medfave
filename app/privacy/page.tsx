@@ -28,7 +28,7 @@ export default function PrivacyPage() {
         <ul className="list-disc space-y-1 pl-6">
           <li><strong>Your account:</strong> name, email, password (stored only as a one-way hash), and whether you signed up as a patient or a doctor.</li>
           <li><strong>From your clinic:</strong> the records a clinic keeps about you as its patient — contact details, appointments, visit notes, prescriptions and documents. Each clinic keeps its own; one clinic never sees another&rsquo;s.</li>
-          <li><strong>For doctors:</strong> your PRC licence number, to check you are licensed before your clinic can see patients.</li>
+          <li><strong>For doctors:</strong> your PRC license number, to check you are licensed before your clinic can see patients.</li>
           <li><strong>Technical:</strong> sign-in times and network addresses, used to keep accounts secure and to stop repeated sign-in attempts.</li>
         </ul>
 

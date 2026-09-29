@@ -210,7 +210,7 @@ function Footer({
         <div className="w-64 border-t border-black pt-2 text-center text-sm">
           <p className="font-medium">{doctor.fullName}</p>
           {doctor.licenseNumber ? (
-            <p className="text-xs">PRC Licence No. {doctor.licenseNumber}</p>
+            <p className="text-xs">PRC License No. {doctor.licenseNumber}</p>
           ) : null}
           <p className="text-xs">Attending Physician</p>
         </div>

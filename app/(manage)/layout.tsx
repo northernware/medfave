@@ -20,46 +20,52 @@ export default async function ManageLayout({ children }: { children: ReactNode }
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="border-b border-border bg-surface">
-        <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3 px-4 py-3">
+        {/* Brand and account on one row; the clinic's sections on their own row
+            below on a phone, or beside the brand on a wider screen. */}
+        <div className="mx-auto flex max-w-4xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
           <Brand href="/manage" />
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-            <nav aria-label="Clinic" className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-              <Link href="/manage" className="text-ink-muted transition-colors hover:text-ink">
-                Clinic
+          <nav
+            aria-label="Clinic"
+            className="order-last -mx-4 flex w-[calc(100%+2rem)] items-center gap-x-4 overflow-x-auto px-4 text-sm sm:order-none sm:mx-0 sm:w-auto sm:px-0"
+          >
+            <Link href="/manage" className="text-ink-muted transition-colors hover:text-ink whitespace-nowrap">
+              Clinic
+            </Link>
+            <Link href="/manage/clinic" className="text-ink-muted transition-colors hover:text-ink whitespace-nowrap">
+              Details
+            </Link>
+            <Link href="/manage/schedule" className="text-ink-muted transition-colors hover:text-ink whitespace-nowrap">
+              Schedule
+            </Link>
+            {manager.clinicOpen ? (
+              <Link href="/manage/staff" className="text-ink-muted transition-colors hover:text-ink whitespace-nowrap">
+                Staff
               </Link>
-              <Link href="/manage/clinic" className="text-ink-muted transition-colors hover:text-ink">
-                Details
+            ) : null}
+            {viewer?.platformAdmin ? (
+              <Link href="/admin/verify" className="text-ink-muted transition-colors hover:text-ink whitespace-nowrap">
+                Admin
               </Link>
-              <Link href="/manage/schedule" className="text-ink-muted transition-colors hover:text-ink">
-                Schedule
+            ) : null}
+            {manager.doctorId && viewer?.verification?.status === "VERIFIED" ? (
+              <Link href="/dashboard" className="text-ink-muted transition-colors hover:text-ink whitespace-nowrap">
+                Consulting room
               </Link>
-              {manager.clinicOpen ? (
-                <Link href="/manage/staff" className="text-ink-muted transition-colors hover:text-ink">
-                  Staff
-                </Link>
-              ) : null}
-              {viewer?.platformAdmin ? (
-                <Link href="/admin/verify" className="text-ink-muted transition-colors hover:text-ink">
-                  Admin
-                </Link>
-              ) : null}
-              {manager.doctorId && viewer?.verification?.status === "VERIFIED" ? (
-                <Link href="/dashboard" className="text-ink-muted transition-colors hover:text-ink">
-                  Consulting room
-                </Link>
-              ) : null}
-            </nav>
+            ) : null}
+            <Link href="/account" className="whitespace-nowrap text-ink-muted transition-colors hover:text-ink md:hidden">
+              Account
+            </Link>
+          </nav>
+          <div className="ml-auto flex items-center gap-3">
             <Link
               href="/account"
-              className="text-sm text-ink-muted transition-colors hover:text-ink hover:underline"
+              className="hidden max-w-40 truncate text-sm text-ink-muted transition-colors hover:text-ink hover:underline md:inline"
             >
               {manager.fullName}
             </Link>
             <ThemeToggle />
             <form action={logout}>
-              <button className="text-sm font-medium text-ink-muted hover:text-ink">
-                Sign out
-              </button>
+              <button className="text-sm font-medium whitespace-nowrap text-ink-muted hover:text-ink">Sign out</button>
             </form>
           </div>
         </div>

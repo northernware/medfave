@@ -266,7 +266,7 @@ export async function sendEmailVerification(options: {
   });
 }
 
-/** To Medfave's admins: a doctor sent their licence for checking. */
+/** To Medfave's admins: a doctor sent their license for checking. */
 export async function sendVerificationRequest(options: {
   to: string;
   doctorName: string;
@@ -275,14 +275,14 @@ export async function sendVerificationRequest(options: {
   link: string;
 }): Promise<SendOutcome> {
   const lines = [
-    `<strong>${esc(options.doctorName)}</strong> (${esc(options.clinicName)}) sent PRC licence ${esc(options.licenseNumber)} for checking.`,
+    `<strong>${esc(options.doctorName)}</strong> (${esc(options.clinicName)}) sent PRC license ${esc(options.licenseNumber)} for checking.`,
     `Open the queue: <a href="${esc(options.link)}">${esc(options.link)}</a>`,
   ];
   return send({
     to: options.to,
     subject: `Doctor to verify: ${options.doctorName}`,
     text: [
-      `${options.doctorName} (${options.clinicName}) sent PRC licence ${options.licenseNumber} for checking.`,
+      `${options.doctorName} (${options.clinicName}) sent PRC license ${options.licenseNumber} for checking.`,
       ``,
       `Open the queue: ${options.link}`,
     ].join("\n"),
@@ -290,7 +290,7 @@ export async function sendVerificationRequest(options: {
   });
 }
 
-/** To the doctor: their licence was verified, or declined with a reason. */
+/** To the doctor: their license was verified, or declined with a reason. */
 export async function sendVerificationOutcome(options: {
   to: string;
   name: string;
@@ -301,23 +301,23 @@ export async function sendVerificationOutcome(options: {
   const lines = options.verified
     ? [
         `Hello ${esc(options.name)},`,
-        `We've checked your PRC licence. Your clinic on Medfave is now fully open: you can add patients, book visits and invite your secretary.`,
+        `We've checked your PRC license. Your clinic on Medfave is now fully open: you can add patients, book visits and invite your secretary.`,
         `<a href="${esc(options.link)}">${esc(options.link)}</a>`,
       ]
     : [
         `Hello ${esc(options.name)},`,
-        `We couldn't verify your PRC licence yet. The reason:`,
+        `We couldn't verify your PRC license yet. The reason:`,
         `<strong>${esc(options.reason ?? "")}</strong>`,
         `Fix the details and send them again: <a href="${esc(options.link)}">${esc(options.link)}</a>`,
       ];
   return send({
     to: options.to,
-    subject: options.verified ? "Your clinic on Medfave is open" : "We couldn't verify your licence yet",
+    subject: options.verified ? "Your clinic on Medfave is open" : "We couldn't verify your license yet",
     text: (options.verified
       ? [
           `Hello ${options.name},`,
           ``,
-          `We've checked your PRC licence. Your clinic on Medfave is now fully open:`,
+          `We've checked your PRC license. Your clinic on Medfave is now fully open:`,
           `you can add patients, book visits and invite your secretary.`,
           ``,
           options.link,
@@ -325,14 +325,14 @@ export async function sendVerificationOutcome(options: {
       : [
           `Hello ${options.name},`,
           ``,
-          `We couldn't verify your PRC licence yet. The reason:`,
+          `We couldn't verify your PRC license yet. The reason:`,
           ``,
           `    ${options.reason ?? ""}`,
           ``,
           `Fix the details and send them again: ${options.link}`,
         ]
     ).join("\n"),
-    html: layout(options.verified ? "You're verified" : "We couldn't verify your licence yet", lines),
+    html: layout(options.verified ? "You're verified" : "We couldn't verify your license yet", lines),
   });
 }
 
