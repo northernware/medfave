@@ -21,8 +21,8 @@ export default async function ManageLayout({ children }: { children: ReactNode }
       <header className="border-b border-border bg-surface">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3 px-4 py-3">
           <Brand href="/manage" />
-          <div className="flex items-center gap-4">
-            <nav aria-label="Clinic" className="flex items-center gap-3 text-sm">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <nav aria-label="Clinic" className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
               <Link href="/manage" className="text-ink-muted transition-colors hover:text-ink">
                 Clinic
               </Link>

@@ -44,7 +44,7 @@ export function OpeningHoursForm({
                 />
                 {WEEKDAY_NAMES[weekday]}
               </label>
-              <span className="flex items-center gap-2 text-sm text-ink-muted">
+              <span className="flex w-full items-center gap-2 text-sm text-ink-muted sm:w-auto">
                 <TextInput
                   type="time"
                   step={300}
@@ -52,7 +52,7 @@ export function OpeningHoursForm({
                   aria-label={`${WEEKDAY_NAMES[weekday]} opens`}
                   defaultValue={timeValue(day?.openMinute ?? 8 * 60)}
                   invalid={Boolean(problem)}
-                  className="w-32"
+                  className="min-w-0 flex-1 sm:w-32 sm:flex-none"
                 />
                 to
                 <TextInput
@@ -62,7 +62,7 @@ export function OpeningHoursForm({
                   aria-label={`${WEEKDAY_NAMES[weekday]} closes`}
                   defaultValue={timeValue(day?.closeMinute ?? 17 * 60)}
                   invalid={Boolean(problem)}
-                  className="w-32"
+                  className="min-w-0 flex-1 sm:w-32 sm:flex-none"
                 />
               </span>
               {problem ? <span className="text-xs text-danger-ink">{problem}</span> : null}

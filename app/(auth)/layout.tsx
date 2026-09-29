@@ -11,7 +11,7 @@ export default async function AuthLayout({ children }: { children: ReactNode }) 
   if (viewer) redirect(homeFor(viewer));
 
   return (
-    <div className="grid min-h-dvh lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
+    <div className="grid min-h-dvh grid-cols-1 lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]">
       {/*
         The brand panel. The heart + plus pattern fills it, but the words sit on
         a quiet, unpatterned block — text never goes over the pattern.

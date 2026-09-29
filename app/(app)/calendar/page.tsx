@@ -105,7 +105,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
         }
       />
 
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
         <Card>
           <div className="flex items-center justify-between gap-4 border-b border-border px-4 py-3">
             <Link
