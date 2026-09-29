@@ -8,6 +8,10 @@
       "model": "Account",
       "namespace": "public"
     },
+    "AccountIdentity": {
+      "model": "AccountIdentity",
+      "namespace": "public"
+    },
     "Appointment": {
       "model": "Appointment",
       "namespace": "public"
@@ -178,7 +182,7 @@
                 }
               },
               "passwordHash": {
-                "nullable": false,
+                "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -273,6 +277,21 @@
                 },
                 "to": {
                   "model": "EmailVerification",
+                  "namespace": "public"
+                }
+              },
+              "identities": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "accountId"
+                  ]
+                },
+                "to": {
+                  "model": "AccountIdentity",
                   "namespace": "public"
                 }
               },
@@ -420,6 +439,99 @@
               },
               "namespaceId": "public",
               "table": "Account"
+            }
+          },
+          "AccountIdentity": {
+            "fields": {
+              "accountId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "email": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "provider": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/enum@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "typeName": "IdentityProvider"
+                  }
+                }
+              },
+              "subject": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "account": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "accountId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Account",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "accountId": {
+                  "column": "accountId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "email": {
+                  "column": "email"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "provider": {
+                  "column": "provider"
+                },
+                "subject": {
+                  "column": "subject"
+                }
+              },
+              "namespaceId": "public",
+              "table": "AccountIdentity"
             }
           },
           "Appointment": {
@@ -5115,6 +5227,13 @@
               ],
               "typeName": "DocumentType"
             },
+            "IdentityProvider": {
+              "kind": "postgres-enum",
+              "members": [
+                "GOOGLE"
+              ],
+              "typeName": "IdentityProvider"
+            },
             "RecordStatus": {
               "kind": "postgres-enum",
               "members": [
@@ -5248,7 +5367,7 @@
                 "passwordHash": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
-                  "nullable": false
+                  "nullable": true
                 },
                 "sessionsValidFrom": {
                   "codecId": "pg/timestamp-string@1",
@@ -5296,6 +5415,101 @@
                   "id"
                 ],
                 "name": "Account_pkey"
+              },
+              "uniques": []
+            },
+            "AccountIdentity": {
+              "columns": {
+                "accountId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamp",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "email": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "provider": {
+                  "codecId": "pg/enum@1",
+                  "nativeType": "IdentityProvider",
+                  "nullable": false,
+                  "typeParams": {
+                    "typeName": "IdentityProvider"
+                  },
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "IdentityProvider",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "subject": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "name": "AccountIdentity_accountId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "accountId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "AccountIdentity"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Account"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "accountId"
+                  ],
+                  "name": "AccountIdentity_accountId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "provider",
+                    "subject"
+                  ],
+                  "name": "AccountIdentity_provider_subject_key",
+                  "unique": true
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ],
+                "name": "AccountIdentity_pkey"
               },
               "uniques": []
             },
@@ -9150,6 +9364,12 @@
                 "RECORD_COPIES"
               ]
             },
+            "IdentityProvider": {
+              "kind": "valueSet",
+              "values": [
+                "GOOGLE"
+              ]
+            },
             "RecordStatus": {
               "kind": "valueSet",
               "values": [
@@ -9227,7 +9447,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "30a9ed7f15ffe62b3a0b880fcb853ad560092462b1374bab2c7eb48e2a3cb5be"
+    "storageHash": "46d6038ae2dabe39a7ee5a0a24e88afe6554c9f1b850d37cf36ffd638796ae39"
   },
   "capabilities": {
     "postgres": {

@@ -17,7 +17,7 @@ export default async function WelcomePage() {
       <div>
         <h1 className="text-[32px] leading-10 font-semibold tracking-[-0.015em]">Welcome, {firstName}</h1>
         <p className="mt-1 text-ink-muted">
-          {doctor ? "Let's get your practice onto medfave." : "Let's connect you with your clinic."}
+          {doctor ? "Let's get your practice onto Medfave." : "Let's connect you with your clinic."}
         </p>
       </div>
 

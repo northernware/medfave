@@ -2,17 +2,13 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import { signUp } from "@/app/actions/sign-up";
+import { finishGoogleSignUp } from "@/app/actions/sign-up";
 import { Field, FormError, SubmitButton, TextInput } from "@/components/form";
 import { EMPTY_FORM_STATE } from "@/lib/validation";
+import { ROLES } from "../sign-up-form";
 
-export const ROLES = [
-  { value: "PATIENT", label: "I'm a patient", hint: "See your visits and records, and ask clinics for a time." },
-  { value: "DOCTOR", label: "I'm a doctor", hint: "Run your clinic. We check your PRC licence before patients." },
-] as const;
-
-export function SignUpForm({ role }: { role: "PATIENT" | "DOCTOR" }) {
-  const [state, action] = useActionState(signUp, EMPTY_FORM_STATE);
+export function GoogleSignUpForm({ name, role }: { name: string; role: "PATIENT" | "DOCTOR" }) {
+  const [state, action] = useActionState(finishGoogleSignUp, EMPTY_FORM_STATE);
   const err = state.fieldErrors;
 
   return (
@@ -40,32 +36,8 @@ export function SignUpForm({ role }: { role: "PATIENT" | "DOCTOR" }) {
         {err?.role ? <p className="mt-1.5 text-sm text-danger-ink">{err.role[0]}</p> : null}
       </fieldset>
 
-      <Field label="Full name" htmlFor="fullName" error={err?.fullName} required>
-        <TextInput id="fullName" name="fullName" autoComplete="name" required invalid={Boolean(err?.fullName)} />
-      </Field>
-      <Field label="Email" htmlFor="email" error={err?.email} required>
-        <TextInput id="email" name="email" type="email" autoComplete="email" required invalid={Boolean(err?.email)} />
-      </Field>
-      <Field label="Password" htmlFor="password" error={err?.password} hint="At least 10 characters." required>
-        <TextInput
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          required
-          minLength={10}
-          invalid={Boolean(err?.password)}
-        />
-      </Field>
-      <Field label="Confirm password" htmlFor="confirmPassword" error={err?.confirmPassword} required>
-        <TextInput
-          id="confirmPassword"
-          name="confirmPassword"
-          type="password"
-          autoComplete="new-password"
-          required
-          invalid={Boolean(err?.confirmPassword)}
-        />
+      <Field label="Full name" htmlFor="fullName" error={err?.fullName} hint="As it should appear to your clinic." required>
+        <TextInput id="fullName" name="fullName" autoComplete="name" defaultValue={name} required invalid={Boolean(err?.fullName)} />
       </Field>
 
       <div>
