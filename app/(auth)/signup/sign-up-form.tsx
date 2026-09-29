@@ -76,7 +76,7 @@ export function SignUpForm({ role }: { role: "PATIENT" | "DOCTOR" }) {
             <Link href="/privacy" target="_blank" className="font-medium text-accent-ink hover:underline">
               privacy notice
             </Link>{" "}
-            and agree to medfave processing my personal and health information as it describes.
+            and agree to Medfave processing my personal and health information as it describes.
           </span>
         </label>
         {err?.consent ? <p className="mt-1.5 text-sm text-danger-ink">{err.consent[0]}</p> : null}

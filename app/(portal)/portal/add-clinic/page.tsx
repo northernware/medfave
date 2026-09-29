@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Add a clinic" };
 
 /**
  * Another clinic's activation code, redeemed by somebody who already has a
- * medfave login. That clinic's chart joins the login; its records stay its own.
+ * Medfave login. That clinic's chart joins the login; its records stay its own.
  */
 export default async function AddClinicPage({ searchParams }: PageProps<"/portal/add-clinic">) {
   const me = await requirePatientAccount();
@@ -28,7 +28,7 @@ export default async function AddClinicPage({ searchParams }: PageProps<"/portal
       <Card>
         <div className="space-y-2 px-5 pt-5 text-sm text-ink-muted">
           <p>
-            Seen at another clinic that uses medfave? Ask their desk for an activation code and enter it here — it
+            Seen at another clinic that uses Medfave? Ask their desk for an activation code and enter it here — it
             links that clinic to this same login, so you don&rsquo;t need a second account.
           </p>
           <p>Each clinic keeps its own records. One clinic never sees another&rsquo;s.</p>

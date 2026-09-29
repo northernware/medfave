@@ -9,7 +9,7 @@ import {
 } from "./logo-paths";
 
 /*
- * The medfave logo, from the approved artwork in the brand repo
+ * The Medfave logo, from the approved artwork in the brand repo
  * (northernware/medfave-design). The shapes are copied in `logo-paths.ts`; the
  * colours come from the theme (`--logo-heart`, `--logo-word`), so the lockup is
  * fuchsia and plum on light and the single-colour white version on dark.
@@ -67,7 +67,7 @@ export function Lockup({ className = "h-7 w-auto" }: { className?: string }) {
 export function Brand({ href = "/", size = "default" }: { href?: string; size?: "default" | "large" }) {
   // The guidelines' minimum for the full logo is 140px wide: 26px tall here.
   return (
-    <Link href={href} aria-label="medfave home" className="inline-flex items-center">
+    <Link href={href} aria-label="Medfave home" className="inline-flex items-center">
       <Lockup className={size === "large" ? "h-9 w-auto" : "h-[26px] w-auto"} />
     </Link>
   );

@@ -50,7 +50,7 @@ export async function createAccount(input: Record<string, unknown>): Promise<Sig
   if (taken) {
     return {
       ok: false,
-      message: "That email already has a medfave account.",
+      message: "That email already has a Medfave account.",
       fieldErrors: { email: ["Already registered — sign in instead"] },
     };
   }

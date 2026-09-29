@@ -7,7 +7,7 @@ import { buttonClass } from "@/components/ui";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export const metadata: Metadata = {
-  title: { absolute: "medfave — appointments and records for family practice" },
+  title: { absolute: "Medfave — appointments and records for family practice" },
 };
 
 /*
@@ -80,7 +80,7 @@ function Hero() {
           Care, with a little heart — and the whole family in one place.
         </h1>
         <p className="mt-5 max-w-xl text-lg leading-7 text-pretty text-ink-muted">
-          medfave keeps a family practice&rsquo;s appointments, visit notes and prescriptions together,
+          Medfave keeps a family practice&rsquo;s appointments, visit notes and prescriptions together,
           organised by household. Find relatives in a click, book a family checkup, and see
           hereditary risk at a glance — while every patient keeps a chart of their own.
         </p>
@@ -93,7 +93,7 @@ function Hero() {
           </Link>
         </div>
         <p className="mt-4 text-sm text-ink-faint">
-          Free to start. Already on medfave?{" "}
+          Free to start. Already on Medfave?{" "}
           <Link href="/login" className="font-medium text-accent-ink hover:underline">
             Sign in
           </Link>
@@ -264,7 +264,7 @@ function Roles() {
             One clinic, a seat for everyone in it
           </h2>
           <p className="mt-3 text-base leading-6 text-pretty text-ink-muted">
-            Each person signs in to the part of medfave that&rsquo;s theirs, and sees only what their
+            Each person signs in to the part of Medfave that&rsquo;s theirs, and sees only what their
             role needs.
           </p>
         </div>
@@ -291,7 +291,7 @@ function Privacy() {
         </h2>
         <div className="space-y-4 text-base leading-6 text-pretty text-ink-muted">
           <p>
-            Everything a doctor creates in medfave is visible to that doctor only. A patient signing in
+            Everything a doctor creates in Medfave is visible to that doctor only. A patient signing in
             sees their own records and nobody else&rsquo;s, and the front desk works the schedule
             without reading clinical notes.
           </p>

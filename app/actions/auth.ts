@@ -173,7 +173,7 @@ export async function requestPasswordReset(
   const confirmed: FormState = {
     ok: true,
     message:
-      `If ${email} has a medfave account, a link is on its way. It expires in an hour. ` +
+      `If ${email} has a Medfave account, a link is on its way. It expires in an hour. ` +
       `Check the spam folder if it does not appear.`,
   };
 

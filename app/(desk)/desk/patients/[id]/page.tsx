@@ -38,7 +38,7 @@ async function ActivationHandover({
         <div
           className="size-44 shrink-0 self-center rounded-md bg-white p-2 sm:self-start [&>svg]:size-full"
           role="img"
-          aria-label={`QR code that opens medfave's activation page with ${patientName}'s code filled in`}
+          aria-label={`QR code that opens Medfave's activation page with ${patientName}'s code filled in`}
           // Generated here from our own link by the qrcode package — no user input reaches it unescaped.
           dangerouslySetInnerHTML={{ __html: svg }}
         />
@@ -50,7 +50,7 @@ async function ActivationHandover({
             <p className="tabular mt-1 text-xl font-semibold tracking-wider">{code}</p>
           </div>
           <p className="text-sm text-ink-muted">
-            {patientName} scans the QR code with their phone camera to set up their login, in the medfave
+            {patientName} scans the QR code with their phone camera to set up their login, in the Medfave
             app or on the web. Or share it to them, or read it out.
           </p>
           <ShareCode code={code} link={link} clinicName={clinicName} />

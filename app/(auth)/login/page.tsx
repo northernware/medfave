@@ -30,7 +30,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
       </p>
 
       <p className="mt-6 text-sm text-ink-muted">
-        New to medfave?{" "}
+        New to Medfave?{" "}
         <Link href="/signup" className="font-medium text-accent-ink hover:underline">
           Create an account
         </Link>

@@ -1,6 +1,6 @@
 # Mobile API (v1)
 
-The JSON API the medfave mobile app talks to, under `/api/v1`. It applies the
+The JSON API the Medfave mobile app talks to, under `/api/v1`. It applies the
 same rules as the web pages; where a page would redirect, the API answers with
 a status code instead.
 
