@@ -14,7 +14,7 @@ namespace public {
     specialty      String?
     licenseNumber  String?
     clinicName     String?
-    /// Whether a Medfave admin has checked their PRC licence. Nothing clinical
+    /// Whether a Medfave admin has checked their PRC license. Nothing clinical
     /// opens until it is VERIFIED: no patients, bookings or staff invites.
     /// Doctors from before self sign-up were stamped VERIFIED by the migration
     /// that added this.

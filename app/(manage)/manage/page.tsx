@@ -72,10 +72,10 @@ export default async function ManagePage({ searchParams }: PageProps<"/manage">)
             <VerificationTracker status="PENDING" />
             <div>
               <h2 className="text-xl leading-7 font-semibold tracking-[-0.01em]">
-                {welcome ? "Your clinic is set up. Now we check your licence." : "We're checking your licence"}
+                {welcome ? "Your clinic is set up. Now we check your license." : "We're checking your license"}
               </h2>
               <p className="mt-1.5 text-sm leading-6 text-ink-muted">
-                PRC licence <strong className="nums text-ink">{me.licenseNumber}</strong> for{" "}
+                PRC license <strong className="nums text-ink">{me.licenseNumber}</strong> for{" "}
                 <strong className="text-ink">{me.fullName}</strong>. Usually within a day — we&rsquo;ll email you. Until
                 then you can&rsquo;t add patients, book visits or invite staff.
               </p>
@@ -105,7 +105,7 @@ export default async function ManagePage({ searchParams }: PageProps<"/manage">)
             <VerificationTracker status="DECLINED" />
             <div>
               <h2 className="text-xl leading-7 font-semibold tracking-[-0.01em]">
-                We couldn&rsquo;t verify your licence yet
+                We couldn&rsquo;t verify your license yet
               </h2>
               <p className="mt-1.5 text-sm text-ink-muted">Fix the details below and send them again.</p>
             </div>

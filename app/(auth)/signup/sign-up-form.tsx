@@ -8,7 +8,7 @@ import { EMPTY_FORM_STATE } from "@/lib/validation";
 
 export const ROLES = [
   { value: "PATIENT", label: "I'm a patient", hint: "See your visits and records, and ask clinics for a time." },
-  { value: "DOCTOR", label: "I'm a doctor", hint: "Run your clinic. We check your PRC licence before patients." },
+  { value: "DOCTOR", label: "I'm a doctor", hint: "Run your clinic. We check your PRC license before patients." },
 ] as const;
 
 export function SignUpForm({ role }: { role: "PATIENT" | "DOCTOR" }) {

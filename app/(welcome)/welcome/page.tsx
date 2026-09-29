@@ -38,7 +38,7 @@ export default async function WelcomePage() {
         <Card>
           <CardHeader title={viewer.staff.clinicName} subtitle="Not open yet" />
           <p className="px-5 pb-5 text-sm text-ink-muted">
-            This clinic&rsquo;s doctor is waiting for us to check their PRC licence. You&rsquo;ll have everything as soon
+            This clinic&rsquo;s doctor is waiting for us to check their PRC license. You&rsquo;ll have everything as soon
             as it&rsquo;s verified.
           </p>
         </Card>
@@ -46,7 +46,7 @@ export default async function WelcomePage() {
         <Card>
           <CardHeader
             title="Set up your practice"
-            subtitle="We check your PRC licence before your clinic can see patients — that keeps Medfave for real doctors only. Usually within a day."
+            subtitle="We check your PRC license before your clinic can see patients — that keeps Medfave for real doctors only. Usually within a day."
           />
           <PracticeForm name={viewer.fullName} />
           <p className="border-t border-border px-5 py-4 text-sm text-ink-muted sm:px-6">

@@ -89,7 +89,7 @@ async function main() {
     specialty: "Internal Medicine",
     clinicName: CLINIC_NAME,
     licenseNumber: "PRC-0203871",
-    // A demo clinic that works straight away: skip the licence check.
+    // A demo clinic that works straight away: skip the license check.
     verificationStatus: "VERIFIED",
     verifiedAt: now,
     createdAt: now,

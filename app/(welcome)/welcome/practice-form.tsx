@@ -7,7 +7,7 @@ import { buttonClass } from "@/components/ui";
 import { EMPTY_FORM_STATE } from "@/lib/validation";
 
 const STEPS = ["You", "Your clinic"] as const;
-const FIRST_STEP_FIELDS = ["licenceName", "licenseNumber", "specialty"];
+const FIRST_STEP_FIELDS = ["licenseName", "licenseNumber", "specialty"];
 
 /**
  * A doctor's own practice: who they are to the PRC, then the clinic. On a
@@ -54,19 +54,19 @@ export function PracticeForm({ name }: { name: string }) {
         <legend className="sr-only sm:not-sr-only sm:mb-4 sm:flex sm:items-center sm:gap-2 sm:text-base sm:font-semibold">
           <SectionNumber n={1} /> You
         </legend>
-        <Field label="Name on your PRC licence" htmlFor="licenceName" error={err?.licenceName} required>
+        <Field label="Name on your PRC license" htmlFor="licenseName" error={err?.licenseName} required>
           <TextInput
-            id="licenceName"
-            name="licenceName"
-            defaultValue={v.licenceName ?? name}
+            id="licenseName"
+            name="licenseName"
+            defaultValue={v.licenseName ?? name}
             autoComplete="name"
             required
-            invalid={Boolean(err?.licenceName)}
+            invalid={Boolean(err?.licenseName)}
           />
         </Field>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
-            label="PRC licence number"
+            label="PRC license number"
             htmlFor="licenseNumber"
             error={err?.licenseNumber}
             hint="Seven digits, as on your PRC ID."

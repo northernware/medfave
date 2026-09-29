@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Verify doctors" };
 
 /**
  * The verification queue. The automatic checks sit beside each doctor; the
- * licence itself is checked by hand in the PRC's lookup, which has no API.
+ * license itself is checked by hand in the PRC's lookup, which has no API.
  */
 export default async function VerifyPage() {
   const [pending, recent] = await Promise.all([
@@ -33,7 +33,7 @@ export default async function VerifyPage() {
     <div className="space-y-6">
       <PageHeader
         title="Verify doctors"
-        subtitle={`${pending.length === 0 ? "Nobody" : pending.length === 1 ? "One doctor" : `${pending.length} doctors`} waiting. Check each licence in the PRC lookup, then verify or decline.`}
+        subtitle={`${pending.length === 0 ? "Nobody" : pending.length === 1 ? "One doctor" : `${pending.length} doctors`} waiting. Check each license in the PRC lookup, then verify or decline.`}
       />
 
       {pending.length === 0 ? (
@@ -43,7 +43,7 @@ export default async function VerifyPage() {
           const checks = automaticChecks({
             emailVerified: Boolean(d.account?.emailVerifiedAt),
             licenseNumber: d.licenseNumber,
-            licenceName: d.fullName,
+            licenseName: d.fullName,
             accountName: d.account?.fullName ?? "",
           });
           return (
@@ -58,7 +58,7 @@ export default async function VerifyPage() {
                 }
               />
               <dl className="grid gap-4 px-5 py-4 sm:grid-cols-3">
-                <Detail label="PRC licence" value={d.licenseNumber} />
+                <Detail label="PRC license" value={d.licenseNumber} />
                 <Detail label="Specialty" value={d.specialty} />
                 <Detail label="Account" value={`${d.account?.fullName ?? "—"} · ${d.account?.email ?? ""}`} />
                 <Detail label="Clinic" value={d.clinic?.name} />

@@ -63,8 +63,8 @@ are `YYYY-MM-DD` and times of day `HH:MM`, both in clinic time (Asia/Manila).
 | `GET /auth/providers` | → `{ google }`. Whether "Continue with Google" is set up on this server; show the button only when `true` |
 | `POST /auth/google/exchange` | `{ code, verifier }` → `{ token, expiresAt, viewer }`. The end of a Google sign-in; see below |
 | `GET /me` | `{ viewer }` |
-| `POST /practice` | `{ licenceName, licenseNumber, specialty?, clinicName, address, contactNumber }` → `201 { viewer }`. A signed-up doctor creates their clinic; it opens once a Medfave admin verifies the licence (`viewer.verification`). Email must be confirmed first (422 otherwise). `licenseNumber` is 7 digits |
-| `POST /practice/resubmit` | `{ licenceName, licenseNumber, specialty? }` → `{ viewer }`. A declined doctor sends corrected details again |
+| `POST /practice` | `{ licenseName, licenseNumber, specialty?, clinicName, address, contactNumber }` → `201 { viewer }`. A signed-up doctor creates their clinic; it opens once a Medfave admin verifies the license (`viewer.verification`). Email must be confirmed first (422 otherwise). `licenseNumber` is 7 digits |
+| `POST /practice/resubmit` | `{ licenseName, licenseNumber, specialty? }` → `{ viewer }`. A declined doctor sends corrected details again |
 
 **Continue with Google.** The server does the OAuth; the app opens it in a
 browser session (`WebBrowser.openAuthSessionAsync`) and never sees Google's
@@ -99,7 +99,7 @@ that account; there is never a second account for one email.
   sign-up): what they said they were. It picks the welcome for an account with
   `role: "none"`, and grants nothing.
 - `patientId` is the first chart's id, kept for older app builds. Use `charts`.
-- `verification` is a doctor's licence check, `{ status: "PENDING" | "VERIFIED"
+- `verification` is a doctor's license check, `{ status: "PENDING" | "VERIFIED"
   | "DECLINED", declineReason }`, or `null` for anyone with no clinician
   profile. Until it is `VERIFIED` the doctor's `role` is `"none"` and their
   clinic is closed: doctor endpoints answer 403. The practice is set up, and

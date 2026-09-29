@@ -21,7 +21,7 @@ export function DecisionForm({ doctorId }: { doctorId: string }) {
       {open ? (
         <>
           <Field label="Why? The doctor reads this." htmlFor={`reason-${doctorId}`} error={state.fieldErrors?.reason} required>
-            <TextArea id={`reason-${doctorId}`} name="reason" rows={2} defaultValue={state.values?.reason} placeholder="e.g. The licence number doesn't match that name in the PRC lookup." />
+            <TextArea id={`reason-${doctorId}`} name="reason" rows={2} defaultValue={state.values?.reason} placeholder="e.g. The license number doesn't match that name in the PRC lookup." />
           </Field>
           <div className="flex gap-2">
             <SubmitButton name="decision" value="decline" variant="danger" pendingLabel="Declining…">

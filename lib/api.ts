@@ -88,7 +88,7 @@ export async function apiDoctor(request: Request): Promise<ApiDoctor | Response>
     return apiError(403, "This is for doctor accounts.");
   }
   if (doctor.verificationStatus !== "VERIFIED") {
-    return apiError(403, "We're still checking your PRC licence. Your clinic opens once it's verified.");
+    return apiError(403, "We're still checking your PRC license. Your clinic opens once it's verified.");
   }
   return {
     accountId: viewer.accountId,
@@ -142,7 +142,7 @@ export function viewerSummary(viewer: Viewer) {
     fullName: viewer.fullName,
     // Work comes first, as on the web (`homeFor`): a doctor who is also
     // somebody's patient elsewhere opens the doctor side.
-    // A doctor whose licence isn't verified yet has no doctor side to open;
+    // A doctor whose license isn't verified yet has no doctor side to open;
     // `verification` says where they stand.
     role: viewer.doctorId && viewer.staff?.role === "DOCTOR" && viewer.verification?.status === "VERIFIED"
       ? "doctor"
@@ -160,7 +160,7 @@ export function viewerSummary(viewer: Viewer) {
     /** The first chart's id. Kept for older app builds; use `charts`. */
     patientId: viewer.charts[0]?.id ?? null,
     doctorId: viewer.doctorId,
-    /** The licence check, for a doctor: `{ status: "PENDING" | "VERIFIED" | "DECLINED", declineReason }`. */
+    /** The license check, for a doctor: `{ status: "PENDING" | "VERIFIED" | "DECLINED", declineReason }`. */
     verification: viewer.verification,
   } as const;
 }

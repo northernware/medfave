@@ -106,7 +106,7 @@ export async function changePassword(_prev: FormState, formData: FormData): Prom
 /**
  * The clinician details that appear on paper.
  *
- * Specialty and licence number print on prescriptions and certificates, so
+ * Specialty and license number print on prescriptions and certificates, so
  * they belong to the person who signs them rather than to the practice.
  */
 export async function updateClinicianProfile(

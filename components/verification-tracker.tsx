@@ -1,5 +1,5 @@
 /**
- * Where a new clinic stands: set up, licence being checked, open. The middle
+ * Where a new clinic stands: set up, license being checked, open. The middle
  * step turns red when the check was declined, so the doctor sees at a glance
  * which part needs them.
  */
@@ -7,7 +7,7 @@ export function VerificationTracker({ status }: { status: "PENDING" | "DECLINED"
   const steps = [
     { label: "Clinic set up", state: "done" },
     {
-      label: status === "DECLINED" ? "Licence needs a fix" : "Licence check",
+      label: status === "DECLINED" ? "License needs a fix" : "License check",
       state: status === "VERIFIED" ? "done" : status === "DECLINED" ? "problem" : "current",
     },
     { label: "Clinic opens", state: status === "VERIFIED" ? "done" : "todo" },

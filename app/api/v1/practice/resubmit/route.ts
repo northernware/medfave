@@ -5,7 +5,7 @@ import { resubmitPractice } from "@/lib/practice";
 /**
  * A declined doctor sends corrected details for checking again.
  *
- * Body: `{ licenceName, licenseNumber, specialty? }`.
+ * Body: `{ licenseName, licenseNumber, specialty? }`.
  */
 export async function POST(request: Request) {
   const viewer = await apiViewer(request);

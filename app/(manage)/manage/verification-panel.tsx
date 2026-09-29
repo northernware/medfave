@@ -28,18 +28,18 @@ export function ResubmitForm({
   return (
     <form action={action} className="space-y-4">
       <FormError message={state.message} />
-      <Field label="Name on your PRC licence" htmlFor="licenceName" error={err?.licenceName} required>
+      <Field label="Name on your PRC license" htmlFor="licenseName" error={err?.licenseName} required>
         <TextInput
-          id="licenceName"
-          name="licenceName"
-          defaultValue={v.licenceName ?? doctor.fullName}
+          id="licenseName"
+          name="licenseName"
+          defaultValue={v.licenseName ?? doctor.fullName}
           required
-          invalid={Boolean(err?.licenceName)}
+          invalid={Boolean(err?.licenseName)}
         />
       </Field>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field
-          label="PRC licence number"
+          label="PRC license number"
           htmlFor="licenseNumber"
           error={err?.licenseNumber}
           hint="Seven digits, as on your PRC ID."
