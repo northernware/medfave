@@ -23,6 +23,7 @@ export async function requestAppointment(_prev: FormState, formData: FormData): 
     preferredDate: String(formData.get("preferredDate") ?? ""),
     preferredTime: String(formData.get("preferredTime") ?? ""),
     reason: String(formData.get("reason") ?? ""),
+    doctorId: String(formData.get("doctorId") ?? "") || undefined,
   });
   if (!result.ok) return result;
   redirect("/portal?requested=1");

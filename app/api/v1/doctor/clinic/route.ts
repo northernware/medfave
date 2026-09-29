@@ -4,5 +4,5 @@ import { apiDoctor, clinicBookingInfo } from "@/lib/api";
 export async function GET(request: Request) {
   const doctor = await apiDoctor(request);
   if (doctor instanceof Response) return doctor;
-  return Response.json(await clinicBookingInfo(doctor.clinicId));
+  return Response.json(await clinicBookingInfo(doctor.clinicId, { doctorId: doctor.doctorId }));
 }

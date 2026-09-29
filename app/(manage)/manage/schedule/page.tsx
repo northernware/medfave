@@ -10,7 +10,8 @@ import {
   saveServiceLengths,
 } from "@/app/actions/schedule";
 import { requireClinicManager } from "@/lib/auth";
-import { clinicDoctorId } from "@/lib/clinic";
+import { pickDoctor } from "@/lib/clinic";
+import { DoctorPicker, withParam } from "@/components/doctor-picker";
 import { orm } from "@/src/prisma/db";
 import { DEFAULT_SCHEDULE, describeWeek, scheduleConflict } from "@/lib/availability";
 import { dayKey, formatCalendarDate, calendarDateFromDb, formatDateTime, instantFromDb, instantToDb } from "@/lib/datetime";
@@ -47,8 +48,28 @@ const SAVED: Record<string, string> = {
  */
 export default async function SchedulePage({ searchParams }: PageProps<"/manage/schedule">) {
   const manager = await requireClinicManager();
-  const { saved } = await searchParams;
-  const doctorId = await clinicDoctorId(manager.clinicId);
+  const params = await searchParams;
+  const { saved } = params;
+  // A doctor sets their own hours; an administrator picks whose.
+  const { doctorId: picked, doctors } = await pickDoctor(manager.clinicId, params.doctor);
+  const doctorId = manager.doctorId ?? picked;
+  const whose = doctors.find((d) => d.id === doctorId);
+
+  if (!doctorId && doctors.length > 1) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title="Schedules" subtitle="Each doctor has their own hours. Choose whose to change." />
+        <Card className="p-5 sm:p-6">
+          <DoctorPicker
+            label="Doctor"
+            doctors={doctors}
+            selected={null}
+            hrefFor={(id) => withParam("/manage/schedule", params, "doctor", id)}
+          />
+        </Card>
+      </div>
+    );
+  }
 
   if (!doctorId) {
     return (
@@ -114,7 +135,7 @@ export default async function SchedulePage({ searchParams }: PageProps<"/manage/
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Clinic schedule"
+        title={doctors.length > 1 && whose ? `${whose.fullName}'s schedule` : "Clinic schedule"}
         subtitle={`${describeWeek(schedule)}${schedule.breaks.length ? `, with ${schedule.breaks.length} break${schedule.breaks.length === 1 ? "" : "s"}` : ""}.`}
         actions={
           <Link href="/manage" className={buttonClass("secondary")}>
@@ -122,6 +143,15 @@ export default async function SchedulePage({ searchParams }: PageProps<"/manage/
           </Link>
         }
       />
+
+      {manager.doctorId ? null : (
+        <DoctorPicker
+          label="Doctor"
+          doctors={doctors}
+          selected={doctorId}
+          hrefFor={(id) => withParam("/manage/schedule", { doctor: id }, "doctor", id)}
+        />
+      )}
 
       {typeof saved === "string" && SAVED[saved] ? (
         <div className="rounded-lg border border-ok/40 bg-ok-tint px-4 py-3 text-sm">
@@ -165,7 +195,7 @@ export default async function SchedulePage({ searchParams }: PageProps<"/manage/
         />
         <div className="px-5 py-4">
           <OpeningHoursForm
-            action={saveOpeningHours}
+            action={saveOpeningHours.bind(null, doctorId)}
             hours={configured ? hoursRows : DEFAULT_SCHEDULE.hours}
           />
         </div>
@@ -185,7 +215,7 @@ export default async function SchedulePage({ searchParams }: PageProps<"/manage/
                     {labelForMinute(b.startMinute)} to {labelForMinute(b.endMinute)}
                   </span>
                 </span>
-                <form action={removeBreak}>
+                <form action={removeBreak.bind(null, doctorId)}>
                   <input type="hidden" name="breakId" value={b.id} />
                   <button className="text-xs font-medium text-ink-muted hover:text-danger-ink">Remove</button>
                 </form>
@@ -194,7 +224,7 @@ export default async function SchedulePage({ searchParams }: PageProps<"/manage/
           </ul>
         ) : null}
         <div className="px-5 py-4">
-          <BreakForm action={addBreak} />
+          <BreakForm action={addBreak.bind(null, doctorId)} />
         </div>
       </Card>
 
@@ -218,7 +248,7 @@ export default async function SchedulePage({ searchParams }: PageProps<"/manage/
                       : ", all day"}
                   </span>
                 </span>
-                <form action={removeClosure}>
+                <form action={removeClosure.bind(null, doctorId)}>
                   <input type="hidden" name="closureId" value={c.id} />
                   <button className="text-xs font-medium text-ink-muted hover:text-danger-ink">Remove</button>
                 </form>
@@ -227,7 +257,7 @@ export default async function SchedulePage({ searchParams }: PageProps<"/manage/
           </ul>
         ) : null}
         <div className="px-5 py-4">
-          <ClosureForm action={addClosure} today={today} />
+          <ClosureForm action={addClosure.bind(null, doctorId)} today={today} />
         </div>
       </Card>
 
@@ -238,7 +268,7 @@ export default async function SchedulePage({ searchParams }: PageProps<"/manage/
         />
         <div className="px-5 py-4">
           <ServiceLengthsForm
-            action={saveServiceLengths}
+            action={saveServiceLengths.bind(null, doctorId)}
             services={SERVICES.map((s) => ({
               value: s.value,
               label: s.label,
@@ -253,7 +283,7 @@ export default async function SchedulePage({ searchParams }: PageProps<"/manage/
         <CardHeader title="Booking rules" subtitle="How the day is divided and how far ahead the clinic books." />
         <div className="px-5 py-4">
           <BookingRulesForm
-            action={saveBookingRules}
+            action={saveBookingRules.bind(null, doctorId)}
             rules={{
               slotStepMinutes: schedule.slotStepMinutes,
               minLeadMinutes: schedule.minLeadMinutes,

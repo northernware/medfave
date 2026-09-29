@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { db, orm } from "@/src/prisma/db";
 import type { CurrentPatient } from "@/lib/auth";
 import { confirmByEmail, findClash, lockDoctorSchedule, type Actor } from "@/lib/booking";
-import { clinicDoctorId } from "@/lib/clinic";
+import { lastDoctorFor, pickDoctor } from "@/lib/clinic";
 import {
   calendarDateToDb,
   fromDateInputValue,
@@ -31,6 +31,8 @@ export type RequestInput = {
   /** HH:MM, or empty for "any time". */
   preferredTime: string;
   reason: string;
+  /** Which doctor it is for. Left out: the one the patient saw last, or the only one. */
+  doctorId?: string;
 };
 
 export type CreateRequestResult = { ok: true; id: string } | ({ ok: false } & FormState);
@@ -68,8 +70,15 @@ export async function createAppointmentRequest(
     return { ok: false, message: "Check the details of your request.", fieldErrors };
   }
 
-  const doctorId = await clinicDoctorId(patient.clinicId);
-  if (!doctorId) return { ok: false, message: "This clinic is not taking requests at the moment." };
+  // A request goes to the doctor it names. Every doctor at a clinic is equal:
+  // there is no "the clinic's doctor" (plans/group-practice-findings.md).
+  const { doctorId, doctors } = await pickDoctor(
+    patient.clinicId,
+    input.doctorId,
+    await lastDoctorFor(patient.clinicId, patient.patientId),
+  );
+  if (doctors.length === 0) return { ok: false, message: "This clinic is not taking requests at the moment." };
+  if (!doctorId) return { ok: false, message: "Choose which doctor you'd like to see.", fieldErrors: { doctorId: ["Required"] } };
 
   // The login outlives an archived chart on purpose, but a request would land in
   // the desk's queue for somebody the desk cannot find. Asked to ring instead.
@@ -129,11 +138,13 @@ export async function declineAppointmentRequest(actor: Actor, requestId: string,
   if (!requestId) return false;
 
   const request = await orm.AppointmentRequest
-    .select("id", "status")
+    .select("id", "status", "doctorId")
     .where((r) => r.id.eq(requestId))
     .where((r) => r.clinicId.eq(actor.clinicId))
     .first();
   if (!request || request.status !== "PENDING") return false;
+  // The desk answers any request; a doctor only their own.
+  if (actor.doctorId && request.doctorId !== actor.doctorId) return false;
 
   const now = instantToDb(new Date());
   await orm.AppointmentRequest.where((r) => r.id.eq(requestId)).update({
@@ -174,6 +185,8 @@ export async function acceptAppointmentRequest(actor: Actor, requestId: string, 
     .where((r) => r.clinicId.eq(actor.clinicId))
     .first();
   if (!request || request.status !== "PENDING") return { ok: false, reason: "not-found" };
+  // The desk answers any request; a doctor only their own.
+  if (actor.doctorId && request.doctorId !== actor.doctorId) return { ok: false, reason: "not-found" };
 
   const chosen = time.trim() || request.preferredTime;
   if (!chosen || !/^([01]\d|2[0-3]):[0-5]\d$/.test(chosen)) return { ok: false, reason: "needs-time" };

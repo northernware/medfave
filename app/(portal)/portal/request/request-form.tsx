@@ -11,16 +11,20 @@ export function RequestForm({
   action,
   earliest,
   latest,
+  doctorId,
 }: {
   action: (state: FormState, formData: FormData) => Promise<FormState>;
   earliest: string;
   latest: string;
+  /** The doctor this request is for; chosen above the form. */
+  doctorId: string;
 }) {
   const [state, formAction] = useActionState(action, EMPTY_FORM_STATE);
   const err = state.fieldErrors;
 
   return (
     <form action={formAction} className="space-y-5">
+      <input type="hidden" name="doctorId" value={doctorId} />
       <FormError message={state.message} />
 
       <Field label="What is it about?" htmlFor="service" error={err?.service} required>

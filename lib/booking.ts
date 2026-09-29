@@ -1,7 +1,7 @@
 import "server-only";
 import { revalidatePath } from "next/cache";
 import { AppointmentStatus, type ClinicRole } from "@/lib/enums";
-import { clinicDoctorId } from "@/lib/clinic";
+import { pickDoctor } from "@/lib/clinic";
 import { db, orm } from "@/src/prisma/db";
 import {
   clinicDayRange,
@@ -342,8 +342,9 @@ export async function bookAppointment(
   const parsed = appointmentSchema.safeParse(input);
   if (!parsed.success) return { ...toFieldErrors(parsed.error), ok: false };
 
-  const doctorId = actor.doctorId ?? (await clinicDoctorId(actor.clinicId));
-  if (!doctorId) return { ok: false, message: "This clinic has no clinician to book with." };
+  // A doctor books into their own diary; the desk names whose.
+  const doctorId = actor.doctorId ?? (await pickDoctor(actor.clinicId, input.doctorId)).doctorId;
+  if (!doctorId) return { ok: false, message: "Choose which doctor this visit is with." };
 
   const resolved = await resolveBooking(actor.clinicId, doctorId, parsed.data);
   if ("error" in resolved) return { ...resolved.error, ok: false };

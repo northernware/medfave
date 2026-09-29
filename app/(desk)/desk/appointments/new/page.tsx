@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { createAppointment } from "@/app/actions/appointments";
 import { requireStaff } from "@/lib/auth";
-import { clinicDoctorId } from "@/lib/clinic";
+import { lastDoctorFor, pickDoctor } from "@/lib/clinic";
+import { DoctorPicker, withParam } from "@/components/doctor-picker";
 import { bookingFormData } from "@/lib/queries";
 import { fullDayClosure, hoursFor, type Schedule } from "@/lib/availability";
 import {
@@ -34,10 +35,23 @@ export default async function DeskNewAppointmentPage({
   searchParams,
 }: PageProps<"/desk/appointments/new">) {
   const staff = await requireStaff();
-  const { patientId, date, service, source } = await searchParams;
+  const params = await searchParams;
+  const { patientId, date, service, source } = params;
 
-  const doctorId = staff.doctorId ?? (await clinicDoctorId(staff.clinicId));
-  if (!doctorId) {
+  // Whose diary: the doctor asked for, else the one this patient saw last, else
+  // the only doctor. With several and no hint, the desk chooses first.
+  const lastSeen = typeof patientId === "string" ? await lastDoctorFor(staff.clinicId, patientId) : null;
+  const { doctorId, doctors } = await pickDoctor(staff.clinicId, params.doctor, staff.doctorId ?? lastSeen);
+  const picker = (
+    <DoctorPicker
+      label="Booking with"
+      doctors={doctors}
+      selected={doctorId}
+      hrefFor={(id) => withParam("/desk/appointments/new", params, "doctor", id)}
+    />
+  );
+
+  if (doctors.length === 0) {
     return (
       <div className="space-y-6">
         <PageHeader title="Book appointment" />
@@ -51,8 +65,18 @@ export default async function DeskNewAppointmentPage({
     );
   }
 
+  if (!doctorId) {
+    return (
+      <div className="space-y-6">
+        <PageHeader title={source === "WALK_IN" ? "Register walk-in" : "Book appointment"} subtitle="Choose the doctor first." />
+        <Card className="p-5 sm:p-6">{picker}</Card>
+      </div>
+    );
+  }
+
+  // The desk books any of the clinic's patients, for whichever doctor.
   const { patients, busyByDay, followUps, schedule, window, walkInWindow, now } =
-    await bookingFormData(doctorId);
+    await bookingFormData(doctorId, undefined, { clinicId: staff.clinicId });
 
   if (patients.length === 0) {
     return (
@@ -79,8 +103,10 @@ export default async function DeskNewAppointmentPage({
   return (
     <div className="space-y-6">
       <PageHeader title={walkIn ? "Register walk-in" : "Book appointment"} />
-      <Card className="p-5 sm:p-6">
+      <Card className="space-y-6 p-5 sm:p-6">
+        {picker}
         <AppointmentForm
+          doctorId={doctorId}
           action={createAppointment}
           patients={patients}
           busyByDay={busyByDay}

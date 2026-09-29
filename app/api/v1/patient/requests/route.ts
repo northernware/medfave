@@ -50,6 +50,7 @@ export async function POST(request: Request) {
     preferredDate: text(body.preferredDate),
     preferredTime: text(body.preferredTime),
     reason: text(body.reason),
+    doctorId: text(body.doctorId) || undefined,
   });
   if (!result.ok) return apiError(422, result.message ?? "Check the details of your request.", result.fieldErrors);
 

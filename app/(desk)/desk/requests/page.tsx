@@ -16,6 +16,7 @@ export default async function DeskRequestsPage({ searchParams }: PageProps<"/des
   const [pending, decided] = await Promise.all([
     orm.AppointmentRequest
       .select("id", "preferredDate", "preferredTime", "service", "reason", "createdAt")
+      .include("doctor", (d) => d.select("fullName"))
       .include("patient", (p) =>
         p.select("id", "firstName", "middleName", "lastName", "contactNumber", "patientNumber"),
       )
@@ -75,6 +76,7 @@ export default async function DeskRequestsPage({ searchParams }: PageProps<"/des
                       {fullName(r.patient)}
                     </Link>
                     <p className="text-sm text-ink-muted">
+                      {r.doctor ? <span className="font-medium text-ink">For {r.doctor.fullName} · </span> : null}
                       {SERVICE_LABELS[r.service]} · {r.reason}
                     </p>
                     <p className="text-xs text-ink-faint">

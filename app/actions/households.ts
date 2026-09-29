@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireDoctor, requireStaff } from "@/lib/auth";
-import { clinicDoctorId } from "@/lib/clinic";
+import { pickDoctor } from "@/lib/clinic";
 import { orm } from "@/src/prisma/db";
 import { instantToDb } from "@/lib/datetime";
 import { newId } from "@/lib/ids";
@@ -30,10 +30,10 @@ export async function createHousehold(_prev: FormState, formData: FormData): Pro
   const parsed = householdSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return toFieldErrors(parsed.error);
 
-  // `doctorId` predates clinics and still carries authorship, so a household
-  // the desk registers has to name a clinician. It names the clinic's.
-  const attributedTo = staff.doctorId ?? (await clinicDoctorId(staff.clinicId));
-  if (!attributedTo) return { message: "This clinic has no clinician to register under." };
+  // `doctorId` carries whose household it is: the signed-in doctor's, or the
+  // one the desk chose.
+  const attributedTo = staff.doctorId ?? (await pickDoctor(staff.clinicId, formData.get("doctorId"))).doctorId;
+  if (!attributedTo) return { message: "Choose which doctor this household is for.", fieldErrors: { doctorId: ["Required"] } };
 
   const existing = await orm.Household
     .select("id", "archivedAt")
@@ -61,7 +61,7 @@ export async function createHousehold(_prev: FormState, formData: FormData): Pro
   const household = await orm.Household.select("id").create({
     ...withoutContact,
     id: newId(),
-    doctorId: attributedTo,
+    doctorId: attributedTo!,
     clinicId: staff.clinicId,
     createdAt: now,
     updatedAt: now,

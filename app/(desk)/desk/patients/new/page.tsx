@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { createPatient } from "@/app/actions/patients";
 import { requireStaff } from "@/lib/auth";
+import { clinicDoctors } from "@/lib/clinic";
 import { orm } from "@/src/prisma/db";
 import { blankPatient } from "@/lib/form-defaults";
 import { NEW_HOUSEHOLD } from "@/lib/validation";
@@ -40,6 +41,7 @@ export default async function DeskNewPatientPage({ searchParams }: PageProps<"/d
           households={households}
           // The desk registers people; it does not record findings about them.
           clinical={staff.role !== "SECRETARY"}
+          doctors={staff.doctorId ? [] : await clinicDoctors(staff.clinicId)}
           submitLabel="Register patient"
           cancelHref="/desk/patients"
         />
