@@ -14,6 +14,18 @@ namespace public {
     specialty      String?
     licenseNumber  String?
     clinicName     String?
+    /// Whether a Medfave admin has checked their PRC licence. Nothing clinical
+    /// opens until it is VERIFIED: no patients, bookings or staff invites.
+    /// Doctors from before self sign-up were stamped VERIFIED by the migration
+    /// that added this.
+    verificationStatus pg.enum(VerificationStatus) @default("PENDING")
+    /// When they last sent their details for checking.
+    verificationSubmittedAt TimestampString(3)?
+    verifiedAt     TimestampString(3)?
+    /// The admin who verified or declined them.
+    verifiedById   String?
+    /// Why they were declined, for them to read and fix.
+    declineReason  String?
     createdAt      TimestampString(3)    @default(now())
     updatedAt      TimestampString(3)
     appointments   Appointment[]
@@ -26,7 +38,8 @@ namespace public {
     documentRequests DocumentRequest[]      @relation(name: "DocumentRequest_doctorId_fkey")
     documentsReleased DocumentRequest[]     @relation(name: "DocumentRequest_releasedById_fkey")
     clinic         Clinic?         @relation(fields: [clinicId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "Doctor_clinicId_fkey")
-    account        Account?        @relation(fields: [accountId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "Doctor_accountId_fkey")
+    account        Account?        @relation(name: "Doctor_accountId_fkey", fields: [accountId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "Doctor_accountId_fkey")
+    verifiedBy     Account?        @relation(name: "Doctor_verifiedById_fkey", fields: [verifiedById], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "Doctor_verifiedById_fkey")
     appointmentRequests AppointmentRequest[]
     scheduleSettings ScheduleSettings?
     clinicHours      ClinicHours[]
@@ -597,7 +610,7 @@ namespace public {
     createdAt    TimestampString(3) @default(now())
     updatedAt    TimestampString(3)
     memberships  ClinicMember[]
-    doctorProfile Doctor?
+    doctorProfile Doctor?            @relation(name: "Doctor_accountId_fkey")
     /// Their chart at each clinic that has seen them; empty for staff-only accounts.
     patientProfiles Patient[]
     invitesSent  StaffInvite[]       @relation(name: "StaffInvite_invitedById_fkey")
@@ -609,6 +622,10 @@ namespace public {
     passwordResets PasswordReset[]
     emailVerifications EmailVerification[]
     identities   AccountIdentity[]
+    doctorsVerified Doctor[]         @relation(name: "Doctor_verifiedById_fkey")
+    /// Runs Medfave itself: verifies doctors. Granted only by
+    /// `npm run admin:grant`, never from the web.
+    platformAdmin Boolean @default(false)
 
     @@index([email], map: "Account_email_key", unique: true)
 
@@ -945,6 +962,12 @@ namespace public {
     MINOR_INJURY_WOUND_CARE = "MINOR_INJURY_WOUND_CARE"
     TELECONSULTATION = "TELECONSULTATION"
     REFERRAL_CONSULTATION = "REFERRAL_CONSULTATION"
+  }
+
+  native_enum VerificationStatus {
+    PENDING = "PENDING"
+    VERIFIED = "VERIFIED"
+    DECLINED = "DECLINED"
   }
 
   native_enum IdentityProvider {

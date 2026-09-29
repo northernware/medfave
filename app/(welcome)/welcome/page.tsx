@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { requireViewer } from "@/lib/auth";
 import { Card, CardHeader } from "@/components/ui";
 import { AddClinicForm } from "@/app/(portal)/portal/add-clinic/add-clinic-form";
+import { PracticeForm } from "./practice-form";
 import { ResendVerification } from "./resend-verification";
 
 export const metadata: Metadata = { title: "Welcome" };
@@ -33,16 +34,24 @@ export default async function WelcomePage() {
         </Card>
       )}
 
-      {doctor ? (
+      {viewer.staff ? (
         <Card>
-          <CardHeader title="Set up your clinic" subtitle="Coming very soon" />
-          <div className="space-y-2 px-5 pb-5 text-sm text-ink-muted">
-            <p>
-              Next, you&rsquo;ll add your PRC licence number and create your clinic. We check the licence before your
-              clinic can see patients — that keeps Medfave for real doctors only.
-            </p>
-            <p>We&rsquo;ll email you when clinic setup opens. Already work at a clinic on Medfave? Ask them to invite you.</p>
-          </div>
+          <CardHeader title={viewer.staff.clinicName} subtitle="Not open yet" />
+          <p className="px-5 pb-5 text-sm text-ink-muted">
+            This clinic&rsquo;s doctor is waiting for us to check their PRC licence. You&rsquo;ll have everything as soon
+            as it&rsquo;s verified.
+          </p>
+        </Card>
+      ) : doctor ? (
+        <Card>
+          <CardHeader
+            title="Set up your practice"
+            subtitle="We check your PRC licence before your clinic can see patients — that keeps Medfave for real doctors only. Usually within a day."
+          />
+          <PracticeForm name={viewer.fullName} />
+          <p className="px-5 pb-5 text-sm text-ink-muted">
+            Joining a clinic that&rsquo;s already on Medfave? Ask them to invite you instead.
+          </p>
         </Card>
       ) : (
         <Card>

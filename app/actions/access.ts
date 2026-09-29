@@ -128,6 +128,9 @@ export async function revokePatientActivation(formData: FormData) {
  */
 export async function inviteStaff(_prev: FormState, formData: FormData): Promise<FormState> {
   const manager = await requireClinicManager();
+  if (!manager.clinicOpen) {
+    return { message: "You can invite staff once your licence is verified." };
+  }
 
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const rawRole = String(formData.get("role") ?? "SECRETARY");

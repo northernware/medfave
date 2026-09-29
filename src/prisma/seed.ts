@@ -298,6 +298,9 @@ async function main() {
       specialty: "Family Medicine",
       clinicName: CLINIC_NAME,
       licenseNumber: "PRC-0114532",
+      // A demo clinic that works straight away: skip the licence check.
+      verificationStatus: "VERIFIED",
+      verifiedAt: seededAt,
   });
 
   const delaCruz = await seedHousehold({

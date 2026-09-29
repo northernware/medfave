@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { logout } from "@/app/actions/auth";
-import { requireClinicManager } from "@/lib/auth";
+import { getViewer, requireClinicManager } from "@/lib/auth";
 import { Brand } from "@/components/brand";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -15,6 +15,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
  */
 export default async function ManageLayout({ children }: { children: ReactNode }) {
   const manager = await requireClinicManager();
+  const viewer = await getViewer();
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -32,10 +33,17 @@ export default async function ManageLayout({ children }: { children: ReactNode }
               <Link href="/manage/schedule" className="text-ink-muted transition-colors hover:text-ink">
                 Schedule
               </Link>
-              <Link href="/manage/staff" className="text-ink-muted transition-colors hover:text-ink">
-                Staff
-              </Link>
-              {manager.doctorId ? (
+              {manager.clinicOpen ? (
+                <Link href="/manage/staff" className="text-ink-muted transition-colors hover:text-ink">
+                  Staff
+                </Link>
+              ) : null}
+              {viewer?.platformAdmin ? (
+                <Link href="/admin/verify" className="text-ink-muted transition-colors hover:text-ink">
+                  Admin
+                </Link>
+              ) : null}
+              {manager.doctorId && viewer?.verification?.status === "VERIFIED" ? (
                 <Link href="/dashboard" className="text-ink-muted transition-colors hover:text-ink">
                   Consulting room
                 </Link>
