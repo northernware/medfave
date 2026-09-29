@@ -45,6 +45,7 @@ Every error is JSON:
 | 403 | Signed in, but this endpoint is for another kind of account |
 | 404 | Not found, or not yours — deliberately the same answer |
 | 422 | The input broke a rule; see `fieldErrors` |
+| 429 | Too many attempts (sign-in, sign-up, codes, emails); wait a few minutes |
 
 ## Endpoints
 
@@ -55,17 +56,23 @@ are `YYYY-MM-DD` and times of day `HH:MM`, both in clinic time (Asia/Manila).
 
 | | |
 | --- | --- |
+| `POST /auth/signup` | `{ fullName, email, password, confirmPassword, role: "PATIENT" \| "DOCTOR", consent: true }` → `201 { token, expiresAt, viewer }`. Open sign-up: the account is signed in at once, unverified, and linked to nothing (`role: "none"`) |
+| `POST /auth/resend-verification` | → `{ sent }`. A new verification link to the signed-in account's email |
 | `POST /auth/login` | `{ email, password }` → `{ token, expiresAt, viewer }` |
 | `POST /auth/activate` | `{ code, fullName, email, password, confirmPassword }` → `201 { token, expiresAt, viewer }`. Turns the activation code the clinic gave a patient into their login. |
 | `GET /me` | `{ viewer }` |
 
-`viewer` is `{ id, email, fullName, role, clinic, charts, patientId, doctorId }`:
+`viewer` is `{ id, email, fullName, role, clinic, charts, emailVerified, signupRole, patientId, doctorId }`:
 
 - `role` is `"doctor"`, `"patient"`, `"staff"` or `"none"`. Work comes first:
   a doctor who is also somebody's patient elsewhere is `"doctor"`. The app
   opens the patient or doctor side from `role`.
 - `charts` is `[{ patientId, clinic: { id, name } }]`, one per clinic this
   login is linked to. One login can be a patient at several clinics.
+- `emailVerified` is whether they've followed the emailed link.
+- `signupRole` is `"PATIENT"`, `"DOCTOR"` or `null` (accounts from before open
+  sign-up): what they said they were. It picks the welcome for an account with
+  `role: "none"`, and grants nothing.
 - `patientId` is the first chart's id, kept for older app builds. Use `charts`.
 
 ### Patient
