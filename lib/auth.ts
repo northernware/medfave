@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { orm } from "@/src/prisma/db";
 import { instantFromDb } from "@/lib/datetime";
 import type { ClinicRole, SignupRole } from "@/lib/enums";
+
+type VerificationStatus = "PENDING" | "VERIFIED" | "DECLINED";
 import { readSession, type Session } from "./session";
 
 /**
@@ -33,6 +35,15 @@ export type Viewer = {
   emailVerified: boolean;
   /** What they said they were at sign-up. Picks their welcome; grants nothing. */
   signupRole: SignupRole | null;
+  /** Their licence check, when they have a clinician profile. */
+  verification: { status: VerificationStatus; declineReason: string | null } | null;
+  /**
+   * Whether their clinic is open for clinical work: it has a verified doctor.
+   * False until then, for every member — see `requireStaff`.
+   */
+  clinicOpen: boolean;
+  /** Runs Medfave itself: may verify doctors. */
+  platformAdmin: boolean;
 };
 
 export type PatientChart = { id: string; clinicId: string; clinicName: string };
@@ -51,11 +62,11 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
 export async function viewerForSession(session: Session): Promise<Viewer | null> {
 
   const account = await orm.Account
-    .select("id", "email", "fullName", "sessionsValidFrom", "emailVerifiedAt", "signupRole")
+    .select("id", "email", "fullName", "sessionsValidFrom", "emailVerifiedAt", "signupRole", "platformAdmin")
     .include("memberships", (m) =>
       m.select("clinicId", "role").include("clinic", (c) => c.select("name")),
     )
-    .include("doctorProfile", (d) => d.select("id"))
+    .include("doctorProfile", (d) => d.select("id", "verificationStatus", "declineReason"))
     .include("patientProfiles", (p) => p.select("id", "clinicId").include("clinic", (c) => c.select("name")))
     .where((a) => a.id.eq(session.accountId))
     .first();
@@ -75,6 +86,14 @@ export async function viewerForSession(session: Session): Promise<Viewer | null>
   // place that would change.
   const membership = account.memberships[0] ?? null;
 
+  const verifiedDoctor = membership
+    ? await orm.Doctor
+        .select("id")
+        .where((d) => d.clinicId.eq(membership.clinicId))
+        .where((d) => d.verificationStatus.eq("VERIFIED"))
+        .first()
+    : null;
+
   return {
     accountId: account.id,
     email: account.email,
@@ -92,6 +111,11 @@ export async function viewerForSession(session: Session): Promise<Viewer | null>
       .sort((a, b) => a.clinicName.localeCompare(b.clinicName)),
     emailVerified: account.emailVerifiedAt !== null,
     signupRole: account.signupRole,
+    verification: account.doctorProfile
+      ? { status: account.doctorProfile.verificationStatus, declineReason: account.doctorProfile.declineReason }
+      : null,
+    clinicOpen: verifiedDoctor !== null,
+    platformAdmin: account.platformAdmin,
   };
 }
 
@@ -103,6 +127,9 @@ export async function requireViewer(): Promise<Viewer> {
 
 /** Where an account belongs when it lands on the wrong door. */
 export function homeFor(viewer: Viewer) {
+  // A clinic waiting on its licence check: its doctor sets it up from Manage,
+  // where the check's status is. Nobody else can be a member yet.
+  if (viewer.staff && !viewer.clinicOpen) return viewer.staff.role === "SECRETARY" ? "/welcome" : "/manage";
   if (viewer.staff?.role === "SECRETARY") return "/desk";
   // An administrator runs the clinic without practising in it, so the clinical
   // section is not theirs. Sending them to "/dashboard" was an infinite redirect: the
@@ -144,9 +171,11 @@ export async function requireDoctor(): Promise<CurrentDoctor> {
   }
 
   const doctor = await orm.Doctor
-    .select("id", "fullName", "specialty", "licenseNumber", "clinicId")
+    .select("id", "fullName", "specialty", "licenseNumber", "clinicId", "verificationStatus")
     .where((d) => d.id.eq(viewer.doctorId!))
     .first();
+  // Nothing clinical until a Medfave admin has checked the licence.
+  if (doctor?.verificationStatus !== "VERIFIED") redirect("/manage");
   // A clinician profile that has lost its clinic cannot be scoped, so it cannot
   // be used.
   if (!doctor?.clinicId || doctor.clinicId !== viewer.staff.clinicId) {
@@ -189,7 +218,8 @@ export type CurrentStaff = {
  */
 export async function requireStaff(): Promise<CurrentStaff> {
   const viewer = await requireViewer();
-  if (!viewer.staff) redirect(homeFor(viewer));
+  // The desk's work is patients and bookings: closed until the clinic is verified.
+  if (!viewer.staff || !viewer.clinicOpen) redirect(homeFor(viewer));
 
   return {
     accountId: viewer.accountId,
@@ -211,6 +241,8 @@ export type CurrentManager = {
   email: string;
   /** Set when this manager is also the clinic's clinician. */
   doctorId: string | null;
+  /** False while the clinic waits on its licence check: no staff invitations yet. */
+  clinicOpen: boolean;
 };
 
 /**
@@ -235,7 +267,15 @@ export async function requireClinicManager(): Promise<CurrentManager> {
     fullName: viewer.fullName,
     email: viewer.email,
     doctorId: viewer.doctorId,
+    clinicOpen: viewer.clinicOpen,
   };
+}
+
+/** Somebody who runs Medfave itself. Everybody else is sent home. */
+export async function requirePlatformAdmin(): Promise<Viewer> {
+  const viewer = await requireViewer();
+  if (!viewer.platformAdmin) redirect(homeFor(viewer));
+  return viewer;
 }
 
 export type CurrentPatient = {

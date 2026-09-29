@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { redirect } from "next/navigation";
 import { inviteStaff, removeClinicMember, revokeStaffInvite } from "@/app/actions/access";
 import { requireClinicManager } from "@/lib/auth";
 import { orm } from "@/src/prisma/db";
@@ -19,6 +20,8 @@ const MANAGER_ROLES = ["DOCTOR", "ADMIN"];
 
 export default async function StaffPage({ searchParams }: PageProps<"/manage/staff">) {
   const manager = await requireClinicManager();
+  // Nobody joins a clinic before its doctor is verified.
+  if (!manager.clinicOpen) redirect("/manage");
   const { code, to, mail } = await searchParams;
 
   const [members, invites] = await Promise.all([

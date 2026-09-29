@@ -5,7 +5,8 @@ import { describeWeek } from "@/lib/availability";
 import { clinicDoctorId } from "@/lib/clinic";
 import { loadSchedule } from "@/lib/queries";
 import { orm } from "@/src/prisma/db";
-import { Card, CardHeader, Detail, PageHeader, buttonClass } from "@/components/ui";
+import { Badge, Card, CardHeader, Detail, PageHeader, buttonClass } from "@/components/ui";
+import { ResubmitForm } from "./verification-panel";
 
 export const metadata: Metadata = { title: "Clinic" };
 
@@ -16,8 +17,15 @@ const ROLE_WORDS: Record<string, string> = {
 };
 
 /** Where an administrator lands: who works here, what the clinic is called, when it opens. */
-export default async function ManagePage() {
+export default async function ManagePage({ searchParams }: PageProps<"/manage">) {
   const manager = await requireClinicManager();
+  const { welcome } = await searchParams;
+  const me = manager.doctorId
+    ? await orm.Doctor
+        .select("fullName", "licenseNumber", "specialty", "verificationStatus", "declineReason")
+        .where((d) => d.id.eq(manager.doctorId!))
+        .first()
+    : null;
 
   const [clinic, members, liveInvites] = await Promise.all([
     orm.Clinic
@@ -48,11 +56,51 @@ export default async function ManagePage() {
         title={clinic?.name ?? manager.clinicName}
         subtitle={`You are signed in as ${ROLE_WORDS[manager.role] ?? "staff"}.`}
         actions={
-          <Link href="/manage/staff" className={buttonClass("primary")}>
-            Staff
-          </Link>
+          manager.clinicOpen ? (
+            <Link href="/manage/staff" className={buttonClass("primary")}>
+              Staff
+            </Link>
+          ) : null
         }
       />
+
+      {me && me.verificationStatus === "PENDING" ? (
+        <Card>
+          <CardHeader
+            title={welcome ? "Your clinic is set up" : "Waiting for verification"}
+            subtitle="Usually within a day. We'll email you."
+            action={<Badge tone="warn" dot>Checking your licence</Badge>}
+          />
+          <div className="space-y-2 px-5 pb-5 text-sm text-ink-muted">
+            <p>
+              We&rsquo;re checking PRC licence <strong className="text-ink">{me.licenseNumber}</strong> for{" "}
+              <strong className="text-ink">{me.fullName}</strong>. Until it&rsquo;s verified you can&rsquo;t add
+              patients, book visits or invite staff.
+            </p>
+            <p>
+              Meanwhile, set up your{" "}
+              <Link href="/manage/schedule" className="font-medium text-accent-ink hover:underline">opening hours and services</Link>{" "}
+              and{" "}
+              <Link href="/manage/clinic" className="font-medium text-accent-ink hover:underline">clinic details</Link>.
+            </p>
+          </div>
+        </Card>
+      ) : null}
+
+      {me && me.verificationStatus === "DECLINED" ? (
+        <Card>
+          <CardHeader
+            title="We couldn't verify your licence yet"
+            subtitle="Fix the details below and send them again."
+            action={<Badge tone="danger">Not verified</Badge>}
+          />
+          <p className="px-5 pb-4 text-sm">
+            <span className="text-ink-muted">Reason: </span>
+            {me.declineReason}
+          </p>
+          <ResubmitForm doctor={me} />
+        </Card>
+      ) : null}
 
       <Card>
         <CardHeader title="Who works here" />

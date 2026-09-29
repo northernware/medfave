@@ -63,6 +63,8 @@ are `YYYY-MM-DD` and times of day `HH:MM`, both in clinic time (Asia/Manila).
 | `GET /auth/providers` | → `{ google }`. Whether "Continue with Google" is set up on this server; show the button only when `true` |
 | `POST /auth/google/exchange` | `{ code, verifier }` → `{ token, expiresAt, viewer }`. The end of a Google sign-in; see below |
 | `GET /me` | `{ viewer }` |
+| `POST /practice` | `{ licenceName, licenseNumber, specialty?, clinicName, address, contactNumber }` → `201 { viewer }`. A signed-up doctor creates their clinic; it opens once a Medfave admin verifies the licence (`viewer.verification`). Email must be confirmed first (422 otherwise). `licenseNumber` is 7 digits |
+| `POST /practice/resubmit` | `{ licenceName, licenseNumber, specialty? }` → `{ viewer }`. A declined doctor sends corrected details again |
 
 **Continue with Google.** The server does the OAuth; the app opens it in a
 browser session (`WebBrowser.openAuthSessionAsync`) and never sees Google's
@@ -86,7 +88,8 @@ that account; there is never a second account for one email.
 
 `viewer` is `{ id, email, fullName, role, clinic, charts, emailVerified, signupRole, patientId, doctorId }`:
 
-- `role` is `"doctor"`, `"patient"`, `"staff"` or `"none"`. Work comes first:
+- `role` is `"doctor"`, `"patient"`, `"staff"` or `"none"`. A doctor or staff
+  member of a clinic that isn't verified yet is `"none"`. Work comes first:
   a doctor who is also somebody's patient elsewhere is `"doctor"`. The app
   opens the patient or doctor side from `role`.
 - `charts` is `[{ patientId, clinic: { id, name } }]`, one per clinic this
@@ -96,6 +99,11 @@ that account; there is never a second account for one email.
   sign-up): what they said they were. It picks the welcome for an account with
   `role: "none"`, and grants nothing.
 - `patientId` is the first chart's id, kept for older app builds. Use `charts`.
+- `verification` is a doctor's licence check, `{ status: "PENDING" | "VERIFIED"
+  | "DECLINED", declineReason }`, or `null` for anyone with no clinician
+  profile. Until it is `VERIFIED` the doctor's `role` is `"none"` and their
+  clinic is closed: doctor endpoints answer 403. The practice is set up, and
+  a decline fixed, on the web (`/welcome`, then `/manage`).
 
 ### Patient
 

@@ -1,0 +1,386 @@
+[
+  {
+    "id": "createNativeEnumType.VerificationStatus",
+    "label": "Create enum type \"VerificationStatus\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "type",
+        "name": "VerificationStatus"
+      }
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "create enum type \"VerificationStatus\"",
+        "sql": "CREATE TYPE \"public\".\"VerificationStatus\" AS ENUM ('PENDING', 'VERIFIED', 'DECLINED')",
+        "params": []
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "column.public.Account.platformAdmin",
+    "label": "Add column \"platformAdmin\" to \"Account\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "platformAdmin",
+        "table": "Account"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"platformAdmin\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Account",
+          "platformAdmin"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"platformAdmin\"",
+        "sql": "ALTER TABLE \"public\".\"Account\" ADD COLUMN \"platformAdmin\" bool DEFAULT false NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"platformAdmin\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Account",
+          "platformAdmin"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Doctor.declineReason",
+    "label": "Add column \"declineReason\" to \"Doctor\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "declineReason",
+        "table": "Doctor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"declineReason\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Doctor",
+          "declineReason"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"declineReason\"",
+        "sql": "ALTER TABLE \"public\".\"Doctor\" ADD COLUMN \"declineReason\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"declineReason\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Doctor",
+          "declineReason"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Doctor.verificationStatus",
+    "label": "Add column \"verificationStatus\" to \"Doctor\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "verificationStatus",
+        "table": "Doctor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"verificationStatus\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Doctor",
+          "verificationStatus"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"verificationStatus\"",
+        "sql": "ALTER TABLE \"public\".\"Doctor\" ADD COLUMN \"verificationStatus\" \"VerificationStatus\" DEFAULT 'PENDING'::\"VerificationStatus\" NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"verificationStatus\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Doctor",
+          "verificationStatus"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Doctor.verificationSubmittedAt",
+    "label": "Add column \"verificationSubmittedAt\" to \"Doctor\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "verificationSubmittedAt",
+        "table": "Doctor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"verificationSubmittedAt\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Doctor",
+          "verificationSubmittedAt"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"verificationSubmittedAt\"",
+        "sql": "ALTER TABLE \"public\".\"Doctor\" ADD COLUMN \"verificationSubmittedAt\" timestamp(3)"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"verificationSubmittedAt\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Doctor",
+          "verificationSubmittedAt"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Doctor.verifiedAt",
+    "label": "Add column \"verifiedAt\" to \"Doctor\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "verifiedAt",
+        "table": "Doctor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"verifiedAt\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Doctor",
+          "verifiedAt"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"verifiedAt\"",
+        "sql": "ALTER TABLE \"public\".\"Doctor\" ADD COLUMN \"verifiedAt\" timestamp(3)"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"verifiedAt\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Doctor",
+          "verifiedAt"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Doctor.verifiedById",
+    "label": "Add column \"verifiedById\" to \"Doctor\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "verifiedById",
+        "table": "Doctor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"verifiedById\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Doctor",
+          "verifiedById"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"verifiedById\"",
+        "sql": "ALTER TABLE \"public\".\"Doctor\" ADD COLUMN \"verifiedById\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"verifiedById\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Doctor",
+          "verifiedById"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "data_migration.verify-existing-doctors",
+    "label": "Data transform: verify-existing-doctors",
+    "operationClass": "data",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [
+      {
+        "description": "Check verify-existing-doctors has work to do",
+        "sql": "SELECT EXISTS (SELECT \"id\" AS \"id\" FROM \"public\".\"Doctor\" WHERE \"verifiedAt\" IS NULL LIMIT 1) AS ok",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "Run verify-existing-doctors",
+        "sql": "UPDATE \"public\".\"Doctor\" SET \"verificationStatus\" = 'VERIFIED', \"verifiedAt\" = \"createdAt\" WHERE \"verifiedAt\" IS NULL",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "Verify verify-existing-doctors resolved all violations",
+        "sql": "SELECT NOT EXISTS (SELECT \"id\" AS \"id\" FROM \"public\".\"Doctor\" WHERE \"verifiedAt\" IS NULL LIMIT 1) AS ok",
+        "params": []
+      }
+    ]
+  },
+  {
+    "id": "index.Doctor.Doctor_verifiedById_idx_dfd74b37",
+    "label": "Create index \"Doctor_verifiedById_idx_dfd74b37\" on \"Doctor\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "Doctor_verifiedById_idx_dfd74b37",
+        "table": "Doctor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"Doctor_verifiedById_idx_dfd74b37\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Doctor_verifiedById_idx_dfd74b37\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"Doctor_verifiedById_idx_dfd74b37\"",
+        "sql": "CREATE INDEX \"Doctor_verifiedById_idx_dfd74b37\" ON \"public\".\"Doctor\" (\"verifiedById\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"Doctor_verifiedById_idx_dfd74b37\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Doctor_verifiedById_idx_dfd74b37\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.Doctor.Doctor_verifiedById_fkey",
+    "label": "Add foreign key \"Doctor_verifiedById_fkey\" on \"Doctor\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "Doctor_verifiedById_fkey",
+        "table": "Doctor"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"Doctor_verifiedById_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Doctor_verifiedById_fkey",
+          "public",
+          "\"public\".\"Doctor\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"Doctor_verifiedById_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"Doctor\"\nADD CONSTRAINT \"Doctor_verifiedById_fkey\"\nFOREIGN KEY (\"verifiedById\")\nREFERENCES \"public\".\"Account\" (\"id\")\nON DELETE SET NULL\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"Doctor_verifiedById_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Doctor_verifiedById_fkey",
+          "public",
+          "\"public\".\"Doctor\""
+        ]
+      }
+    ]
+  }
+]

@@ -188,6 +188,13 @@
                   "kind": "scalar"
                 }
               },
+              "platformAdmin": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
               "sessionsValidFrom": {
                 "nullable": true,
                 "type": {
@@ -258,6 +265,21 @@
                   ],
                   "targetFields": [
                     "accountId"
+                  ]
+                },
+                "to": {
+                  "model": "Doctor",
+                  "namespace": "public"
+                }
+              },
+              "doctorsVerified": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "verifiedById"
                   ]
                 },
                 "to": {
@@ -426,6 +448,9 @@
                 },
                 "passwordHash": {
                   "column": "passwordHash"
+                },
+                "platformAdmin": {
+                  "column": "platformAdmin"
                 },
                 "sessionsValidFrom": {
                   "column": "sessionsValidFrom"
@@ -1883,6 +1908,13 @@
                   }
                 }
               },
+              "declineReason": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "fullName": {
                 "nullable": false,
                 "type": {
@@ -1919,6 +1951,43 @@
                   "typeParams": {
                     "precision": 3
                   }
+                }
+              },
+              "verificationStatus": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/enum@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "typeName": "VerificationStatus"
+                  }
+                }
+              },
+              "verificationSubmittedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "verifiedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "verifiedById": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
                 }
               }
             },
@@ -2177,6 +2246,21 @@
                   "model": "ServiceDuration",
                   "namespace": "public"
                 }
+              },
+              "verifiedBy": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "verifiedById"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Account",
+                  "namespace": "public"
+                }
               }
             },
             "storage": {
@@ -2193,6 +2277,9 @@
                 "createdAt": {
                   "column": "createdAt"
                 },
+                "declineReason": {
+                  "column": "declineReason"
+                },
                 "fullName": {
                   "column": "fullName"
                 },
@@ -2207,6 +2294,18 @@
                 },
                 "updatedAt": {
                   "column": "updatedAt"
+                },
+                "verificationStatus": {
+                  "column": "verificationStatus"
+                },
+                "verificationSubmittedAt": {
+                  "column": "verificationSubmittedAt"
+                },
+                "verifiedAt": {
+                  "column": "verifiedAt"
+                },
+                "verifiedById": {
+                  "column": "verifiedById"
                 }
               },
               "namespaceId": "public",
@@ -5303,6 +5402,15 @@
               ],
               "typeName": "SignupRole"
             },
+            "VerificationStatus": {
+              "kind": "postgres-enum",
+              "members": [
+                "PENDING",
+                "VERIFIED",
+                "DECLINED"
+              ],
+              "typeName": "VerificationStatus"
+            },
             "VisitPriority": {
               "kind": "postgres-enum",
               "members": [
@@ -5368,6 +5476,15 @@
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": true
+                },
+                "platformAdmin": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
                 },
                 "sessionsValidFrom": {
                   "codecId": "pg/timestamp-string@1",
@@ -6620,6 +6737,11 @@
                     "precision": 3
                   }
                 },
+                "declineReason": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "fullName": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -6647,6 +6769,45 @@
                   "typeParams": {
                     "precision": 3
                   }
+                },
+                "verificationStatus": {
+                  "codecId": "pg/enum@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "PENDING"
+                  },
+                  "nativeType": "VerificationStatus",
+                  "nullable": false,
+                  "typeParams": {
+                    "typeName": "VerificationStatus"
+                  },
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "VerificationStatus",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "verificationSubmittedAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "verifiedAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "verifiedById": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 }
               },
               "foreignKeys": [
@@ -6687,6 +6848,25 @@
                     "namespaceId": "public",
                     "tableName": "Account"
                   }
+                },
+                {
+                  "name": "Doctor_verifiedById_fkey",
+                  "onDelete": "setNull",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "verifiedById"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Doctor"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Account"
+                  }
                 }
               ],
               "indexes": [
@@ -6695,6 +6875,14 @@
                     "clinicId"
                   ],
                   "name": "Doctor_clinicId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "verifiedById"
+                  ],
+                  "name": "Doctor_verifiedById_idx_dfd74b37",
+                  "prefix": "Doctor_verifiedById_idx",
                   "unique": false
                 }
               ],
@@ -9433,6 +9621,14 @@
                 "DOCTOR"
               ]
             },
+            "VerificationStatus": {
+              "kind": "valueSet",
+              "values": [
+                "PENDING",
+                "VERIFIED",
+                "DECLINED"
+              ]
+            },
             "VisitPriority": {
               "kind": "valueSet",
               "values": [
@@ -9447,7 +9643,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "46d6038ae2dabe39a7ee5a0a24e88afe6554c9f1b850d37cf36ffd638796ae39"
+    "storageHash": "0b1cd57301ca424643f8d57385d6122ad907b1c2f7f954dbd5210364ee05a4f9"
   },
   "capabilities": {
     "postgres": {

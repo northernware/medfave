@@ -266,6 +266,76 @@ export async function sendEmailVerification(options: {
   });
 }
 
+/** To Medfave's admins: a doctor sent their licence for checking. */
+export async function sendVerificationRequest(options: {
+  to: string;
+  doctorName: string;
+  clinicName: string;
+  licenseNumber: string;
+  link: string;
+}): Promise<SendOutcome> {
+  const lines = [
+    `<strong>${esc(options.doctorName)}</strong> (${esc(options.clinicName)}) sent PRC licence ${esc(options.licenseNumber)} for checking.`,
+    `Open the queue: <a href="${esc(options.link)}">${esc(options.link)}</a>`,
+  ];
+  return send({
+    to: options.to,
+    subject: `Doctor to verify: ${options.doctorName}`,
+    text: [
+      `${options.doctorName} (${options.clinicName}) sent PRC licence ${options.licenseNumber} for checking.`,
+      ``,
+      `Open the queue: ${options.link}`,
+    ].join("\n"),
+    html: layout("A doctor is waiting for verification", lines),
+  });
+}
+
+/** To the doctor: their licence was verified, or declined with a reason. */
+export async function sendVerificationOutcome(options: {
+  to: string;
+  name: string;
+  verified: boolean;
+  reason?: string;
+  link: string;
+}): Promise<SendOutcome> {
+  const lines = options.verified
+    ? [
+        `Hello ${esc(options.name)},`,
+        `We've checked your PRC licence. Your clinic on Medfave is now fully open: you can add patients, book visits and invite your secretary.`,
+        `<a href="${esc(options.link)}">${esc(options.link)}</a>`,
+      ]
+    : [
+        `Hello ${esc(options.name)},`,
+        `We couldn't verify your PRC licence yet. The reason:`,
+        `<strong>${esc(options.reason ?? "")}</strong>`,
+        `Fix the details and send them again: <a href="${esc(options.link)}">${esc(options.link)}</a>`,
+      ];
+  return send({
+    to: options.to,
+    subject: options.verified ? "Your clinic on Medfave is open" : "We couldn't verify your licence yet",
+    text: (options.verified
+      ? [
+          `Hello ${options.name},`,
+          ``,
+          `We've checked your PRC licence. Your clinic on Medfave is now fully open:`,
+          `you can add patients, book visits and invite your secretary.`,
+          ``,
+          options.link,
+        ]
+      : [
+          `Hello ${options.name},`,
+          ``,
+          `We couldn't verify your PRC licence yet. The reason:`,
+          ``,
+          `    ${options.reason ?? ""}`,
+          ``,
+          `Fix the details and send them again: ${options.link}`,
+        ]
+    ).join("\n"),
+    html: layout(options.verified ? "You're verified" : "We couldn't verify your licence yet", lines),
+  });
+}
+
 /**
  * Confirmation that a time has been booked.
  *
