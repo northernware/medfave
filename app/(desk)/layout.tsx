@@ -3,6 +3,7 @@ import Link from "next/link";
 import { logout } from "@/app/actions/auth";
 import { requireStaff } from "@/lib/auth";
 import { Brand } from "@/components/brand";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { DeskNav } from "@/components/desk-nav";
 
 /**
@@ -28,7 +29,7 @@ export default async function DeskLayout({ children }: { children: ReactNode }) 
           <div className="flex items-center gap-3">
             {/* A doctor covering the desk can get back to their own screens. */}
             {staff.role !== "SECRETARY" ? (
-              <Link href="/" className="text-sm font-medium text-accent-ink hover:underline">
+              <Link href="/dashboard" className="text-sm font-medium text-accent-ink hover:underline">
                 Clinical view
               </Link>
             ) : null}
@@ -38,6 +39,7 @@ export default async function DeskLayout({ children }: { children: ReactNode }) 
             >
               {staff.fullName}
             </Link>
+            <ThemeToggle />
             <form action={logout}>
               <button className="text-sm font-medium text-ink-muted hover:text-ink">
                 Sign out

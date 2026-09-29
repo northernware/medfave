@@ -10,7 +10,7 @@ export default function NotFound() {
         <p className="mt-2 text-sm text-pretty text-ink-muted">
           That page does not exist, or it belongs to another doctor&rsquo;s records.
         </p>
-        <Link href="/" className={buttonClass("primary", "mt-6")}>
+        <Link href="/dashboard" className={buttonClass("primary", "mt-6")}>
           Back to today
         </Link>
       </div>

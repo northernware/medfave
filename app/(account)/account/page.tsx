@@ -40,8 +40,8 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
   const role = viewer.staff?.role;
   const standing = role
     ? `${role === "DOCTOR" ? "Doctor" : role === "SECRETARY" ? "Secretary" : "Administrator"} at ${viewer.staff!.clinicName}`
-    : viewer.patient
-      ? "Patient"
+    : viewer.charts.length > 0
+      ? `Patient at ${viewer.charts.map((c) => c.clinicName).join(", ")}`
       : "No clinic or record";
 
   return (

@@ -7,9 +7,70 @@ import { orm } from "@/src/prisma/db";
 import { calendarDateFromDb, formatCalendarDate, formatDateTime, instantFromDb } from "@/lib/datetime";
 import { ageFrom, fullName, RELATIONSHIP_LABELS, REMINDER_LABELS, SEX_LABELS } from "@/lib/domain";
 import { AppointmentList } from "@/components/appointment-list";
+import { ShareCode } from "@/components/share-code";
+import { activationLink, qrSvg } from "@/lib/activation-link";
 import { Badge, buttonClass, Card, CardHeader, Detail, PageHeader } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Patient" };
+
+/**
+ * The code, just issued, and three ways to get it to the patient: scan the QR
+ * code with their phone, share it to Viber or Messenger from the clinic's
+ * phone, or read it out. It is shown this once — only its hash is kept.
+ */
+async function ActivationHandover({
+  code,
+  patientName,
+  clinicName,
+  mail,
+}: {
+  code: string;
+  patientName: string;
+  clinicName: string;
+  mail?: string;
+}) {
+  const link = await activationLink(code);
+  const svg = await qrSvg(link);
+
+  return (
+    <div className="rounded-lg border border-ok/40 bg-ok-tint p-4 sm:p-5">
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
+        <div
+          className="size-44 shrink-0 self-center rounded-md bg-white p-2 sm:self-start [&>svg]:size-full"
+          role="img"
+          aria-label={`QR code that opens medfave's activation page with ${patientName}'s code filled in`}
+          // Generated here from our own link by the qrcode package — no user input reaches it unescaped.
+          dangerouslySetInnerHTML={{ __html: svg }}
+        />
+        <div className="min-w-0 flex-1 space-y-3">
+          <div>
+            <p className="text-sm font-medium text-ok-ink">
+              Activation code — hand it over now, it is not shown again.
+            </p>
+            <p className="tabular mt-1 text-xl font-semibold tracking-wider">{code}</p>
+          </div>
+          <p className="text-sm text-ink-muted">
+            {patientName} scans the QR code with their phone camera to set up their login, in the medfave
+            app or on the web. Or share it to them, or read it out.
+          </p>
+          <ShareCode code={code} link={link} clinicName={clinicName} />
+          <p className="text-xs text-ink-muted">
+            {mail === "sent" ? (
+              <>Also emailed to them.</>
+            ) : mail === "failed" ? (
+              <>The email could not be sent, so pass it on here.</>
+            ) : mail === "no-address" ? (
+              <>No email address on file, so pass it on here.</>
+            ) : (
+              <>Email is not set up, so pass it on here.</>
+            )}{" "}
+            It works once and expires in 14 days.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default async function DeskPatientPage({
   params,
@@ -109,26 +170,13 @@ export default async function DeskPatientPage({
 
       {/* Handed over in person, once. This is the only way a login ever reaches
           a chart, so it is issued to somebody the desk has identified. */}
-      {code ? (
-        <div className="rounded-lg border border-ok/40 bg-ok-tint px-4 py-3">
-          <p className="text-sm font-medium text-ok-ink">
-            Activation code — write it down now, it is not shown again.
-          </p>
-          <p className="tabular mt-1 text-lg font-semibold tracking-wider">{code}</p>
-          <p className="mt-1 text-xs text-ink-muted">
-            Give it to {fullName(patient)} in person. They enter it at the sign-up page to connect a
-            login to this record.{" "}
-            {mail === "sent" ? (
-            <>Also emailed to them.</>
-          ) : mail === "failed" ? (
-            <>The email could not be sent, so this code is the only copy — pass it on directly.</>
-          ) : mail === "no-address" ? (
-            <>No email address on file, so this code is the only copy.</>
-          ) : (
-            <>Email is not set up, so this code is the only copy.</>
-          )}
-          </p>
-        </div>
+      {code && typeof code === "string" ? (
+        <ActivationHandover
+          code={code}
+          patientName={fullName(patient)}
+          clinicName={staff.clinicName}
+          mail={typeof mail === "string" ? mail : undefined}
+        />
       ) : null}
 
       <Card>

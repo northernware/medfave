@@ -3,6 +3,7 @@ import Link from "next/link";
 import { logout } from "@/app/actions/auth";
 import { requireClinicManager } from "@/lib/auth";
 import { Brand } from "@/components/brand";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 /**
  * Running the clinic, as opposed to practising in it.
@@ -35,7 +36,7 @@ export default async function ManageLayout({ children }: { children: ReactNode }
                 Staff
               </Link>
               {manager.doctorId ? (
-                <Link href="/" className="text-ink-muted transition-colors hover:text-ink">
+                <Link href="/dashboard" className="text-ink-muted transition-colors hover:text-ink">
                   Consulting room
                 </Link>
               ) : null}
@@ -46,6 +47,7 @@ export default async function ManageLayout({ children }: { children: ReactNode }
             >
               {manager.fullName}
             </Link>
+            <ThemeToggle />
             <form action={logout}>
               <button className="text-sm font-medium text-ink-muted hover:text-ink">
                 Sign out

@@ -19,58 +19,69 @@
    away from the brand hue, so an allergy or alert can never be mistaken for a
    branded highlight — and a pink button never reads as a warning.
 
-   Every colour is defined here in light form first, then overridden for dark,
-   so nothing has its only definition inside a media query.
+   Every themed colour is written once as light-dark(<light>, <dark>). Which
+   half applies is decided by `color-scheme`: the device's setting by default,
+   or the viewer's own choice, which the root layout puts on <html> as
+   data-theme="light" or "dark". The same switch themes scrollbars and native
+   form controls.
 --------------------------------------------------------------------------- */
 :root {
+  color-scheme: light dark;
+
   --brand: #e91e83;
   --brand-plum: #32132c;
   --brand-blush: #fde7f1;
   /* The logo's own colours. Light: the primary lockup (fuchsia heart, plum
      wordmark). Dark: the approved single-colour version, solid white. */
-  --logo-heart: #e91e83;
-  --logo-word: #32132c;
+  --logo-heart: light-dark(#e91e83, #ffffff);
+  --logo-word: light-dark(#32132c, #ffffff);
 
-  --canvas: #fff9fc;
-  --surface: #ffffff;
-  --surface-muted: #fbeff4;
-  --border: #f0dce6;
-  --border-strong: #dfc2d1;
+  /* Plum grounds the dark theme too — surfaces are deep plum, not grey. */
+  --canvas: light-dark(#fff9fc, #1d0b19);
+  --surface: light-dark(#ffffff, #271122);
+  --surface-muted: light-dark(#fbeff4, #33182d);
+  --border: light-dark(#f0dce6, #43233b);
+  --border-strong: light-dark(#dfc2d1, #5b3551);
 
-  --ink: #32132c;
-  --ink-muted: #6b4f63;
-  --ink-faint: #7b6174;
+  --ink: light-dark(#32132c, #fff1f7);
+  --ink-muted: light-dark(#6b4f63, #d8bccd);
+  --ink-faint: light-dark(#7b6174, #af93a5);
 
-  --accent: #b51260;
-  --accent-hover: #9c0f53;
-  --accent-soft: #fde7f1;
-  --accent-ink: #b51260;
-  --on-accent: #ffffff;
+  /* Dark takes a lighter pink with plum labels: fuchsia with white text would
+     fall below 4.5:1 at button size. */
+  --accent: light-dark(#b51260, #ff6fae);
+  --accent-hover: light-dark(#9c0f53, #ff8fc0);
+  --accent-soft: light-dark(#fde7f1, #4a1a3b);
+  --accent-ink: light-dark(#b51260, #ff8ac0);
+  --on-accent: light-dark(#ffffff, #32132c);
 
-  --danger: oklch(0.56 0.2 29);
-  --danger-soft: oklch(0.965 0.025 29);
-  --danger-ink: oklch(0.47 0.18 29);
+  --danger: light-dark(oklch(0.56 0.2 29), oklch(0.68 0.17 29));
+  --danger-soft: light-dark(oklch(0.965 0.025 29), oklch(0.32 0.07 29));
+  --danger-ink: light-dark(oklch(0.47 0.18 29), oklch(0.83 0.1 29));
 
-  --warn: oklch(0.66 0.14 70);
-  --warn-soft: oklch(0.965 0.05 85);
-  --warn-ink: oklch(0.47 0.11 65);
+  --warn: light-dark(oklch(0.66 0.14 70), oklch(0.78 0.13 80));
+  --warn-soft: light-dark(oklch(0.965 0.05 85), oklch(0.33 0.06 75));
+  --warn-ink: light-dark(oklch(0.47 0.11 65), oklch(0.87 0.09 85));
 
-  --ok: oklch(0.58 0.12 160);
-  --ok-soft: oklch(0.955 0.035 160);
-  --ok-ink: oklch(0.43 0.1 160);
+  --ok: light-dark(oklch(0.58 0.12 160), oklch(0.72 0.12 160));
+  --ok-soft: light-dark(oklch(0.955 0.035 160), oklch(0.3 0.055 160));
+  --ok-ink: light-dark(oklch(0.43 0.1 160), oklch(0.85 0.09 160));
 
   /* Tints for badges and rules — lighter than the -soft fills they replace, so a
      status reads as a marking on the surface rather than a second card. */
-  --accent-tint: #fdeef5;
-  --danger-tint: oklch(0.975 0.016 29);
-  --warn-tint: oklch(0.977 0.03 85);
-  --ok-tint: oklch(0.972 0.022 160);
+  --accent-tint: light-dark(#fdeef5, #3a1530);
+  --danger-tint: light-dark(oklch(0.975 0.016 29), oklch(0.29 0.05 29));
+  --warn-tint: light-dark(oklch(0.977 0.03 85), oklch(0.29 0.045 75));
+  --ok-tint: light-dark(oklch(0.972 0.022 160), oklch(0.28 0.04 160));
 
   /* Elevation by role. Structure is carried by hairlines; a shadow is spent only
      on things that genuinely float. Shadows are tinted plum, not grey, so they
-     sit in the warm canvas instead of dirtying it. */
-  --shadow-card: 0 1px 2px rgb(50 19 44 / 0.04), 0 2px 6px rgb(50 19 44 / 0.04);
-  --shadow-pop: 0 8px 24px rgb(50 19 44 / 0.1), 0 2px 6px rgb(50 19 44 / 0.06);
+     sit in the warm canvas instead of dirtying it; on dark they deepen to black.
+     light-dark() takes colours only, so each shadow's colours are split out. */
+  --shadow-card: 0 1px 2px light-dark(rgb(50 19 44 / 0.04), rgb(0 0 0 / 0.3)),
+    0 2px 6px light-dark(rgb(50 19 44 / 0.04), rgb(0 0 0 / 0.2));
+  --shadow-pop: 0 8px 24px light-dark(rgb(50 19 44 / 0.1), rgb(0 0 0 / 0.45)),
+    0 2px 6px light-dark(rgb(50 19 44 / 0.06), rgb(0 0 0 / 0.3));
 
   /* Softer corners than before: the identity is built from capsules. Buttons
      go fully round; containers stay generous but calm. */
@@ -79,50 +90,13 @@
   --radius-lg: 16px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Plum grounds the dark theme too — surfaces are deep plum, not grey. */
-    --logo-heart: #ffffff;
-    --logo-word: #ffffff;
+/* The viewer's own choice, over the device's. */
+:root[data-theme="light"] {
+  color-scheme: light;
+}
 
-    --canvas: #1d0b19;
-    --surface: #271122;
-    --surface-muted: #33182d;
-    --border: #43233b;
-    --border-strong: #5b3551;
-
-    --ink: #fff1f7;
-    --ink-muted: #d8bccd;
-    --ink-faint: #af93a5;
-
-    /* A lighter pink with plum labels: fuchsia with white text would fall
-       below 4.5:1 at button size. */
-    --accent: #ff6fae;
-    --accent-hover: #ff8fc0;
-    --accent-soft: #4a1a3b;
-    --accent-ink: #ff8ac0;
-    --on-accent: #32132c;
-
-    --danger: oklch(0.68 0.17 29);
-    --danger-soft: oklch(0.32 0.07 29);
-    --danger-ink: oklch(0.83 0.1 29);
-
-    --warn: oklch(0.78 0.13 80);
-    --warn-soft: oklch(0.33 0.06 75);
-    --warn-ink: oklch(0.87 0.09 85);
-
-    --ok: oklch(0.72 0.12 160);
-    --ok-soft: oklch(0.3 0.055 160);
-    --ok-ink: oklch(0.85 0.09 160);
-
-    --accent-tint: #3a1530;
-    --danger-tint: oklch(0.29 0.05 29);
-    --warn-tint: oklch(0.29 0.045 75);
-    --ok-tint: oklch(0.28 0.04 160);
-
-    --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 2px 6px rgb(0 0 0 / 0.2);
-    --shadow-pop: 0 8px 24px rgb(0 0 0 / 0.45), 0 2px 6px rgb(0 0 0 / 0.3);
-  }
+:root[data-theme="dark"] {
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -233,10 +207,17 @@ fieldset {
   background-size: 180px 120px;
 }
 
+/* An image cannot go through light-dark(), so the dark pattern follows the
+   same rule by selector: the device is dark and the viewer has not chosen
+   light, or the viewer has chosen dark. */
 @media (prefers-color-scheme: dark) {
-  .brand-pattern {
+  :root:not([data-theme="light"]) .brand-pattern {
     background-image: url("/pattern-heart-plus-dark.svg");
   }
+}
+
+:root[data-theme="dark"] .brand-pattern {
+  background-image: url("/pattern-heart-plus-dark.svg");
 }
 
 /* A status marking: a coloured dot beside text, so state never rests on the

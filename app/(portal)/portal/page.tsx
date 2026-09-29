@@ -24,7 +24,7 @@ export const metadata: Metadata = { title: "My clinic" };
 
 export default async function PortalPage({ searchParams }: PageProps<"/portal">) {
   const me = await requirePatientAccount();
-  const { requested } = await searchParams;
+  const { requested, added } = await searchParams;
   const now = instantToDb(new Date());
 
   // Every query below is scoped to this one patient id, which came from the
@@ -80,6 +80,13 @@ export default async function PortalPage({ searchParams }: PageProps<"/portal">)
           </Link>
         }
       />
+
+      {added ? (
+        <div className="rounded-lg border border-ok/40 bg-ok-tint px-4 py-3 text-sm">
+          <p className="font-medium text-ok-ink">{me.clinicName} is now linked to your account.</p>
+          <p className="mt-0.5 text-ink-muted">Switch between your clinics at the top of the page.</p>
+        </div>
+      ) : null}
 
       {requested ? (
         <div className="rounded-lg border border-ok/40 bg-ok-tint px-4 py-3 text-sm">

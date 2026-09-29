@@ -30,10 +30,13 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
       </p>
 
       <p className="mt-6 text-sm text-ink-muted">
-        No account yet?{" "}
+        Patient with an activation code?{" "}
         <Link href="/register" className="font-medium text-accent-ink hover:underline">
-          Register your practice
+          Activate your account
         </Link>
+      </p>
+      <p className="mt-2 text-sm text-ink-muted">
+        Clinic staff join by invitation from their clinic.
       </p>
     </div>
   );
