@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
   // The state cookie must be set on the host Google will send the browser back
   // to (APP_URL), so a visit on another name for this server goes there first.
   const home = new URL(appUrl("/"));
-  if (request.nextUrl.host !== home.host) {
+  if (request.headers.get("host") !== home.host) {
     redirect(appUrl(`/auth/google${request.nextUrl.search}`));
   }
 
