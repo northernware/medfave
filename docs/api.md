@@ -63,6 +63,8 @@ are `YYYY-MM-DD` and times of day `HH:MM`, both in clinic time (Asia/Manila).
 | `GET /auth/providers` | → `{ google }`. Whether "Continue with Google" is set up on this server; show the button only when `true` |
 | `POST /auth/google/exchange` | `{ code, verifier }` → `{ token, expiresAt, viewer }`. The end of a Google sign-in; see below |
 | `GET /me` | `{ viewer }` |
+| `POST /practice` | `{ licenceName, licenseNumber, specialty?, clinicName, address, contactNumber }` → `201 { viewer }`. A signed-up doctor creates their clinic; it opens once a Medfave admin verifies the licence (`viewer.verification`). Email must be confirmed first (422 otherwise). `licenseNumber` is 7 digits |
+| `POST /practice/resubmit` | `{ licenceName, licenseNumber, specialty? }` → `{ viewer }`. A declined doctor sends corrected details again |
 
 **Continue with Google.** The server does the OAuth; the app opens it in a
 browser session (`WebBrowser.openAuthSessionAsync`) and never sees Google's
