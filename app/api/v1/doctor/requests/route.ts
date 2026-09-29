@@ -3,7 +3,7 @@ import { calendarDateFromDb, instantFromDb, toDateInputValue } from "@/lib/datet
 import { fullName, SERVICE_LABELS } from "@/lib/domain";
 import { orm } from "@/src/prisma/db";
 
-/** Requests from the clinic's patients still waiting for an answer, oldest first. */
+/** Requests for this doctor still waiting for an answer, oldest first. The desk sees every doctor's. */
 export async function GET(request: Request) {
   const doctor = await apiDoctor(request);
   if (doctor instanceof Response) return doctor;
@@ -12,6 +12,7 @@ export async function GET(request: Request) {
     .select("id", "preferredDate", "preferredTime", "service", "reason", "createdAt")
     .include("patient", (p) => p.select("id", "firstName", "middleName", "lastName"))
     .where((r) => r.clinicId.eq(doctor.clinicId))
+    .where((r) => r.doctorId.eq(doctor.doctorId))
     .where((r) => r.status.eq("PENDING"))
     .orderBy((r) => r.createdAt.asc())
     .limit(100)

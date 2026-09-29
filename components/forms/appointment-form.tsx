@@ -40,6 +40,7 @@ export function AppointmentForm({
   submitLabel,
   cancelHref,
   staffFields = false,
+  doctorId,
   followUpForRecordId,
 }: {
   action: (state: FormState, formData: FormData) => Promise<FormState>;
@@ -59,6 +60,8 @@ export function AppointmentForm({
   cancelHref: string;
   /** Reveals status, source, room and internal notes. */
   staffFields?: boolean;
+  /** Whose diary, when the desk chose one; the server checks it. */
+  doctorId?: string;
   /** Set when booking to satisfy a record's follow-up, so it can be linked back. */
   followUpForRecordId?: string;
 }) {
@@ -130,6 +133,7 @@ export function AppointmentForm({
 
   return (
     <form action={formAction} className="space-y-7">
+      {doctorId ? <input type="hidden" name="doctorId" value={doctorId} /> : null}
       <FormError message={state.message} />
       {followUpForRecordId ? (
         <input type="hidden" name="followUpFor" value={followUpForRecordId} />

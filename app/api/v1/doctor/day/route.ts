@@ -49,6 +49,7 @@ export async function GET(request: Request) {
       : Promise.resolve([]),
     orm.AppointmentRequest
       .where((r) => r.clinicId.eq(doctor.clinicId))
+      .where((r) => r.doctorId.eq(doctor.doctorId))
       .where((r) => r.status.eq("PENDING"))
       .aggregate((agg) => ({ n: agg.count() })),
   ]);

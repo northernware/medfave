@@ -71,6 +71,19 @@ export async function patientOptions(doctorId: string): Promise<PatientOption[]>
     );
 }
 
+/** Every current patient of a clinic, for the desk: it books for all its doctors. */
+export async function clinicPatientOptions(clinicId: string): Promise<PatientOption[]> {
+  const patients = await orm.Patient
+    .select("id", "firstName", "middleName", "lastName")
+    .include("household", (h) => h.select("name"))
+    .where((p) => p.clinicId.eq(clinicId))
+    .where((p) => p.archivedAt.isNull())
+    .all();
+  return patients
+    .map((p) => ({ id: p.id, label: fullName(p), householdName: p.household.name }))
+    .sort((a, b) => a.householdName.localeCompare(b.householdName) || a.label.localeCompare(b.label));
+}
+
 /**
  * Everything the booking form needs to offer slots without a round-trip: who can
  * be booked, which minutes of each day are already taken, and which earlier
@@ -80,7 +93,12 @@ export async function patientOptions(doctorId: string): Promise<PatientOption[]>
  * single doctor that is a few hundred rows, and it makes changing the date or
  * the service instant instead of a loading state.
  */
-export async function bookingFormData(doctorId: string, excludeAppointmentId?: string) {
+export async function bookingFormData(
+  doctorId: string,
+  excludeAppointmentId?: string,
+  /** The desk's form: every patient of the clinic, not only this doctor's. */
+  options: { clinicId?: string } = {},
+) {
   const now = new Date();
   const schedule = await loadSchedule(doctorId);
   const earliest = earliestBookableDay(schedule, now);
@@ -112,7 +130,7 @@ export async function bookingFormData(doctorId: string, excludeAppointmentId?: s
   }
 
   const [patients, booked, previous] = await Promise.all([
-    patientOptions(doctorId),
+    options.clinicId ? clinicPatientOptions(options.clinicId) : patientOptions(doctorId),
     bookedQuery.all(),
     previousQuery.all(),
   ]);

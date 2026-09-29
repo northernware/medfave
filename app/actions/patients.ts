@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { AllergySeverity } from "@/lib/enums";
 import { requireDoctor, requireStaff } from "@/lib/auth";
-import { clinicDoctorId } from "@/lib/clinic";
+import { pickDoctor } from "@/lib/clinic";
 import { db, orm } from "@/src/prisma/db";
 import { calendarDateToDb, instantToDb } from "@/lib/datetime";
 import { newId } from "@/lib/ids";
@@ -342,8 +342,12 @@ export async function createPatient(_prev: FormState, formData: FormData): Promi
     return { message: "That household is not on your list." };
   }
 
-  const attributedTo = staff.doctorId ?? (await clinicDoctorId(staff.clinicId));
-  if (!attributedTo) return { message: "This clinic has no clinician to register under." };
+  // A new household is somebody's: the doctor's own, or the one the desk
+  // chose. An existing household already has its doctor.
+  const attributedTo = staff.doctorId ?? (await pickDoctor(staff.clinicId, formData.get("doctorId"))).doctorId;
+  if (creatingHousehold && !attributedTo) {
+    return { message: "Choose which doctor this patient is for.", fieldErrors: { doctorId: ["Required"] } };
+  }
 
   const clinical = staff.role === "SECRETARY" ? EMPTY_LISTS : parsed.lists;
 
@@ -362,7 +366,7 @@ export async function createPatient(_prev: FormState, formData: FormData): Promi
       ? (
           await tx.orm.public.Household.select("id").create({
             id: newId(),
-            doctorId: attributedTo,
+            doctorId: attributedTo!,
             clinicId: staff.clinicId,
             name: newHouseholdName,
             createdAt: now,
@@ -438,8 +442,12 @@ export async function updatePatient(
     return { message: "This chart is archived. It has to be restored before its details change." };
   }
 
-  const attributedTo = staff.doctorId ?? (await clinicDoctorId(staff.clinicId));
-  if (!attributedTo) return { message: "This clinic has no clinician to register under." };
+  // A new household is somebody's: the doctor's own, or the one the desk
+  // chose. An existing household already has its doctor.
+  const attributedTo = staff.doctorId ?? (await pickDoctor(staff.clinicId, formData.get("doctorId"))).doctorId;
+  if (creatingHousehold && !attributedTo) {
+    return { message: "Choose which doctor this patient is for.", fieldErrors: { doctorId: ["Required"] } };
+  }
 
   // Excluding this patient stops it matching itself.
   const challenge = await duplicateChallenge(staff.clinicId, formData, parsed.scalars, patientId);
@@ -456,7 +464,7 @@ export async function updatePatient(
       ? (
           await t.Household.select("id").create({
             id: newId(),
-            doctorId: attributedTo,
+            doctorId: attributedTo!,
             clinicId: staff.clinicId,
             name: newHouseholdName,
             createdAt: now,

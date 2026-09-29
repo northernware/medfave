@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { updatePatient } from "@/app/actions/patients";
 import { requireStaff } from "@/lib/auth";
+import { clinicDoctors } from "@/lib/clinic";
 import { orm } from "@/src/prisma/db";
 import { calendarDateFromDb, toDateInputValue } from "@/lib/datetime";
 import { fullName } from "@/lib/domain";
@@ -58,6 +59,7 @@ export default async function DeskEditPatientPage({
           action={updatePatient.bind(null, patient.id)}
           households={households}
           clinical={staff.role !== "SECRETARY"}
+          doctors={staff.doctorId ? [] : await clinicDoctors(staff.clinicId)}
           defaults={{
             householdId: patient.householdId,
             firstName: patient.firstName,

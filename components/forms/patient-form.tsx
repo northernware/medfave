@@ -17,6 +17,7 @@ export function PatientForm({
   submitLabel,
   cancelHref,
   clinical = true,
+  doctors = [],
 }: {
   action: (state: FormState, formData: FormData) => Promise<FormState>;
   defaults: PatientDefaults;
@@ -25,6 +26,8 @@ export function PatientForm({
   cancelHref: string;
   /** False at the desk: registration is not the place for clinical findings. */
   clinical?: boolean;
+  /** At the desk of a clinic with several doctors: whose a new household is. */
+  doctors?: { id: string; fullName: string }[];
 }) {
   const [state, formAction] = useActionState(action, EMPTY_FORM_STATE);
   const err = state.fieldErrors;
@@ -122,6 +125,26 @@ export function PatientForm({
                 required
                 invalid={Boolean(err?.newHouseholdName)}
               />
+            </Field>
+          ) : null}
+          {creatingHousehold && doctors.length > 1 ? (
+            <Field
+              label="Doctor"
+              htmlFor="doctorId"
+              error={err?.doctorId}
+              hint="Whose patient this is. That doctor sees them."
+              required
+            >
+              <Select id="doctorId" name="doctorId" defaultValue="" required invalid={Boolean(err?.doctorId)}>
+                <option value="" disabled>
+                  Choose a doctor…
+                </option>
+                {doctors.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.fullName}
+                  </option>
+                ))}
+              </Select>
             </Field>
           ) : null}
           <Field label="Relationship" htmlFor="relationship" error={err?.relationship} required>

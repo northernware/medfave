@@ -121,11 +121,11 @@ A clinic the login isn't linked to gets `404`.
 | `POST /patient/clinics` | `{ code }` → `201 { clinic: { id, name } }`. **Add a clinic:** redeems another clinic's activation code and links that clinic's chart to this login. Open to any signed-in account. `422` for an invalid code or a clinic already linked |
 | `GET /patient/appointments` | `{ upcoming[], past[] }`, each `{ id, scheduledAt, durationMinutes, service, serviceLabel, reason, status, statusLabel, visitType, doctor }` |
 | `GET /patient/requests` | `{ requests[] }`, each `{ id, preferredDate, preferredTime, service, serviceLabel, reason, status, decisionNote, createdAt }` |
-| `POST /patient/requests` | `{ service, preferredDate, preferredTime?, reason }` → `201 { id, status: "PENDING" }` |
+| `POST /patient/requests` | `{ service, preferredDate, preferredTime?, reason, doctorId? }` → `201 { id, status: "PENDING" }`. Patients ask for a **doctor**: `doctorId` is one of `/patient/clinic`'s `doctors`. Left out: the doctor they saw last, or the only one; with several and no history, `422` asks to choose. Checked against that doctor's hours |
 | `DELETE /patient/requests/:id` | Withdraws a request that is still pending → `{ id, status: "WITHDRAWN" }` |
 | `GET /patient/documents` | `{ documents[] }`, each `{ id, type, typeLabel, purpose, sharedAt }` |
 | `GET /patient/documents/:id` | `{ document }`, with `fields[]` of `{ name, label, value }` in the clinic's order |
-| `GET /patient/clinic` | `{ clinic, takingRequests, services[], schedule }` — what the request form needs: services, the week's hours, closures ahead, and `earliestDay` / `latestDay` |
+| `GET /patient/clinic?doctor=` | `{ clinic, doctors[], doctorId, takingRequests, services[], schedule }` — what the request form needs. `doctors` are the clinic's bookable doctors `{ id, fullName, specialty }`; `doctorId` is whose hours and services follow: `?doctor=` if given, else the patient's last doctor, else the only one (`null`: ask them to choose). `schedule` has the week's hours, closures ahead, and `earliestDay` / `latestDay` |
 
 A request is **not** a booking. It holds no slot, and the doctor or front desk
 accepts or declines it. The app should say so. The server checks each request
@@ -153,12 +153,12 @@ the visit is now.
 | --- | --- |
 | `GET /doctor/day?date=YYYY-MM-DD` | `{ date, isToday, appointments[], queue[], pendingRequests }`. Today when `date` is left out. `queue` is who is here (checked in or with the doctor), in arrival order, and only for today. Marks overdue no-shows and sends tomorrow's reminders first, as the dashboard does. |
 | `GET /doctor/week?from=&days=` | `{ days: [{ date, count }] }`: visits still expected per day (7 by default, 31 at most) |
-| `GET /doctor/clinic` | Same shape as `/patient/clinic`, plus `breaks`, `slotStepMinutes` and `today` |
+| `GET /doctor/clinic` | Same shape as `/patient/clinic`, for the signed-in doctor's own hours, plus `breaks`, `slotStepMinutes` and `today` |
 | `GET /doctor/patients?q=` | `{ patients[] }`, each `{ id, fullName, patientNumber, household }`. Name or number match; at most 50; archived charts left out |
 | `GET /doctor/patients/:id` | `{ patient, upcoming[], past[] }`. Demographics, contact and household. Clinical notes stay on the web |
 | `POST /doctor/appointments` | `{ patientId, service, reason, date, time, walkIn? }` → `201 { id }`. A walk-in skips the booking lead time and joins the queue as checked in. `409` when the time was just taken |
 | `POST /doctor/appointments/:id/status` | `{ status }` → `{ id, status }`. `409` for a move `nextStatuses` doesn't allow, or when restoring a visit whose slot has since gone |
-| `GET /doctor/requests` | `{ requests[] }` waiting for an answer, oldest first, each with `patient: { id, fullName }` |
+| `GET /doctor/requests` | `{ requests[] }` for **this doctor** waiting for an answer, oldest first, each with `patient: { id, fullName }`. A doctor can only accept or decline their own (others are `404`); the desk handles any, on the web |
 | `POST /doctor/requests/:id/accept` | `{ time? }` → `{ id, status: "ACCEPTED", appointmentId }`. `time` is required when the patient asked for any time. `409` when the time is no longer free |
 | `POST /doctor/requests/:id/decline` | `{ note? }` → `{ id, status: "DECLINED" }`. The patient reads the note |
 

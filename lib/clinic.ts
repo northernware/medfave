@@ -1,22 +1,56 @@
 import "server-only";
 import { orm } from "@/src/prisma/db";
 
+/** A doctor a booking or request can name: verified, at this clinic. */
+export type ClinicDoctor = { id: string; fullName: string; specialty: string | null };
+
 /**
- * The clinician a clinic-owned row is attributed to when the person doing the
- * work is not one.
- *
- * `doctorId` predates clinics and still carries authorship, so a household a
- * secretary registers has to name somebody. It names the clinic's doctor. With
- * more than one clinician this becomes a choice rather than a lookup, and this
- * is the single place that would have to ask.
+ * The clinic's doctors who can be booked: verified ones, by name. Every doctor
+ * at a clinic is equal; there is no "the clinic's doctor" (plans/
+ * group-practice-findings.md).
  */
-export async function clinicDoctorId(clinicId: string): Promise<string | null> {
-  const doctor = await orm.Doctor
-    .select("id")
+export async function clinicDoctors(clinicId: string): Promise<ClinicDoctor[]> {
+  const doctors = await orm.Doctor
+    .select("id", "fullName", "specialty")
     .where((d) => d.clinicId.eq(clinicId))
-    .orderBy((d) => d.createdAt.asc())
+    .where((d) => d.verificationStatus.eq("VERIFIED"))
+    .all();
+  return doctors.sort((a, b) => a.fullName.localeCompare(b.fullName));
+}
+
+/** The doctor this patient saw or booked most recently at the clinic, if any. */
+export async function lastDoctorFor(clinicId: string, patientId: string): Promise<string | null> {
+  const last = await orm.Appointment
+    .select("doctorId")
+    .where((a) => a.clinicId.eq(clinicId))
+    .where((a) => a.patientId.eq(patientId))
+    .orderBy((a) => a.scheduledAt.desc())
     .first();
-  return doctor?.id ?? null;
+  return last?.doctorId ?? null;
+}
+
+/**
+ * Which doctor a booking, request or registration is for.
+ *
+ * The one asked for, if it is a bookable doctor of this clinic; otherwise the
+ * fallback (the patient's last doctor, say) if that is; otherwise the only
+ * doctor, when there is just one. Null means somebody has to choose.
+ */
+export async function pickDoctor(
+  clinicId: string,
+  requested: unknown,
+  fallback?: string | null,
+): Promise<{ doctorId: string | null; doctors: ClinicDoctor[] }> {
+  const doctors = await clinicDoctors(clinicId);
+  const valid = (id: unknown) => typeof id === "string" && doctors.some((d) => d.id === id);
+  const doctorId = valid(requested)
+    ? (requested as string)
+    : valid(fallback)
+      ? (fallback as string)
+      : doctors.length === 1
+        ? doctors[0].id
+        : null;
+  return { doctorId, doctors };
 }
 
 /**
@@ -38,12 +72,3 @@ export async function clinicLetterhead(clinicId: string) {
 }
 
 export type ClinicLetterhead = Awaited<ReturnType<typeof clinicLetterhead>>;
-
-/** Every clinician of a clinic, for pickers that have to name one. */
-export async function clinicDoctors(clinicId: string) {
-  return orm.Doctor
-    .select("id", "fullName", "specialty")
-    .where((d) => d.clinicId.eq(clinicId))
-    .orderBy((d) => d.fullName.asc())
-    .all();
-}

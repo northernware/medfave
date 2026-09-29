@@ -2,7 +2,7 @@ import "server-only";
 import { patientContext, viewerForSession, type CurrentPatient, type Viewer } from "@/lib/auth";
 import { describeWeek, durationFor, earliestBookableDay, latestBookableDay } from "@/lib/availability";
 import type { Actor } from "@/lib/booking";
-import { clinicDoctorId, clinicLetterhead } from "@/lib/clinic";
+import { clinicLetterhead, pickDoctor } from "@/lib/clinic";
 import { dayKey } from "@/lib/datetime";
 import { SERVICES } from "@/lib/domain";
 import { loadSchedule } from "@/lib/queries";
@@ -105,14 +105,22 @@ export async function apiDoctor(request: Request): Promise<ApiDoctor | Response>
  * The server still checks every booking against the same rules; this lets the
  * app say so first.
  */
-export async function clinicBookingInfo(clinicId: string) {
-  const [letterhead, doctorId] = await Promise.all([clinicLetterhead(clinicId), clinicDoctorId(clinicId)]);
+export async function clinicBookingInfo(clinicId: string, options: { doctorId?: string | null; fallback?: string | null } = {}) {
+  const [letterhead, picked] = await Promise.all([
+    clinicLetterhead(clinicId),
+    pickDoctor(clinicId, options.doctorId, options.fallback),
+  ]);
+  const doctorId = picked.doctorId;
   const schedule = doctorId ? await loadSchedule(doctorId) : null;
   const today = dayKey(new Date());
 
   return {
     clinic: letterhead,
-    takingRequests: schedule !== null,
+    /** The clinic's bookable doctors. A request names one of them (`doctorId`). */
+    doctors: picked.doctors,
+    /** Whose hours and services these are: the one asked for, else the patient's last doctor, else the only one. Null: choose first. */
+    doctorId,
+    takingRequests: picked.doctors.length > 0,
     services: SERVICES.map((s) => ({
       value: s.value,
       label: s.label,

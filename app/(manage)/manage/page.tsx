@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requireClinicManager } from "@/lib/auth";
 import { weekLines } from "@/lib/availability";
-import { clinicDoctorId } from "@/lib/clinic";
+import { clinicDoctors } from "@/lib/clinic";
 import { loadSchedule } from "@/lib/queries";
 import { orm } from "@/src/prisma/db";
 import { Card, CardHeader, Detail, PageHeader, buttonClass } from "@/components/ui";
@@ -44,8 +44,15 @@ export default async function ManagePage({ searchParams }: PageProps<"/manage">)
     return acc;
   }, {});
   const outstanding = liveInvites.filter((i) => !i.acceptedAt && !i.revokedAt).length;
-  const doctorId = await clinicDoctorId(manager.clinicId);
-  const week = doctorId ? weekLines(await loadSchedule(doctorId)) : null;
+  // Each doctor keeps their own hours; show every doctor's week.
+  const doctors = await clinicDoctors(manager.clinicId);
+  const weeks = await Promise.all(
+    doctors.map(async (d) => ({ doctor: d, lines: weekLines(await loadSchedule(d.id)) })),
+  );
+  // A pending doctor isn't bookable yet but still sets up their own week.
+  if (manager.doctorId && !doctors.some((d) => d.id === manager.doctorId)) {
+    weeks.push({ doctor: { id: manager.doctorId, fullName: me?.fullName ?? "", specialty: null }, lines: weekLines(await loadSchedule(manager.doctorId)) });
+  }
   const waiting = me && me.verificationStatus !== "VERIFIED";
 
   return (
@@ -160,19 +167,36 @@ export default async function ManagePage({ searchParams }: PageProps<"/manage">)
       <Card>
         <CardHeader
           title="Schedule"
-          subtitle="Opening hours, breaks, closures and how long each visit takes."
+          subtitle={weeks.length > 1 ? "Each doctor's own hours, breaks and closures." : "Opening hours, breaks, closures and how long each visit takes."}
           action={
             <Link href="/manage/schedule" className="font-medium text-accent-ink hover:underline">
               Edit
             </Link>
           }
         />
-        {week ? (
-          <ul className="space-y-1 px-5 py-4 text-sm">
-            {week.length ? week.map((line) => <li key={line}>{line}</li>) : <li>No opening hours set</li>}
-          </ul>
-        ) : (
+        {weeks.length === 0 ? (
           <p className="px-5 py-4 text-sm">No clinician yet, so no diary to set hours for.</p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {weeks.map(({ doctor, lines }) => (
+              <li key={doctor.id} className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1 px-5 py-4 text-sm">
+                <div>
+                  {weeks.length > 1 ? <p className="font-semibold">{doctor.fullName}</p> : null}
+                  <ul className="space-y-1">
+                    {lines.length ? lines.map((line) => <li key={line}>{line}</li>) : <li>No opening hours set</li>}
+                  </ul>
+                </div>
+                {weeks.length > 1 && (!manager.doctorId || manager.doctorId === doctor.id) ? (
+                  <Link
+                    href={`/manage/schedule?doctor=${doctor.id}`}
+                    className="font-medium text-accent-ink hover:underline"
+                  >
+                    Edit
+                  </Link>
+                ) : null}
+              </li>
+            ))}
+          </ul>
         )}
       </Card>
     </div>
