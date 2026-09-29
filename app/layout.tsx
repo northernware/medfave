@@ -5,7 +5,7 @@ import { THEME_COOKIE, parseTheme } from "@/lib/theme";
 import "./globals.css";
 
 /*
- * The two companion typefaces from the medfave guidelines, self-hosted from
+ * The two companion typefaces from the Medfave guidelines, self-hosted from
  * their npm packages rather than fetched from Google at build time, so a build
  * never depends on reaching fonts.googleapis.com.
  */
@@ -25,8 +25,8 @@ const jakarta = localFont({
 
 export const metadata: Metadata = {
   title: {
-    default: "medfave",
-    template: "%s · medfave",
+    default: "Medfave",
+    template: "%s · Medfave",
   },
   description: "Appointments and medical records for family practice, organised by household.",
 };

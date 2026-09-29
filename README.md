@@ -1,4 +1,4 @@
-# medfave
+# Medfave
 
 Appointments and medical records for family practice, organised by household.
 
@@ -18,7 +18,7 @@ contact number.
 
 - **Next.js 16** (App Router, Server Components, Server Actions) + React 19
 - **Prisma 8** (Prisma Next) against **PostgreSQL**, via `@prisma/orm-postgres`
-- **Tailwind CSS v4** with the medfave brand palette (light and dark) in
+- **Tailwind CSS v4** with the Medfave brand palette (light and dark) in
   `app/globals.css`; Plus Jakarta Sans and Inter self-hosted via Fontsource
 - **Auth**: email + bcrypt password, session as a signed JWT (`jose`) in an
   HttpOnly cookie

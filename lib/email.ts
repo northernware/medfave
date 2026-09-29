@@ -92,7 +92,7 @@ async function send(message: {
 /**
  * Text going into an email's HTML. Names and addresses are whatever somebody
  * typed at sign-up, so they are escaped: a "name" of `<a href=…>` must arrive
- * as those characters, not as a link in a message that says it's from medfave.
+ * as those characters, not as a link in a message that says it's from Medfave.
  */
 function esc(text: string) {
   return text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
@@ -104,7 +104,7 @@ function layout(heading: string, lines: string[], code?: string) {
   const codeBlock = code
     ? `<p style="margin:20px 0;font:600 20px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.08em">${code}</p>`
     : "";
-  // medfave palette: warm white canvas, plum text, fuchsia only as a small
+  // Medfave palette: warm white canvas, plum text, fuchsia only as a small
   // accent rule — mail clients get no brand fonts, so system faces stand in.
   return `<!doctype html><html><body style="margin:0;background:#fff9fc">
 <div style="max-width:520px;margin:0 auto;padding:32px 24px;font:15px/1.6 -apple-system,Segoe UI,Roboto,sans-serif;color:#32132c">
@@ -133,15 +133,15 @@ export async function sendStaffInvite(options: {
 }): Promise<SendOutcome> {
   const role = options.role.toLowerCase();
   const lines = [
-    `${options.invitedBy} has invited you to join <strong>${options.clinicName}</strong> on medfave as a ${role}.`,
+    `${options.invitedBy} has invited you to join <strong>${options.clinicName}</strong> on Medfave as a ${role}.`,
     `Open <a href="${options.link}">${options.link}</a> and enter this code to set your password:`,
   ];
 
   return send({
     to: options.to,
-    subject: `Join ${options.clinicName} on medfave`,
+    subject: `Join ${options.clinicName} on Medfave`,
     text: [
-      `${options.invitedBy} has invited you to join ${options.clinicName} on medfave as a ${role}.`,
+      `${options.invitedBy} has invited you to join ${options.clinicName} on Medfave as a ${role}.`,
       ``,
       `Open ${options.link} and enter this code to set your password:`,
       ``,
@@ -170,7 +170,7 @@ export async function sendPatientActivation(options: {
 }): Promise<SendOutcome> {
   const lines = [
     `Hello ${options.patientName},`,
-    `<strong>${options.clinicName}</strong> has set up a medfave account for you, where you can see your appointments and ask for a booking.`,
+    `<strong>${options.clinicName}</strong> has set up a Medfave account for you, where you can see your appointments and ask for a booking.`,
     `Open <a href="${options.link}">${options.link}</a> and enter this code:`,
   ];
 
@@ -180,7 +180,7 @@ export async function sendPatientActivation(options: {
     text: [
       `Hello ${options.patientName},`,
       ``,
-      `${options.clinicName} has set up a medfave account for you, where you can`,
+      `${options.clinicName} has set up a Medfave account for you, where you can`,
       `see your appointments and ask for a booking.`,
       ``,
       `Open ${options.link} and enter this code:`,
@@ -211,17 +211,17 @@ export async function sendPasswordReset(options: {
 }): Promise<SendOutcome> {
   const lines = [
     `Hello ${esc(options.name)},`,
-    `Somebody asked to reset the medfave password for <strong>${esc(options.to)}</strong>.`,
+    `Somebody asked to reset the Medfave password for <strong>${esc(options.to)}</strong>.`,
     `Open <a href="${esc(options.link)}">${esc(options.link)}</a>, or enter this code:`,
   ];
 
   return send({
     to: options.to,
-    subject: "Reset your medfave password",
+    subject: "Reset your Medfave password",
     text: [
       `Hello ${options.name},`,
       ``,
-      `Somebody asked to reset the medfave password for ${options.to}.`,
+      `Somebody asked to reset the Medfave password for ${options.to}.`,
       ``,
       `Open ${options.link}, or enter this code:`,
       ``,
@@ -244,7 +244,7 @@ export async function sendEmailVerification(options: {
 }): Promise<SendOutcome> {
   const lines = [
     `Hello ${esc(options.name)},`,
-    `Welcome to medfave. Confirm that <strong>${esc(options.to)}</strong> is your email address:`,
+    `Welcome to Medfave. Confirm that <strong>${esc(options.to)}</strong> is your email address:`,
     `<a href="${esc(options.link)}" style="display:inline-block;padding:10px 18px;border-radius:999px;background:#b51260;color:#ffffff;text-decoration:none;font-weight:600">Confirm my email</a>`,
     `Or open this link: <a href="${esc(options.link)}">${esc(options.link)}</a>`,
     `It works for three days.`,
@@ -252,15 +252,15 @@ export async function sendEmailVerification(options: {
 
   return send({
     to: options.to,
-    subject: "Confirm your email for medfave",
+    subject: "Confirm your email for Medfave",
     text: [
       `Hello ${options.name},`,
       ``,
-      `Welcome to medfave. Confirm that ${options.to} is your email address by opening:`,
+      `Welcome to Medfave. Confirm that ${options.to} is your email address by opening:`,
       ``,
       `    ${options.link}`,
       ``,
-      `It works for three days. If you didn't sign up for medfave, ignore this email.`,
+      `It works for three days. If you didn't sign up for Medfave, ignore this email.`,
     ].join("\n"),
     html: layout("Confirm your email", lines),
   });

@@ -22,10 +22,10 @@ export default async function RegisterPage({ searchParams }: PageProps<"/registe
           below works either way. */}
       {given ? (
         <div className="mt-6 rounded-lg bg-accent-tint p-4">
-          <p className="text-sm font-medium">Have the medfave app?</p>
+          <p className="text-sm font-medium">Have the Medfave app?</p>
           <p className="mt-0.5 text-sm text-ink-muted">Open it with your code filled in, or carry on here.</p>
           <a href={`medfave://activate?code=${encodeURIComponent(given)}`} className={buttonClass("primary", "mt-3")}>
-            Open in the medfave app
+            Open in the Medfave app
           </a>
         </div>
       ) : null}

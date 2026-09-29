@@ -16,7 +16,7 @@ and again right after anything is merged to `main`:
 1. **Pull:** `git fetch --all --prune`, then `git switch main && git pull --ff-only`.
    Branch from that fresh `main`, never from a stale one.
 2. **See what changed:** `gh pr list` for open PRs, and the newest notes in
-   `docs/changes/`, here and in the other two medfave repos.
+   `docs/changes/`, here and in the other two Medfave repos.
 3. **Touching the database** (medfave-web): check `migrations/` for new
    migrations and run `npm run db:verify`. **Never `db:update` the shared dev
    database from unmerged work.** Plan a migration with `npm run db:plan`,
@@ -56,7 +56,7 @@ work.**
 
 Before planning a feature, read `PRODUCT.md` in
 [northernware/medfave-design](https://github.com/northernware/medfave-design)
-(`../medfave-design/PRODUCT.md` when cloned beside this repo): what medfave is
+(`../medfave-design/PRODUCT.md` when cloned beside this repo): what Medfave is
 for, the business model, the build order and the decisions still open. Don't
 build as if an open decision were settled.
 
@@ -72,7 +72,7 @@ appointment slot goes through `lockDoctorSchedule` and `findClash` in
 
 ## Brand and design reference
 
-The medfave look is defined in a separate repo,
+The Medfave look is defined in a separate repo,
 [northernware/medfave-design](https://github.com/northernware/medfave-design),
 which serves both this app and `medfave-mobile`. Check it before any UI work,
 and clone it beside this repo (`../medfave-design`) if it is not there.
@@ -88,3 +88,8 @@ and clone it beside this repo (`../medfave-design`) if it is not there.
 - Where this app deliberately differs from the tokens (the dark palette, clinical
   status colours), `app/globals.css` says why. Keep those differences unless the
   brand repo changes.
+- In text the name is **"Medfave"**, capital M: pages, titles, buttons, emails,
+  messages. Only the logo artwork and technical names (addresses, `medfave://`,
+  repo and code names) are lowercase. The email header's "♥ medfave" stands in
+  for the logo, so it stays lowercase. See "Writing the name" in
+  medfave-design's `README.md`.

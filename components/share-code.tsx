@@ -14,7 +14,7 @@ const noSubscription = () => () => {};
  */
 export function ShareCode({ code, link, clinicName }: { code: string; link: string; clinicName: string }) {
   const [copied, setCopied] = useState<"link" | "code" | null>(null);
-  const message = `Your ${clinicName} activation code for medfave is ${code}. Open this link to set up your account: ${link}`;
+  const message = `Your ${clinicName} activation code for Medfave is ${code}. Open this link to set up your account: ${link}`;
   // False on the server and on the first render, then the browser's answer —
   // so the markup the server sent and the first client render agree.
   const canShare = useSyncExternalStore(
@@ -40,7 +40,7 @@ export function ShareCode({ code, link, clinicName }: { code: string; link: stri
         <button
           type="button"
           className={buttonClass("primary")}
-          onClick={() => navigator.share({ title: "medfave activation", text: message }).catch(() => {})}
+          onClick={() => navigator.share({ title: "Medfave activation", text: message }).catch(() => {})}
         >
           Share…
         </button>

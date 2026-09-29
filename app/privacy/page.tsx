@@ -20,7 +20,7 @@ export default function PrivacyPage() {
         </p>
         <h1 className="text-[32px] leading-10 font-semibold">Privacy notice</h1>
         <p>
-          medfave is software that clinics use to run appointments and patient records, and that patients use to see
+          Medfave is software that clinics use to run appointments and patient records, and that patients use to see
           their visits and reach their clinic. This notice explains what we collect, why, and your rights.
         </p>
 
@@ -42,7 +42,7 @@ export default function PrivacyPage() {
         <h2 className="text-xl font-semibold">Who sees it</h2>
         <p>
           Your records are seen by the clinic that keeps them and the people it authorises. We don&rsquo;t sell your
-          information or use it for advertising. Service providers that host medfave or send its emails process data only
+          information or use it for advertising. Service providers that host Medfave or send its emails process data only
           on our instructions.
         </p>
 

@@ -39,20 +39,20 @@ export default async function WelcomePage() {
           <div className="space-y-2 px-5 pb-5 text-sm text-ink-muted">
             <p>
               Next, you&rsquo;ll add your PRC licence number and create your clinic. We check the licence before your
-              clinic can see patients — that keeps medfave for real doctors only.
+              clinic can see patients — that keeps Medfave for real doctors only.
             </p>
-            <p>We&rsquo;ll email you when clinic setup opens. Already work at a clinic on medfave? Ask them to invite you.</p>
+            <p>We&rsquo;ll email you when clinic setup opens. Already work at a clinic on Medfave? Ask them to invite you.</p>
           </div>
         </Card>
       ) : (
         <Card>
           <CardHeader
             title="Have a code from your clinic?"
-            subtitle="Clinics on medfave give their patients an activation code — at the desk, or by message."
+            subtitle="Clinics on Medfave give their patients an activation code — at the desk, or by message."
           />
           <AddClinicForm />
           <p className="px-5 pb-5 text-sm text-ink-muted">
-            No code? Finding a clinic and asking for a visit on medfave is coming soon.
+            No code? Finding a clinic and asking for a visit on Medfave is coming soon.
           </p>
         </Card>
       )}

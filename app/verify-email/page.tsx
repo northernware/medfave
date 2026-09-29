@@ -23,7 +23,7 @@ export default async function VerifyEmailPage({ searchParams }: PageProps<"/veri
             <h1 className="text-[28px] leading-9 font-semibold">Email confirmed</h1>
             <p className="mt-2 text-sm text-ink-muted">Thank you. You can close this page, or carry on in medfave.</p>
             <Link href="/login" className={buttonClass("primary", "mt-6 w-full")}>
-              Continue to medfave
+              Continue to Medfave
             </Link>
           </>
         ) : failed || typeof code !== "string" ? (
@@ -39,7 +39,7 @@ export default async function VerifyEmailPage({ searchParams }: PageProps<"/veri
         ) : (
           <>
             <h1 className="text-[28px] leading-9 font-semibold">Confirm your email</h1>
-            <p className="mt-2 text-sm text-ink-muted">One tap, and medfave knows this inbox is yours.</p>
+            <p className="mt-2 text-sm text-ink-muted">One tap, and Medfave knows this inbox is yours.</p>
             <form action={confirmEmail} className="mt-6">
               <input type="hidden" name="code" value={code} />
               <button className={buttonClass("primary", "w-full")}>Confirm my email</button>

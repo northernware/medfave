@@ -125,11 +125,11 @@ export async function activatePatient(input: Record<string, unknown>, address: s
 
   const taken = await orm.Account.select("id").where((a) => a.email.eq(email)).first();
   if (taken) {
-    // One login, many clinics: somebody who already has medfave adds this
+    // One login, many clinics: somebody who already has Medfave adds this
     // clinic to that login rather than making a second one.
     return {
       ok: false,
-      message: "That email already has a medfave account. Sign in, then add this clinic with the same code.",
+      message: "That email already has a Medfave account. Sign in, then add this clinic with the same code.",
       fieldErrors: { email: ["Already registered — sign in and choose “Add a clinic”"] },
     };
   }
