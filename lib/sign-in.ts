@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { db, orm } from "@/src/prisma/db";
 import { hasPassed, instantToDb } from "@/lib/datetime";
 import { newId } from "@/lib/ids";
+import { hit, hitAll, LIMITS, TOO_MANY } from "@/lib/rate-limit";
 import { hashToken } from "@/lib/tokens";
 import { activationSchema, loginSchema, toFieldErrors, type FormState } from "@/lib/validation";
 
@@ -18,9 +19,15 @@ export type SignInResult = { ok: true; accountId: string } | ({ ok: false } & Fo
 // password take the same amount of time to reject.
 const DECOY_HASH = "$2b$12$C6UzMDM.H6dfI/f/IKcEeO3jGZ5VZ0rJ8vJ8gXqU9O0F5nJ0lK7Zu";
 
-export async function checkCredentials(input: Record<string, unknown>): Promise<SignInResult> {
+export async function checkCredentials(input: Record<string, unknown>, address: string): Promise<SignInResult> {
   const parsed = loginSchema.safeParse(input);
   if (!parsed.success) return { ...toFieldErrors(parsed.error), ok: false };
+
+  const allowed = await hitAll([
+    [`sign-in:email:${parsed.data.email}`, LIMITS.signInEmail],
+    [`sign-in:address:${address}`, LIMITS.signInAddress],
+  ]);
+  if (!allowed) return { ok: false, message: TOO_MANY };
 
   const account = await orm.Account
     .select("id", "passwordHash")
@@ -69,6 +76,7 @@ export type LinkResult = { ok: true; clinicId: string; clinicName: string } | ({
 export async function linkPatientActivation(accountId: string, rawCode: unknown): Promise<LinkResult> {
   const code = typeof rawCode === "string" ? rawCode.trim() : "";
   if (code.length < 4) return { ok: false, message: "Enter the code the clinic gave you.", fieldErrors: { code: ["Required"] } };
+  if (!(await hit(`code:account:${accountId}`, LIMITS.codeAttempts))) return { ok: false, message: TOO_MANY };
 
   const activation = await liveActivation(code);
   if (!activation) return REFUSE_CODE;
@@ -106,9 +114,10 @@ export async function linkPatientActivation(accountId: string, rawCode: unknown)
  * identified somebody at the desk, issued a code for their record, and the
  * code is what carries that decision.
  */
-export async function activatePatient(input: Record<string, unknown>): Promise<SignInResult> {
+export async function activatePatient(input: Record<string, unknown>, address: string): Promise<SignInResult> {
   const parsed = activationSchema.safeParse(input);
   if (!parsed.success) return { ...toFieldErrors(parsed.error), ok: false };
+  if (!(await hit(`code:address:${address}`, LIMITS.codeAttempts))) return { ok: false, message: TOO_MANY };
 
   const { code, email, password } = parsed.data;
   const activation = await liveActivation(code);

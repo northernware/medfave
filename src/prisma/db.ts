@@ -29,13 +29,23 @@ function createDb() {
 // Next.js re-evaluates modules on hot reload; without the global we would open a
 // new connection pool on every save. The pool lives for the process lifetime and
 // is never closed per-request.
-const globalForDb = globalThis as unknown as { db?: Db };
+//
+// The cached client is kept per schema version. It is built from the contract,
+// so after a schema change (a new table, a new column) the old client doesn't
+// know about them, and a dev server that has been running since before would
+// fail until restarted. Keyed on the contract's storage hash, a changed schema
+// gets a fresh client on the next reload instead.
+const globalForDb = globalThis as unknown as { db?: Db; dbSchema?: string };
+const schema = (contractJson as { storage?: { storageHash?: string } }).storage?.storageHash ?? "";
 
 let client: Db | undefined;
 
 function getDb(): Db {
-  client ??= globalForDb.db ?? createDb();
-  if (process.env.NODE_ENV !== "production") globalForDb.db = client;
+  client ??= globalForDb.db && globalForDb.dbSchema === schema ? globalForDb.db : createDb();
+  if (process.env.NODE_ENV !== "production") {
+    globalForDb.db = client;
+    globalForDb.dbSchema = schema;
+  }
   return client;
 }
 

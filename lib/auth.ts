@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { orm } from "@/src/prisma/db";
 import { instantFromDb } from "@/lib/datetime";
-import type { ClinicRole } from "@/lib/enums";
+import type { ClinicRole, SignupRole } from "@/lib/enums";
 import { readSession, type Session } from "./session";
 
 /**
@@ -29,6 +29,10 @@ export type Viewer = {
    * clinic's chart is its own, and nothing here merges them.
    */
   charts: PatientChart[];
+  /** Whether they have followed the link sent to their email. */
+  emailVerified: boolean;
+  /** What they said they were at sign-up. Picks their welcome; grants nothing. */
+  signupRole: SignupRole | null;
 };
 
 export type PatientChart = { id: string; clinicId: string; clinicName: string };
@@ -47,7 +51,7 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
 export async function viewerForSession(session: Session): Promise<Viewer | null> {
 
   const account = await orm.Account
-    .select("id", "email", "fullName", "sessionsValidFrom")
+    .select("id", "email", "fullName", "sessionsValidFrom", "emailVerifiedAt", "signupRole")
     .include("memberships", (m) =>
       m.select("clinicId", "role").include("clinic", (c) => c.select("name")),
     )
@@ -86,6 +90,8 @@ export async function viewerForSession(session: Session): Promise<Viewer | null>
     charts: account.patientProfiles
       .map((p) => ({ id: p.id, clinicId: p.clinicId, clinicName: p.clinic.name }))
       .sort((a, b) => a.clinicName.localeCompare(b.clinicName)),
+    emailVerified: account.emailVerifiedAt !== null,
+    signupRole: account.signupRole,
   };
 }
 
@@ -104,7 +110,8 @@ export function homeFor(viewer: Viewer) {
   if (viewer.staff?.role === "ADMIN") return "/manage";
   if (viewer.staff) return "/dashboard";
   if (viewer.charts.length > 0) return "/portal";
-  return "/no-access";
+  // Signed up, but not yet a patient anywhere or a member of a clinic.
+  return "/welcome";
 }
 
 export type CurrentDoctor = {

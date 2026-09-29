@@ -9,6 +9,7 @@ import { hashToken, issueToken, normaliseToken } from "@/lib/tokens";
 import { appUrl, sendPasswordReset } from "@/lib/email";
 import { createSession, destroySession } from "@/lib/session";
 import { getViewer, homeFor } from "@/lib/auth";
+import { clientAddress, hit, LIMITS, TOO_MANY } from "@/lib/rate-limit";
 import { activatePatient, checkCredentials } from "@/lib/sign-in";
 import {
   forgotPasswordSchema,
@@ -19,7 +20,7 @@ import {
 } from "@/lib/validation";
 
 export async function login(_prev: FormState, formData: FormData): Promise<FormState> {
-  const result = await checkCredentials(Object.fromEntries(formData));
+  const result = await checkCredentials(Object.fromEntries(formData), await clientAddress());
   if (!result.ok) return result;
 
   await createSession(result.accountId);
@@ -35,7 +36,7 @@ export async function activatePatientAccount(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const result = await activatePatient(Object.fromEntries(formData));
+  const result = await activatePatient(Object.fromEntries(formData), await clientAddress());
   if (!result.ok) return result;
 
   await createSession(result.accountId);
@@ -168,6 +169,7 @@ export async function requestPasswordReset(
   if (!parsed.success) return toFieldErrors(parsed.error);
 
   const { email } = parsed.data;
+  if (!(await hit(`email-send:${email}`, LIMITS.emailSends))) return pad(startedAt, { message: TOO_MANY });
   const confirmed: FormState = {
     ok: true,
     message:

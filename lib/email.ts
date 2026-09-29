@@ -89,6 +89,15 @@ async function send(message: {
 
 // --- the messages themselves ------------------------------------------------
 
+/**
+ * Text going into an email's HTML. Names and addresses are whatever somebody
+ * typed at sign-up, so they are escaped: a "name" of `<a href=…>` must arrive
+ * as those characters, not as a link in a message that says it's from medfave.
+ */
+function esc(text: string) {
+  return text.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
+}
+
 /** Plain, short, and free of anything clinical. Mail is not a private channel. */
 function layout(heading: string, lines: string[], code?: string) {
   const body = lines.map((l) => `<p style="margin:0 0 12px">${l}</p>`).join("");
@@ -201,9 +210,9 @@ export async function sendPasswordReset(options: {
   code: string;
 }): Promise<SendOutcome> {
   const lines = [
-    `Hello ${options.name},`,
-    `Somebody asked to reset the medfave password for <strong>${options.to}</strong>.`,
-    `Open <a href="${options.link}">${options.link}</a>, or enter this code:`,
+    `Hello ${esc(options.name)},`,
+    `Somebody asked to reset the medfave password for <strong>${esc(options.to)}</strong>.`,
+    `Open <a href="${esc(options.link)}">${esc(options.link)}</a>, or enter this code:`,
   ];
 
   return send({
@@ -224,6 +233,36 @@ export async function sendPasswordReset(options: {
       `If this was not you, ignore it — your password has not changed.`,
     ].join("\n"),
     html: layout("Reset your password", lines, options.code),
+  });
+}
+
+/** The link that proves somebody reads the inbox they signed up with. */
+export async function sendEmailVerification(options: {
+  to: string;
+  name: string;
+  link: string;
+}): Promise<SendOutcome> {
+  const lines = [
+    `Hello ${esc(options.name)},`,
+    `Welcome to medfave. Confirm that <strong>${esc(options.to)}</strong> is your email address:`,
+    `<a href="${esc(options.link)}" style="display:inline-block;padding:10px 18px;border-radius:999px;background:#b51260;color:#ffffff;text-decoration:none;font-weight:600">Confirm my email</a>`,
+    `Or open this link: <a href="${esc(options.link)}">${esc(options.link)}</a>`,
+    `It works for three days.`,
+  ];
+
+  return send({
+    to: options.to,
+    subject: "Confirm your email for medfave",
+    text: [
+      `Hello ${options.name},`,
+      ``,
+      `Welcome to medfave. Confirm that ${options.to} is your email address by opening:`,
+      ``,
+      `    ${options.link}`,
+      ``,
+      `It works for three days. If you didn't sign up for medfave, ignore this email.`,
+    ].join("\n"),
+    html: layout("Confirm your email", lines),
   });
 }
 

@@ -1,0 +1,419 @@
+[
+  {
+    "id": "createNativeEnumType.SignupRole",
+    "label": "Create enum type \"SignupRole\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "type",
+        "name": "SignupRole"
+      }
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "create enum type \"SignupRole\"",
+        "sql": "CREATE TYPE \"public\".\"SignupRole\" AS ENUM ('PATIENT', 'DOCTOR')",
+        "params": []
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "table.EmailVerification",
+    "label": "Create table \"EmailVerification\"",
+    "summary": "Creates table \"EmailVerification\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "EmailVerification"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"EmailVerification\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"EmailVerification\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"EmailVerification\"",
+        "sql": "CREATE TABLE \"public\".\"EmailVerification\" (\n  \"accountId\" text NOT NULL,\n  \"createdAt\" timestamp(3) DEFAULT (now()) NOT NULL,\n  \"expiresAt\" timestamp(3) NOT NULL,\n  \"id\" text NOT NULL,\n  \"revokedAt\" timestamp(3),\n  \"tokenHash\" text NOT NULL,\n  \"usedAt\" timestamp(3),\n  CONSTRAINT \"EmailVerification_pkey\" PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"EmailVerification\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"EmailVerification\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.RateLimitBucket",
+    "label": "Create table \"RateLimitBucket\"",
+    "summary": "Creates table \"RateLimitBucket\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "RateLimitBucket"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"RateLimitBucket\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"RateLimitBucket\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"RateLimitBucket\"",
+        "sql": "CREATE TABLE \"public\".\"RateLimitBucket\" (\n  \"count\" int4 DEFAULT 0 NOT NULL,\n  \"key\" text NOT NULL,\n  \"windowStart\" timestamp(3) NOT NULL,\n  CONSTRAINT \"RateLimitBucket_pkey\" PRIMARY KEY (\"key\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"RateLimitBucket\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"RateLimitBucket\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Account.consentVersion",
+    "label": "Add column \"consentVersion\" to \"Account\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "consentVersion",
+        "table": "Account"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"consentVersion\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Account",
+          "consentVersion"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"consentVersion\"",
+        "sql": "ALTER TABLE \"public\".\"Account\" ADD COLUMN \"consentVersion\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"consentVersion\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Account",
+          "consentVersion"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Account.consentedAt",
+    "label": "Add column \"consentedAt\" to \"Account\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "consentedAt",
+        "table": "Account"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"consentedAt\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Account",
+          "consentedAt"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"consentedAt\"",
+        "sql": "ALTER TABLE \"public\".\"Account\" ADD COLUMN \"consentedAt\" timestamp(3)"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"consentedAt\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Account",
+          "consentedAt"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Account.emailVerifiedAt",
+    "label": "Add column \"emailVerifiedAt\" to \"Account\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "emailVerifiedAt",
+        "table": "Account"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"emailVerifiedAt\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Account",
+          "emailVerifiedAt"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"emailVerifiedAt\"",
+        "sql": "ALTER TABLE \"public\".\"Account\" ADD COLUMN \"emailVerifiedAt\" timestamp(3)"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"emailVerifiedAt\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Account",
+          "emailVerifiedAt"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "data_migration.verify-existing-accounts",
+    "label": "Data transform: verify-existing-accounts",
+    "operationClass": "data",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [
+      {
+        "description": "Check verify-existing-accounts has work to do",
+        "sql": "SELECT EXISTS (SELECT \"id\" AS \"id\" FROM \"public\".\"Account\" WHERE \"emailVerifiedAt\" IS NULL LIMIT 1) AS ok",
+        "params": []
+      }
+    ],
+    "execute": [
+      {
+        "description": "Run verify-existing-accounts",
+        "sql": "UPDATE \"public\".\"Account\" SET \"emailVerifiedAt\" = \"createdAt\" WHERE \"emailVerifiedAt\" IS NULL",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "Verify verify-existing-accounts resolved all violations",
+        "sql": "SELECT NOT EXISTS (SELECT \"id\" AS \"id\" FROM \"public\".\"Account\" WHERE \"emailVerifiedAt\" IS NULL LIMIT 1) AS ok",
+        "params": []
+      }
+    ]
+  },
+  {
+    "id": "column.public.Account.signupRole",
+    "label": "Add column \"signupRole\" to \"Account\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "signupRole",
+        "table": "Account"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"signupRole\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Account",
+          "signupRole"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"signupRole\"",
+        "sql": "ALTER TABLE \"public\".\"Account\" ADD COLUMN \"signupRole\" \"SignupRole\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"signupRole\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Account",
+          "signupRole"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.EmailVerification.EmailVerification_accountId_idx",
+    "label": "Create index \"EmailVerification_accountId_idx\" on \"EmailVerification\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "EmailVerification_accountId_idx",
+        "table": "EmailVerification"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"EmailVerification_accountId_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"EmailVerification_accountId_idx\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"EmailVerification_accountId_idx\"",
+        "sql": "CREATE INDEX \"EmailVerification_accountId_idx\" ON \"public\".\"EmailVerification\" (\"accountId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"EmailVerification_accountId_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"EmailVerification_accountId_idx\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.EmailVerification.EmailVerification_tokenHash_key",
+    "label": "Create index \"EmailVerification_tokenHash_key\" on \"EmailVerification\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "EmailVerification_tokenHash_key",
+        "table": "EmailVerification"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"EmailVerification_tokenHash_key\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"EmailVerification_tokenHash_key\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"EmailVerification_tokenHash_key\"",
+        "sql": "CREATE UNIQUE INDEX \"EmailVerification_tokenHash_key\" ON \"public\".\"EmailVerification\" (\"tokenHash\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"EmailVerification_tokenHash_key\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"EmailVerification_tokenHash_key\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.EmailVerification.EmailVerification_accountId_fkey",
+    "label": "Add foreign key \"EmailVerification_accountId_fkey\" on \"EmailVerification\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "EmailVerification_accountId_fkey",
+        "table": "EmailVerification"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"EmailVerification_accountId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "EmailVerification_accountId_fkey",
+          "public",
+          "\"public\".\"EmailVerification\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"EmailVerification_accountId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"EmailVerification\"\nADD CONSTRAINT \"EmailVerification_accountId_fkey\"\nFOREIGN KEY (\"accountId\")\nREFERENCES \"public\".\"Account\" (\"id\")\nON DELETE CASCADE\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"EmailVerification_accountId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "EmailVerification_accountId_fkey",
+          "public",
+          "\"public\".\"EmailVerification\""
+        ]
+      }
+    ]
+  }
+]

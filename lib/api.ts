@@ -149,6 +149,9 @@ export function viewerSummary(viewer: Viewer) {
     clinic: viewer.staff ? { id: viewer.staff.clinicId, name: viewer.staff.clinicName, role: viewer.staff.role } : null,
     /** Every clinic this patient login is linked to, each with its own chart. */
     charts: viewer.charts.map((c) => ({ patientId: c.id, clinic: { id: c.clinicId, name: c.clinicName } })),
+    emailVerified: viewer.emailVerified,
+    /** What they said they were at sign-up: picks the welcome for an account with no clinic yet. */
+    signupRole: viewer.signupRole,
     /** The first chart's id. Kept for older app builds; use `charts`. */
     patientId: viewer.charts[0]?.id ?? null,
     doctorId: viewer.doctorId,

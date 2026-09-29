@@ -1,4 +1,5 @@
 import { apiError, apiPatient, apiViewer, readJson } from "@/lib/api";
+import { TOO_MANY } from "@/lib/rate-limit";
 import { linkPatientActivation } from "@/lib/sign-in";
 
 /** Every clinic this patient login is linked to. Pass one's `id` as `?clinic=` to the other patient endpoints. */
@@ -23,6 +24,6 @@ export async function POST(request: Request) {
   if (!body) return apiError(400, "Send `{ code }` as JSON.");
 
   const result = await linkPatientActivation(viewer.accountId, body.code);
-  if (!result.ok) return apiError(422, result.message ?? "That code can't be used.", result.fieldErrors);
+  if (!result.ok) return apiError(result.message === TOO_MANY ? 429 : 422, result.message ?? "That code can't be used.", result.fieldErrors);
   return Response.json({ clinic: { id: result.clinicId, name: result.clinicName } }, { status: 201 });
 }

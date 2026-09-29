@@ -44,6 +44,10 @@
       "model": "DocumentRequest",
       "namespace": "public"
     },
+    "EmailVerification": {
+      "model": "EmailVerification",
+      "namespace": "public"
+    },
     "Household": {
       "model": "Household",
       "namespace": "public"
@@ -92,6 +96,10 @@
       "model": "Prescription",
       "namespace": "public"
     },
+    "RateLimitBucket": {
+      "model": "RateLimitBucket",
+      "namespace": "public"
+    },
     "ScheduleSettings": {
       "model": "ScheduleSettings",
       "namespace": "public"
@@ -111,6 +119,23 @@
         "models": {
           "Account": {
             "fields": {
+              "consentVersion": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "consentedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
               "createdAt": {
                 "nullable": false,
                 "type": {
@@ -126,6 +151,16 @@
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
+                }
+              },
+              "emailVerifiedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
                 }
               },
               "fullName": {
@@ -156,6 +191,16 @@
                   "kind": "scalar",
                   "typeParams": {
                     "precision": 3
+                  }
+                }
+              },
+              "signupRole": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/enum@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "typeName": "SignupRole"
                   }
                 }
               },
@@ -213,6 +258,21 @@
                 },
                 "to": {
                   "model": "Doctor",
+                  "namespace": "public"
+                }
+              },
+              "emailVerifications": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "accountId"
+                  ]
+                },
+                "to": {
+                  "model": "EmailVerification",
                   "namespace": "public"
                 }
               },
@@ -324,11 +384,20 @@
             },
             "storage": {
               "fields": {
+                "consentVersion": {
+                  "column": "consentVersion"
+                },
+                "consentedAt": {
+                  "column": "consentedAt"
+                },
                 "createdAt": {
                   "column": "createdAt"
                 },
                 "email": {
                   "column": "email"
+                },
+                "emailVerifiedAt": {
+                  "column": "emailVerifiedAt"
                 },
                 "fullName": {
                   "column": "fullName"
@@ -341,6 +410,9 @@
                 },
                 "sessionsValidFrom": {
                   "column": "sessionsValidFrom"
+                },
+                "signupRole": {
+                  "column": "signupRole"
                 },
                 "updatedAt": {
                   "column": "updatedAt"
@@ -2322,6 +2394,115 @@
               },
               "namespaceId": "public",
               "table": "DocumentRequest"
+            }
+          },
+          "EmailVerification": {
+            "fields": {
+              "accountId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "expiresAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "revokedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "tokenHash": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "usedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              }
+            },
+            "relations": {
+              "account": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "accountId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Account",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "accountId": {
+                  "column": "accountId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "expiresAt": {
+                  "column": "expiresAt"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "revokedAt": {
+                  "column": "revokedAt"
+                },
+                "tokenHash": {
+                  "column": "tokenHash"
+                },
+                "usedAt": {
+                  "column": "usedAt"
+                }
+              },
+              "namespaceId": "public",
+              "table": "EmailVerification"
             }
           },
           "Household": {
@@ -4447,6 +4628,50 @@
               "table": "Prescription"
             }
           },
+          "RateLimitBucket": {
+            "fields": {
+              "count": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "key": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "windowStart": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              }
+            },
+            "relations": {},
+            "storage": {
+              "fields": {
+                "count": {
+                  "column": "count"
+                },
+                "key": {
+                  "column": "key"
+                },
+                "windowStart": {
+                  "column": "windowStart"
+                }
+              },
+              "namespaceId": "public",
+              "table": "RateLimitBucket"
+            }
+          },
           "ScheduleSettings": {
             "fields": {
               "defaultDurationMinutes": {
@@ -4951,6 +5176,14 @@
               ],
               "typeName": "Sex"
             },
+            "SignupRole": {
+              "kind": "postgres-enum",
+              "members": [
+                "PATIENT",
+                "DOCTOR"
+              ],
+              "typeName": "SignupRole"
+            },
             "VisitPriority": {
               "kind": "postgres-enum",
               "members": [
@@ -4964,6 +5197,19 @@
           "table": {
             "Account": {
               "columns": {
+                "consentVersion": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "consentedAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
                 "createdAt": {
                   "codecId": "pg/timestamp-string@1",
                   "default": {
@@ -4980,6 +5226,14 @@
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": false
+                },
+                "emailVerifiedAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 3
+                  }
                 },
                 "fullName": {
                   "codecId": "pg/text@1",
@@ -5002,6 +5256,20 @@
                   "nullable": true,
                   "typeParams": {
                     "precision": 3
+                  }
+                },
+                "signupRole": {
+                  "codecId": "pg/enum@1",
+                  "nativeType": "SignupRole",
+                  "nullable": true,
+                  "typeParams": {
+                    "typeName": "SignupRole"
+                  },
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "SignupRole",
+                    "namespaceId": "public",
+                    "plane": "storage"
                   }
                 },
                 "updatedAt": {
@@ -6524,6 +6792,105 @@
                   "id"
                 ],
                 "name": "DocumentRequest_pkey"
+              },
+              "uniques": []
+            },
+            "EmailVerification": {
+              "columns": {
+                "accountId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamp",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "expiresAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "revokedAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "tokenHash": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "usedAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "foreignKeys": [
+                {
+                  "name": "EmailVerification_accountId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "accountId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "EmailVerification"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Account"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "accountId"
+                  ],
+                  "name": "EmailVerification_accountId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "tokenHash"
+                  ],
+                  "name": "EmailVerification_tokenHash_key",
+                  "unique": true
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ],
+                "name": "EmailVerification_pkey"
               },
               "uniques": []
             },
@@ -8318,6 +8685,41 @@
               },
               "uniques": []
             },
+            "RateLimitBucket": {
+              "columns": {
+                "count": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 0
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "key": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "windowStart": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "foreignKeys": [],
+              "indexes": [],
+              "primaryKey": {
+                "columns": [
+                  "key"
+                ],
+                "name": "RateLimitBucket_pkey"
+              },
+              "uniques": []
+            },
             "ScheduleSettings": {
               "columns": {
                 "defaultDurationMinutes": {
@@ -8804,6 +9206,13 @@
                 "FEMALE"
               ]
             },
+            "SignupRole": {
+              "kind": "valueSet",
+              "values": [
+                "PATIENT",
+                "DOCTOR"
+              ]
+            },
             "VisitPriority": {
               "kind": "valueSet",
               "values": [
@@ -8818,7 +9227,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "6dc60cf3b4ad2e98d8a1bd803da67c14a4595a7f5c8c8a4b548d92ee73d02ead"
+    "storageHash": "30a9ed7f15ffe62b3a0b880fcb853ad560092462b1374bab2c7eb48e2a3cb5be"
   },
   "capabilities": {
     "postgres": {

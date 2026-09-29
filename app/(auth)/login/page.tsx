@@ -30,13 +30,19 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
       </p>
 
       <p className="mt-6 text-sm text-ink-muted">
+        New to medfave?{" "}
+        <Link href="/signup" className="font-medium text-accent-ink hover:underline">
+          Create an account
+        </Link>
+      </p>
+      <p className="mt-2 text-sm text-ink-muted">
         Patient with an activation code?{" "}
         <Link href="/register" className="font-medium text-accent-ink hover:underline">
           Activate your account
         </Link>
       </p>
       <p className="mt-2 text-sm text-ink-muted">
-        Clinic staff join by invitation from their clinic.
+        Secretaries and clinic staff join by invitation from their clinic.
       </p>
     </div>
   );
