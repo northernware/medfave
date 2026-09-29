@@ -33,7 +33,20 @@ export type FormState = {
    * back as the confirmation, so a tick approves exactly what was on screen.
    */
   confirmToken?: string;
+  /**
+   * What was typed, handed back with an error. React resets a form after its
+   * action runs, so a form that wants to keep the input uses these as its
+   * defaults. Never include a password.
+   */
+  values?: Record<string, string>;
 };
+
+/** A form's text fields, to hand back with an error (see `FormState.values`). */
+export function formValues(formData: FormData, omit: string[] = []): Record<string, string> {
+  const values: Record<string, string> = {};
+  for (const [k, v] of formData) if (typeof v === "string" && !omit.includes(k) && !k.startsWith("$")) values[k] = v;
+  return values;
+}
 
 export type DuplicateMatch = {
   id: string;

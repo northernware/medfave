@@ -148,7 +148,7 @@ export function viewerSummary(viewer: Viewer) {
       ? "doctor"
       : viewer.charts.length > 0
         ? "patient"
-        : viewer.staff
+        : viewer.staff && viewer.clinicOpen
           ? "staff"
           : "none",
     clinic: viewer.staff ? { id: viewer.staff.clinicId, name: viewer.staff.clinicName, role: viewer.staff.role } : null,

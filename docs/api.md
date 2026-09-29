@@ -86,7 +86,8 @@ that account; there is never a second account for one email.
 
 `viewer` is `{ id, email, fullName, role, clinic, charts, emailVerified, signupRole, patientId, doctorId }`:
 
-- `role` is `"doctor"`, `"patient"`, `"staff"` or `"none"`. Work comes first:
+- `role` is `"doctor"`, `"patient"`, `"staff"` or `"none"`. A doctor or staff
+  member of a clinic that isn't verified yet is `"none"`. Work comes first:
   a doctor who is also somebody's patient elsewhere is `"doctor"`. The app
   opens the patient or doctor side from `role`.
 - `charts` is `[{ patientId, clinic: { id, name } }]`, one per clinic this
@@ -96,6 +97,11 @@ that account; there is never a second account for one email.
   sign-up): what they said they were. It picks the welcome for an account with
   `role: "none"`, and grants nothing.
 - `patientId` is the first chart's id, kept for older app builds. Use `charts`.
+- `verification` is a doctor's licence check, `{ status: "PENDING" | "VERIFIED"
+  | "DECLINED", declineReason }`, or `null` for anyone with no clinician
+  profile. Until it is `VERIFIED` the doctor's `role` is `"none"` and their
+  clinic is closed: doctor endpoints answer 403. The practice is set up, and
+  a decline fixed, on the web (`/welcome`, then `/manage`).
 
 ### Patient
 

@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { db, orm } from "./db";
+import { orm } from "./db";
 
 /*
  * Makes an account a Medfave platform admin: it can verify doctors at
@@ -16,12 +16,18 @@ if (!email || email.startsWith("--")) {
   process.exit(1);
 }
 
-const account = await orm.Account.select("id", "fullName").where((a) => a.email.eq(email)).first();
-if (!account) {
-  console.error(`No account for ${email}. Sign up first, then run this again.`);
-  process.exit(1);
+async function main() {
+  const account = await orm.Account.select("id", "fullName").where((a) => a.email.eq(email)).first();
+  if (!account) {
+    console.error(`No account for ${email}. Sign up first, then run this again.`);
+    process.exit(1);
+  }
+  await orm.Account.where((a) => a.id.eq(account.id)).update({ platformAdmin: !revoke });
+  console.log(`${account.fullName} <${email}> ${revoke ? "is no longer" : "is now"} a platform admin.`);
+  process.exit(0);
 }
-await orm.Account.where((a) => a.id.eq(account.id)).update({ platformAdmin: !revoke });
-console.log(`${account.fullName} <${email}> ${revoke ? "is no longer" : "is now"} a platform admin.`);
-await db.close?.();
-process.exit(0);
+
+main().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});

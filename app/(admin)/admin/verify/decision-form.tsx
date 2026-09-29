@@ -10,16 +10,18 @@ import { EMPTY_FORM_STATE } from "@/lib/validation";
 export function DecisionForm({ doctorId }: { doctorId: string }) {
   const [state, action] = useActionState(decideDoctor, EMPTY_FORM_STATE);
   const [declining, setDeclining] = useState(false);
+  // Stay on the reason box after a refused decline.
+  const open = declining || Boolean(state.fieldErrors?.reason);
   if (state.ok) return <p role="status" className="text-sm text-ok-ink">{state.message}</p>;
 
   return (
     <form action={action} className="space-y-3">
       <input type="hidden" name="doctorId" value={doctorId} />
       <FormError message={state.message} />
-      {declining ? (
+      {open ? (
         <>
           <Field label="Why? The doctor reads this." htmlFor={`reason-${doctorId}`} error={state.fieldErrors?.reason} required>
-            <TextArea id={`reason-${doctorId}`} name="reason" rows={2} placeholder="e.g. The licence number doesn't match that name in the PRC lookup." />
+            <TextArea id={`reason-${doctorId}`} name="reason" rows={2} defaultValue={state.values?.reason} placeholder="e.g. The licence number doesn't match that name in the PRC lookup." />
           </Field>
           <div className="flex gap-2">
             <SubmitButton name="decision" value="decline" variant="danger" pendingLabel="Declining…">
