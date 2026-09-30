@@ -1,6 +1,7 @@
 import { apiDoctor, apiError, readJson } from "@/lib/api";
 import { writeClinicWeek, writeDoctorWeek } from "@/lib/hours";
-import { loadClinicHours } from "@/lib/queries";
+import { DEFAULT_SCHEDULE } from "@/lib/availability";
+import { loadClinicHours, withinClinicHours } from "@/lib/queries";
 import { orm } from "@/src/prisma/db";
 
 /**
@@ -15,7 +16,13 @@ export async function GET(request: Request) {
     orm.ClinicHours.select("weekday", "openMinute", "closeMinute").where((h) => h.doctorId.eq(doctor.doctorId)).all(),
     loadClinicHours(doctor.clinicId),
   ]);
-  return Response.json({ mine, clinic });
+  // Never set: the doctor runs on the standard week, kept inside the clinic's.
+  const configured = mine.length > 0;
+  return Response.json({
+    mine: configured ? mine : withinClinicHours(DEFAULT_SCHEDULE.hours, clinic),
+    mineConfigured: configured,
+    clinic,
+  });
 }
 
 /** Body: `{ which: "mine" | "clinic", days: [{ weekday: 0-6, from: "HH:MM", to: "HH:MM" }] }` — the open days only. */
