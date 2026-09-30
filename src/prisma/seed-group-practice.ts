@@ -98,6 +98,9 @@ async function main() {
     id: newId(),
     name: CLINIC_NAME,
     address: "88 Magsaysay Ave., Baguio City",
+    slug: "magsaysay-group-clinic",
+    // Listed, so "Find a doctor" has somebody to find in development.
+    listed: true,
     contactNumber: "(074) 442 7788",
     createdAt: now,
     updatedAt: now,

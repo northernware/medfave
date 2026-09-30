@@ -32,6 +32,11 @@ export async function POST(request: Request) {
     .first();
   let details;
   if (!chart) {
+    if (!body.details || typeof body.details !== "object") {
+      return apiError(422, "You're new to this clinic: tell them who you are — name, birthday, sex, mobile and address.", {
+        details: ["Required for a new patient"],
+      });
+    }
     const read = readNewPatient(body.details);
     if (!read.ok) return apiError(422, read.message ?? "Check your details.", read.fieldErrors);
     details = read.details;

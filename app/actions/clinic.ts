@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { ensureSlug } from "@/lib/clinic-link";
 import { redirect } from "next/navigation";
 import { orm } from "@/src/prisma/db";
 import { requireClinicManager } from "@/lib/auth";
@@ -48,6 +49,7 @@ export async function setListed(formData: FormData) {
     listed: formData.get("listed") === "on",
     updatedAt: instantToDb(new Date()),
   });
+  await ensureSlug(manager.clinicId);
   revalidatePath("/manage/clinic");
   redirect("/manage/clinic?saved=listing");
 }
