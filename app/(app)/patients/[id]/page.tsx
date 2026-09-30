@@ -439,14 +439,14 @@ export default async function PatientPage({
         <p className="mt-0.5 text-xs text-ink-muted">
           {shared ? "This clinic shares charts between its doctors." : "Only doctors caring for this patient can open it."}
         </p>
-        <ul className="mt-3 space-y-1.5 text-xs">
+        <ul className="mt-3 space-y-2.5 text-xs">
           {accessLog.map((entry, i) => (
-            <li key={i} className="flex justify-between gap-3">
-              <span className="truncate">
+            <li key={i}>
+              <span className="block">
                 {entry.account.fullName}
                 {entry.recordId ? <span className="text-ink-faint"> · a visit note</span> : null}
               </span>
-              <span className="tabular shrink-0 text-ink-muted">{formatDateTime(instantFromDb(entry.openedAt))}</span>
+              <span className="tabular block text-ink-muted">{formatDateTime(instantFromDb(entry.openedAt))}</span>
             </li>
           ))}
         </ul>
