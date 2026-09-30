@@ -11,6 +11,7 @@ import {
   RETURNED_BY_LABELS,
 } from "@/lib/follow-up";
 import { requireDoctor } from "@/lib/auth";
+import { canReadNote, logChartAccess } from "@/lib/care";
 import { orm } from "@/src/prisma/db";
 import { calendarDateFromDb, formatDate, instantFromDb } from "@/lib/datetime";
 import { formatCalendarDate, formatDateTime, toDateInputValue } from "@/lib/datetime";
@@ -63,9 +64,14 @@ export default async function RecordPage({ params }: PageProps<"/records/[id]">)
         .orderBy((x) => x.createdAt.asc()),
     )
     .where((r) => r.id.eq(id))
-    .where((r) => r.doctorId.eq(doctor.id))
+    .where((r) => r.clinicId.eq(doctor.clinicId))
     .first();
-  if (!record) notFound();
+  // Their author's, or any at a clinic that shares charts (lib/care.ts).
+  if (!record || !(await canReadNote(doctor, record))) notFound();
+  // Only the author changes, prints or archives a note; others read it.
+  const mine = record.doctorId === doctor.id;
+  const author = mine ? null : await orm.Doctor.select("fullName").where((d) => d.id.eq(record.doctorId)).first();
+  await logChartAccess({ clinicId: doctor.clinicId, patientId: record.patientId, accountId: doctor.accountId, recordId: record.id });
 
   const { patient } = record;
   const draft = record.status === "DRAFT";
@@ -109,10 +115,11 @@ export default async function RecordPage({ params }: PageProps<"/records/[id]">)
             {" · "}
             {SEX_LABELS[patient.sex]} · {ageFrom(calendarDateFromDb(patient.dateOfBirth), visitDate)} at visit ·{" "}
             {formatDateTime(visitDate)}
+            {author ? ` · by ${author.fullName}` : ""}
           </>
         }
         actions={
-          archived ? (
+          !mine ? null : archived ? (
             <form action={restoreMedicalRecord}>
               <input type="hidden" name="recordId" value={record.id} />
               <button className={buttonClass("primary")}>Restore record</button>
@@ -277,9 +284,11 @@ export default async function RecordPage({ params }: PageProps<"/records/[id]">)
             title="Prescriptions"
             subtitle={`${record.prescriptions.length} item(s)`}
             action={
-              <Link href={`/records/${record.id}/prescription`} className={buttonClass("secondary")}>
-                Print prescription
-              </Link>
+              mine ? (
+                <Link href={`/records/${record.id}/prescription`} className={buttonClass("secondary")}>
+                  Print prescription
+                </Link>
+              ) : null
             }
           />
           <ul className="divide-y divide-border">
@@ -346,7 +355,7 @@ export default async function RecordPage({ params }: PageProps<"/records/[id]">)
         </Card>
       ) : null}
 
-      {archived ? null : (
+      {archived || !mine ? null : (
         <DangerZone
           action={archiveMedicalRecord}
           fieldName="recordId"

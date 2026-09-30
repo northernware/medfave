@@ -151,6 +151,7 @@ namespace public {
     alerts            PatientAlert[]
     documentRequests  DocumentRequest[]
     activations       PatientActivation[]
+    chartAccesses     ChartAccess[]
     appointmentRequests AppointmentRequest[]
     account           Account?                    @relation(fields: [accountId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "Patient_accountId_fkey")
     clinic            Clinic                      @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "Patient_clinicId_fkey")
@@ -417,6 +418,26 @@ namespace public {
     @@map("ClinicHours")
   }
 
+  /// Somebody opened a patient's chart or one of its visit notes. Kept so a
+  /// clinic, and the patient, can know who looked: with health data, who read
+  /// it matters as much as who may.
+  model ChartAccess {
+    id         String @id(map: "ChartAccess_pkey")
+    clinicId   String
+    patientId  String
+    accountId  String
+    /// The visit note opened, when it was one; null for the chart itself.
+    recordId   String?
+    openedAt   TimestampString(3) @default(now())
+    clinic     Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "ChartAccess_clinicId_fkey")
+    patient    Patient @relation(fields: [patientId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "ChartAccess_patientId_fkey")
+    account    Account @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "ChartAccess_accountId_fkey")
+
+    @@index([patientId, openedAt], map: "ChartAccess_patientId_openedAt_idx")
+
+    @@map("ChartAccess")
+  }
+
   /// When the clinic itself is open, one row per open weekday. Each doctor's
   /// own hours (`ClinicHours`) must fall inside these. A clinic with no rows
   /// sets no limit: clinics from before this existed keep working unchanged.
@@ -575,9 +596,14 @@ namespace public {
     name          String
     address       String?
     contactNumber String?
+    /// Whether every doctor here may read every patient's chart and visit
+    /// notes. Off: a doctor reads only the charts of patients they care for,
+    /// and only their own notes. Every chart opened is logged either way.
+    sharedCharts  Boolean @default(false)
     createdAt     TimestampString(3) @default(now())
     updatedAt     TimestampString(3)
     members       ClinicMember[]
+    chartAccesses ChartAccess[]
     doctors       Doctor[]
     households    Household[]
     appointments  Appointment[]
@@ -640,6 +666,7 @@ namespace public {
     passwordResets PasswordReset[]
     emailVerifications EmailVerification[]
     identities   AccountIdentity[]
+    chartAccesses ChartAccess[]
     doctorsVerified Doctor[]         @relation(name: "Doctor_verifiedById_fkey")
     /// Runs Medfave itself: verifies doctors. Granted only by
     /// `npm run admin:grant`, never from the web.

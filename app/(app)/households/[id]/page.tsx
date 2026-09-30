@@ -10,11 +10,12 @@ import { calendarDateFromDb, formatCalendarDate } from "@/lib/datetime";
 import { ageFrom, fullName, RELATIONSHIP_LABELS, SEX_LABELS } from "@/lib/domain";
 import { AppointmentList } from "@/components/appointment-list";
 import { DangerZone } from "@/components/danger-zone";
-import { caredForIds } from "@/lib/care";
+import { caredForIds, sharesCharts } from "@/lib/care";
 import { Badge, buttonClass, Card, CardHeader, Detail, EmptyState, PageHeader, Prose } from "@/components/ui";
 
 /** A household of the clinic: households are the clinic's, like its patients. */
 async function loadHousehold(doctor: { id: string; clinicId: string }, householdId: string) {
+  const shared = await sharesCharts(doctor.clinicId);
   return orm.Household
     .include("patients", (p) =>
       p
@@ -31,9 +32,12 @@ async function loadHousehold(doctor: { id: string; clinicId: string }, household
         )
         .include("allergies", (a) => a.select("id", "severity"))
         // Archived visits are out of the chart, so they are out of its count.
-        // This doctor's own visits only: notes are their author's.
+        // This doctor's own visits, or everyone's when the clinic shares charts.
         .include("medicalRecords", (r) =>
-          r.where((x) => x.archivedAt.isNull()).where((x) => x.doctorId.eq(doctor.id)).count(),
+          r
+            .where((x) => x.archivedAt.isNull())
+            .where((x) => (shared ? x.clinicId.eq(doctor.clinicId) : x.doctorId.eq(doctor.id)))
+            .count(),
         )
         .orderBy((x) => x.dateOfBirth.asc()),
     )

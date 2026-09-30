@@ -1,0 +1,365 @@
+[
+  {
+    "id": "table.ChartAccess",
+    "label": "Create table \"ChartAccess\"",
+    "summary": "Creates table \"ChartAccess\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "ChartAccess"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"ChartAccess\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ChartAccess\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"ChartAccess\"",
+        "sql": "CREATE TABLE \"public\".\"ChartAccess\" (\n  \"accountId\" text NOT NULL,\n  \"clinicId\" text NOT NULL,\n  \"id\" text NOT NULL,\n  \"openedAt\" timestamp(3) DEFAULT (now()) NOT NULL,\n  \"patientId\" text NOT NULL,\n  \"recordId\" text,\n  CONSTRAINT \"ChartAccess_pkey\" PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"ChartAccess\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ChartAccess\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Clinic.sharedCharts",
+    "label": "Add column \"sharedCharts\" to \"Clinic\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "sharedCharts",
+        "table": "Clinic"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"sharedCharts\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Clinic",
+          "sharedCharts"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"sharedCharts\"",
+        "sql": "ALTER TABLE \"public\".\"Clinic\" ADD COLUMN \"sharedCharts\" bool DEFAULT false NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"sharedCharts\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Clinic",
+          "sharedCharts"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.ChartAccess.ChartAccess_accountId_idx_cbfb3085",
+    "label": "Create index \"ChartAccess_accountId_idx_cbfb3085\" on \"ChartAccess\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "ChartAccess_accountId_idx_cbfb3085",
+        "table": "ChartAccess"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"ChartAccess_accountId_idx_cbfb3085\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ChartAccess_accountId_idx_cbfb3085\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"ChartAccess_accountId_idx_cbfb3085\"",
+        "sql": "CREATE INDEX \"ChartAccess_accountId_idx_cbfb3085\" ON \"public\".\"ChartAccess\" (\"accountId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"ChartAccess_accountId_idx_cbfb3085\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ChartAccess_accountId_idx_cbfb3085\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.ChartAccess.ChartAccess_clinicId_idx_8f933800",
+    "label": "Create index \"ChartAccess_clinicId_idx_8f933800\" on \"ChartAccess\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "ChartAccess_clinicId_idx_8f933800",
+        "table": "ChartAccess"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"ChartAccess_clinicId_idx_8f933800\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ChartAccess_clinicId_idx_8f933800\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"ChartAccess_clinicId_idx_8f933800\"",
+        "sql": "CREATE INDEX \"ChartAccess_clinicId_idx_8f933800\" ON \"public\".\"ChartAccess\" (\"clinicId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"ChartAccess_clinicId_idx_8f933800\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ChartAccess_clinicId_idx_8f933800\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.ChartAccess.ChartAccess_patientId_idx_e5f07e88",
+    "label": "Create index \"ChartAccess_patientId_idx_e5f07e88\" on \"ChartAccess\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "ChartAccess_patientId_idx_e5f07e88",
+        "table": "ChartAccess"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"ChartAccess_patientId_idx_e5f07e88\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ChartAccess_patientId_idx_e5f07e88\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"ChartAccess_patientId_idx_e5f07e88\"",
+        "sql": "CREATE INDEX \"ChartAccess_patientId_idx_e5f07e88\" ON \"public\".\"ChartAccess\" (\"patientId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"ChartAccess_patientId_idx_e5f07e88\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ChartAccess_patientId_idx_e5f07e88\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.ChartAccess.ChartAccess_patientId_openedAt_idx",
+    "label": "Create index \"ChartAccess_patientId_openedAt_idx\" on \"ChartAccess\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "ChartAccess_patientId_openedAt_idx",
+        "table": "ChartAccess"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"ChartAccess_patientId_openedAt_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ChartAccess_patientId_openedAt_idx\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"ChartAccess_patientId_openedAt_idx\"",
+        "sql": "CREATE INDEX \"ChartAccess_patientId_openedAt_idx\" ON \"public\".\"ChartAccess\" (\"patientId\", \"openedAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"ChartAccess_patientId_openedAt_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ChartAccess_patientId_openedAt_idx\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.ChartAccess.ChartAccess_clinicId_fkey",
+    "label": "Add foreign key \"ChartAccess_clinicId_fkey\" on \"ChartAccess\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "ChartAccess_clinicId_fkey",
+        "table": "ChartAccess"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"ChartAccess_clinicId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ChartAccess_clinicId_fkey",
+          "public",
+          "\"public\".\"ChartAccess\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"ChartAccess_clinicId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"ChartAccess\"\nADD CONSTRAINT \"ChartAccess_clinicId_fkey\"\nFOREIGN KEY (\"clinicId\")\nREFERENCES \"public\".\"Clinic\" (\"id\")\nON DELETE CASCADE\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"ChartAccess_clinicId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ChartAccess_clinicId_fkey",
+          "public",
+          "\"public\".\"ChartAccess\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.ChartAccess.ChartAccess_patientId_fkey",
+    "label": "Add foreign key \"ChartAccess_patientId_fkey\" on \"ChartAccess\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "ChartAccess_patientId_fkey",
+        "table": "ChartAccess"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"ChartAccess_patientId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ChartAccess_patientId_fkey",
+          "public",
+          "\"public\".\"ChartAccess\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"ChartAccess_patientId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"ChartAccess\"\nADD CONSTRAINT \"ChartAccess_patientId_fkey\"\nFOREIGN KEY (\"patientId\")\nREFERENCES \"public\".\"Patient\" (\"id\")\nON DELETE CASCADE\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"ChartAccess_patientId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ChartAccess_patientId_fkey",
+          "public",
+          "\"public\".\"ChartAccess\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.ChartAccess.ChartAccess_accountId_fkey",
+    "label": "Add foreign key \"ChartAccess_accountId_fkey\" on \"ChartAccess\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "ChartAccess_accountId_fkey",
+        "table": "ChartAccess"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"ChartAccess_accountId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ChartAccess_accountId_fkey",
+          "public",
+          "\"public\".\"ChartAccess\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"ChartAccess_accountId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"ChartAccess\"\nADD CONSTRAINT \"ChartAccess_accountId_fkey\"\nFOREIGN KEY (\"accountId\")\nREFERENCES \"public\".\"Account\" (\"id\")\nON DELETE CASCADE\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"ChartAccess_accountId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ChartAccess_accountId_fkey",
+          "public",
+          "\"public\".\"ChartAccess\""
+        ]
+      }
+    ]
+  }
+]

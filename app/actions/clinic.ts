@@ -35,3 +35,18 @@ export async function updateClinicDetails(
   revalidatePath("/", "layout");
   redirect("/manage/clinic?saved=1");
 }
+
+/**
+ * Whether the clinic's doctors share charts: every doctor there may read every
+ * patient's chart and visit notes (notes stay the author's to change). Off by
+ * default. Every chart opened is logged either way (lib/care.ts).
+ */
+export async function setSharedCharts(formData: FormData) {
+  const manager = await requireClinicManager();
+  await orm.Clinic.where((c) => c.id.eq(manager.clinicId)).update({
+    sharedCharts: formData.get("sharedCharts") === "on",
+    updatedAt: instantToDb(new Date()),
+  });
+  revalidatePath("/manage/clinic");
+  redirect("/manage/clinic?saved=sharing");
+}
