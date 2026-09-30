@@ -11,7 +11,9 @@ const LINKS = [
   { href: "/patients", label: "Patients", icon: "M12 11a4 4 0 100-8 4 4 0 000 8zM5 21v-1a7 7 0 0114 0v1" },
   { href: "/documents", label: "Records requests", icon: "M8 4h8l4 4v12H4V4h4zm8 0v4h4M8 13h8M8 17h5" },
   { href: "/desk", label: "Front desk", icon: "M4 19h16M6 19V9l6-4 6 4v10M10 19v-5h4v5" },
-  { href: "/manage/staff", label: "Staff", icon: "M9 7a3 3 0 106 0 3 3 0 10-6 0M4 20v-1a5 5 0 015-5h2a5 5 0 015 5v1M17 11a2.5 2.5 0 100-5" },
+  { href: "/manage/schedule", label: "My hours", icon: "M12 7v5l3 2M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
+  // Details, schedules, staff and chart sharing live under Manage.
+  { href: "/manage", label: "Clinic settings", icon: "M12 15a3 3 0 100-6 3 3 0 000 6zM19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z" },
 ] as const;
 
 function isActive(pathname: string, href: string) {
