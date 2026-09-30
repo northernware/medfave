@@ -215,7 +215,8 @@ async function writeConsultation(
   const patient = await orm.Patient
     .select("id", "archivedAt")
     .where((p) => p.id.eq(patientId))
-    .where((p) => p.household.some((h) => h.doctorId.eq(doctorId)))
+    // Any patient of the clinic: writing a note is part of caring for them.
+    .where((p) => p.clinicId.eq(clinicId))
     .first();
   if (!patient) return { error: { message: "That patient is not on your list." } };
   // Writing into a chart that has been set aside is a sign it should not have

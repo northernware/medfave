@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { archivePatient, deletePatient, restorePatient } from "@/app/actions/patients";
 import { requireDoctor } from "@/lib/auth";
+import { caresFor } from "@/lib/care";
 import { orm } from "@/src/prisma/db";
 import { appointmentListQuery, toAppointmentListItem } from "@/lib/queries";
 import { calendarDateFromDb, instantFromDb } from "@/lib/datetime";
@@ -26,7 +27,7 @@ export async function generateMetadata({ params }: PageProps<"/patients/[id]">):
   const patient = await orm.Patient
     .select("firstName", "middleName", "lastName")
     .where((p) => p.id.eq(id))
-    .where((p) => p.household.some((h) => h.doctorId.eq(doctor.id)))
+    .where((p) => p.clinicId.eq(doctor.clinicId))
     .first();
   return { title: patient ? fullName(patient) : "Patient" };
 }
@@ -38,6 +39,19 @@ export default async function PatientPage({
   const doctor = await requireDoctor();
   const { id } = await params;
   const { blocked } = await searchParams;
+
+  // Patients are the clinic's. Their details are open to every doctor there;
+  // the chart only to doctors caring for them (lib/care.ts).
+  if (!(await caresFor(doctor, id))) {
+    const basic = await orm.Patient
+      .select("id", "firstName", "middleName", "lastName", "dateOfBirth", "sex", "relationship", "contactNumber", "email", "patientNumber", "archivedAt")
+      .include("household", (h) => h.select("id", "name"))
+      .where((p) => p.id.eq(id))
+      .where((p) => p.clinicId.eq(doctor.clinicId))
+      .first();
+    if (!basic) notFound();
+    return <DetailsOnly patient={basic} />;
+  }
 
   const patient = await orm.Patient
     .include("household", (h) => h.select("id", "name", "contactNumber"))
@@ -66,6 +80,8 @@ export default async function PatientPage({
           "weightKg",
         )
         .include("prescriptions", (rx) => rx.count())
+        // Visit notes are their author's (layer 3).
+        .where((x) => x.doctorId.eq(doctor.id))
         .orderBy((x) => x.visitDate.desc()),
     )
     // Counted for one decision only: whether this chart can still be deleted,
@@ -74,7 +90,7 @@ export default async function PatientPage({
     .include("documentRequests", (d) => d.count())
     .include("appointmentRequests", (r) => r.count())
     .where((p) => p.id.eq(id))
-    .where((p) => p.household.some((h) => h.doctorId.eq(doctor.id)))
+    .where((p) => p.clinicId.eq(doctor.clinicId))
     .first();
   if (!patient) notFound();
 
@@ -99,8 +115,10 @@ export default async function PatientPage({
     : null;
   // The same test the delete action applies; the page only offers what the
   // action would accept.
+  // Everyone's notes count here, not only the ones this doctor can read.
+  const anyNotes = await orm.MedicalRecord.select("id").where((r) => r.patientId.eq(patient.id)).first();
   const hasHistory =
-    patient.medicalRecords.length > 0 ||
+    anyNotes !== null ||
     patient.appointments > 0 ||
     patient.documentRequests > 0 ||
     patient.appointmentRequests > 0 ||
@@ -437,6 +455,61 @@ export default async function PatientPage({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * A patient of the clinic this doctor hasn't cared for yet: who they are and
+ * how to reach them, and a way to book them. Booking makes them this doctor's
+ * patient too, and opens their chart.
+ */
+function DetailsOnly({
+  patient,
+}: {
+  patient: {
+    id: string;
+    firstName: string;
+    middleName: string | null;
+    lastName: string;
+    dateOfBirth: string;
+    sex: keyof typeof SEX_LABELS;
+    relationship: keyof typeof RELATIONSHIP_LABELS;
+    contactNumber: string | null;
+    email: string | null;
+    patientNumber: string | null;
+    archivedAt: string | null;
+    household: { id: string; name: string };
+  };
+}) {
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title={fullName(patient)}
+        subtitle={`${patient.household.name} household · ${RELATIONSHIP_LABELS[patient.relationship]} · ${SEX_LABELS[patient.sex]} · ${ageFrom(calendarDateFromDb(patient.dateOfBirth))}`}
+        actions={
+          patient.archivedAt ? null : (
+            <Link href={`/appointments/new?patientId=${patient.id}`} className={buttonClass("primary")}>
+              Book
+            </Link>
+          )
+        }
+      />
+      <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm">
+        <p className="font-medium">A patient of the clinic you haven&rsquo;t seen yet.</p>
+        <p className="mt-0.5 text-ink-muted">
+          You can see their details and book them. Their chart opens once they&rsquo;re booked with you; other
+          doctors&rsquo; visit notes stay with those doctors.
+        </p>
+      </div>
+      <Card className="p-5">
+        <dl className="grid gap-4 sm:grid-cols-2">
+          <Detail label="Patient number" value={patient.patientNumber} />
+          <Detail label="Date of birth" value={formatCalendarDate(calendarDateFromDb(patient.dateOfBirth))} />
+          <Detail label="Phone" value={patient.contactNumber} />
+          <Detail label="Email" value={patient.email} />
+        </dl>
+      </Card>
     </div>
   );
 }

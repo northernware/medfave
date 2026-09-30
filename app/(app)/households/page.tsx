@@ -18,7 +18,7 @@ export default async function HouseholdsPage({ searchParams }: PageProps<"/house
     .select("id", "name", "address", "contactNumber", "archiveReason")
     // Members still in the working list; archived ones are counted out.
     .include("patients", (p) => p.where((x) => x.archivedAt.isNull()).count())
-    .where((h) => h.doctorId.eq(doctor.id))
+    .where((h) => h.clinicId.eq(doctor.clinicId))
     .where((h) => (archived ? h.archivedAt.isNotNull() : h.archivedAt.isNull()))
     .orderBy((h) => h.name.asc());
 
@@ -36,7 +36,7 @@ export default async function HouseholdsPage({ searchParams }: PageProps<"/house
   const [households, { archivedCount }] = await Promise.all([
     householdQuery.all(),
     orm.Household
-      .where((h) => h.doctorId.eq(doctor.id))
+      .where((h) => h.clinicId.eq(doctor.clinicId))
       .where((h) => h.archivedAt.isNotNull())
       .aggregate((a) => ({ archivedCount: a.count() })),
   ]);

@@ -16,14 +16,14 @@ export default async function NewHouseholdMemberPage({ params }: PageProps<"/hou
   const household = await orm.Household
     .select("id", "name")
     .where((h) => h.id.eq(id))
-    .where((h) => h.doctorId.eq(doctor.id))
+    .where((h) => h.clinicId.eq(doctor.clinicId))
     .where((h) => h.archivedAt.isNull())
     .first();
   if (!household) notFound();
 
   const households = await orm.Household
     .select("id", "name")
-    .where((h) => h.doctorId.eq(doctor.id))
+    .where((h) => h.clinicId.eq(doctor.clinicId))
     .where((h) => h.archivedAt.isNull())
     .orderBy((h) => h.name.asc())
     .all();

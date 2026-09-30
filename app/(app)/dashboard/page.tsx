@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { setAppointmentStatus, startConsultation } from "@/app/actions/appointments";
 import { requireDoctor } from "@/lib/auth";
+import { caredForIds, idsOrNone } from "@/lib/care";
 import { orm } from "@/src/prisma/db";
 import { followUpsDue } from "@/lib/queries";
 import { sweepNoShows } from "@/lib/no-show";
@@ -45,6 +46,7 @@ export default async function DashboardPage() {
   // when somebody opens the clinic's own screens.
   await sendDueReminders(doctor.clinicId, now);
 
+  const mineIds = idsOrNone(await caredForIds(doctor));
   const [
     todaysRows,
     waitingRows,
@@ -109,12 +111,14 @@ export default async function DashboardPage() {
         .where((a) => a.scheduledAt.gte(instantToDb(today.end)))
         .where((a) => a.status.in(ACTIVE_STATUSES))
         .aggregate((agg) => ({ n: agg.count() })),
+      // The doctor's own: households with a patient they care for, and those patients.
       orm.Household
-        .where((h) => h.doctorId.eq(doctor.id))
+        .where((h) => h.clinicId.eq(doctor.clinicId))
+        .where((h) => h.patients.some((p) => p.id.in(mineIds)))
         .where((h) => h.archivedAt.isNull())
         .aggregate((agg) => ({ n: agg.count() })),
       orm.Patient
-        .where((p) => p.household.some((h) => h.doctorId.eq(doctor.id)))
+        .where((p) => p.id.in(mineIds))
         .where((p) => p.archivedAt.isNull())
         .aggregate((agg) => ({ n: agg.count() })),
     ]);
