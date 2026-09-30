@@ -14,9 +14,9 @@ import { Badge, buttonClass, Card, CardHeader, Detail, PageHeader } from "@/comp
 export const metadata: Metadata = { title: "Patient" };
 
 /**
- * The code, just issued, and three ways to get it to the patient: scan the QR
- * code with their phone, share it to Viber or Messenger from the clinic's
- * phone, or read it out. It is shown this once — only its hash is kept.
+ * The code, just issued, handed over at the desk: the patient scans the QR in
+ * the Medfave app or types the 6 digits. For later, the message carries the
+ * long code (14 days). Shown this once — only hashes are kept.
  */
 async function ActivationHandover({
   code,
@@ -33,54 +33,65 @@ async function ActivationHandover({
 }) {
   const link = await activationLink(code);
   const svg = await qrSvg(link);
+  const firstName = patientName.split(/\s+/)[0];
+  const mailNote =
+    mail === "sent"
+      ? "Also emailed to them."
+      : mail === "failed"
+        ? "The email didn't go through."
+        : mail === "no-address"
+          ? "No email on file."
+          : null;
 
   return (
-    <div className="rounded-lg border border-ok/40 bg-ok-tint p-4 sm:p-5">
-      <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
-        <div
-          className="size-44 shrink-0 self-center rounded-md bg-white p-2 sm:self-start [&>svg]:size-full"
-          role="img"
-          aria-label={`QR code that opens Medfave's activation page with ${patientName}'s code filled in`}
-          // Generated here from our own link by the qrcode package — no user input reaches it unescaped.
-          dangerouslySetInnerHTML={{ __html: svg }}
-        />
-        <div className="min-w-0 flex-1 space-y-3">
-          <div>
-            <p className="text-sm font-medium text-ok-ink">
-              Hand it over now — it is not shown again.
-            </p>
-            {pin ? (
-              <>
-                <p className="tabular mt-1 text-4xl font-semibold tracking-[0.2em]">
-                  {pin.slice(0, 3)} {pin.slice(3)}
-                </p>
-                <p className="text-xs text-ink-muted">6-digit code · works for 30 minutes</p>
-              </>
-            ) : (
-              <p className="tabular mt-1 text-xl font-semibold tracking-wider">{code}</p>
-            )}
-          </div>
-          <p className="text-sm text-ink-muted">
-            {patientName} scans the QR code in the Medfave app (Scan a clinic&rsquo;s QR code) or with their phone
-            camera. Or they type the 6-digit code in the app. To send it later, share the message: it carries a
-            longer code that lasts 14 days.
-          </p>
-          <ShareCode code={code} link={link} clinicName={clinicName} />
-          <p className="text-xs text-ink-muted">
-            {mail === "sent" ? (
-              <>Also emailed to them.</>
-            ) : mail === "failed" ? (
-              <>The email could not be sent, so pass it on here.</>
-            ) : mail === "no-address" ? (
-              <>No email address on file, so pass it on here.</>
-            ) : (
-              <>Email is not set up, so pass it on here.</>
-            )}{" "}
-            The QR code and the message work once, for 14 days.
-          </p>
+    <section className="overflow-hidden rounded-xl border border-accent/30 bg-surface shadow-card">
+      <div className="flex items-baseline justify-between gap-4 bg-accent-tint px-5 py-3.5 sm:px-6">
+        <h2 className="font-display text-lg font-semibold tracking-[-0.01em]">
+          Link {firstName}&rsquo;s Medfave account
+        </h2>
+        <p className="shrink-0 text-xs font-medium text-accent-ink">Shown once</p>
+      </div>
+
+      <div className="grid gap-6 px-5 py-6 sm:grid-cols-[auto_1fr] sm:items-center sm:gap-10 sm:px-6">
+        <figure className="mx-auto space-y-2 text-center sm:mx-0">
+          <div
+            className="size-44 rounded-lg border-2 border-brand bg-white p-2.5 [&>svg]:size-full"
+            role="img"
+            aria-label={`QR code that links ${patientName}'s Medfave account`}
+            // Generated here from our own link by the qrcode package — no user input reaches it unescaped.
+            dangerouslySetInnerHTML={{ __html: svg }}
+          />
+          <figcaption className="text-sm text-ink-muted">Scan in the Medfave app</figcaption>
+        </figure>
+
+        <div className="space-y-3 text-center sm:text-left">
+          <p className="text-sm font-medium text-ink-muted">Or type this code</p>
+          {pin ? (
+            <div className="flex justify-center gap-2 sm:justify-start" aria-label={`Code ${pin.split("").join(" ")}`}>
+              {pin.split("").map((d, i) => (
+                <span
+                  key={i}
+                  className={`tabular grid h-14 w-11 place-items-center rounded-md border border-border-strong bg-surface-muted font-display text-3xl font-semibold ${i === 2 ? "mr-2" : ""}`}
+                >
+                  {d}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="tabular font-display text-xl font-semibold tracking-wider">{code}</p>
+          )}
+          <p className="text-sm text-ink-muted">{pin ? "Works for 30 minutes, once." : "Works once."}</p>
         </div>
       </div>
-    </div>
+
+      <div className="flex flex-col gap-3 border-t border-border bg-surface-muted/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <p className="text-sm text-ink-muted">
+          <span className="font-medium text-ink">Not with them?</span> Send a link that lasts 14 days.
+          {mailNote ? ` ${mailNote}` : ""}
+        </p>
+        <ShareCode code={code} link={link} clinicName={clinicName} />
+      </div>
+    </section>
   );
 }
 
