@@ -6,8 +6,7 @@ import { db, orm } from "@/src/prisma/db";
 import { requireClinicManager } from "@/lib/auth";
 import { pickDoctor } from "@/lib/clinic";
 import { newId } from "@/lib/ids";
-import { label } from "@/lib/availability";
-import { loadClinicHours, type DayHours } from "@/lib/queries";
+import { writeClinicWeek, writeDoctorWeek } from "@/lib/hours";
 import { SERVICES } from "@/lib/domain";
 import { NOTICE_OPTIONS, SLOT_STEPS } from "@/lib/schedule-options";
 import type { FormState } from "@/lib/validation";
@@ -67,69 +66,12 @@ function minuteOf(value: FormDataEntryValue | null): number | null {
  * to the built-in week, so "closed every day" would save as its opposite — and
  * a clinic that never opens is not a setting anybody means.
  */
-/** The week form's days: the open ones, or the per-day problems. */
-function readWeek(formData: FormData): { open: DayHours[]; fieldErrors: Record<string, string[]> } {
-  const fieldErrors: Record<string, string[]> = {};
-  const open: DayHours[] = [];
-
-  for (let weekday = 0; weekday < 7; weekday++) {
-    if (formData.get(`open-${weekday}`) !== "on") continue;
-    const from = minuteOf(formData.get(`from-${weekday}`));
-    const to = minuteOf(formData.get(`to-${weekday}`));
-    if (from === null || to === null) {
-      fieldErrors[`day-${weekday}`] = ["Give both times, on the hour or in steps of five minutes"];
-    } else if (to <= from) {
-      fieldErrors[`day-${weekday}`] = ["Closing has to be after opening"];
-    } else {
-      open.push({ weekday, openMinute: from, closeMinute: to });
-    }
-  }
-  return { open, fieldErrors };
-}
-
-const DAY_NAMES = ["Sundays", "Mondays", "Tuesdays", "Wednesdays", "Thursdays", "Fridays", "Saturdays"];
 
 export async function saveOpeningHours(forDoctor: string, _prev: FormState, formData: FormData): Promise<FormState> {
   const { manager, doctorId } = await scope(forDoctor);
   if (!doctorId) return NO_CLINICIAN;
-
-  const { open, fieldErrors } = readWeek(formData);
-
-  // A doctor's hours sit inside the clinic's, when the clinic has set them.
-  const clinicWeek = await loadClinicHours(manager.clinicId);
-  if (clinicWeek.length > 0) {
-    for (const day of open) {
-      const c = clinicWeek.find((x) => x.weekday === day.weekday);
-      if (!c) {
-        fieldErrors[`day-${day.weekday}`] = [`The clinic is closed on ${DAY_NAMES[day.weekday]}`];
-      } else if (day.openMinute < c.openMinute || day.closeMinute > c.closeMinute) {
-        fieldErrors[`day-${day.weekday}`] = [
-          `The clinic is open ${label(c.openMinute)}–${label(c.closeMinute)} on ${DAY_NAMES[day.weekday]}`,
-        ];
-      }
-    }
-  }
-
-  if (Object.keys(fieldErrors).length > 0) {
-    return { message: "Check the highlighted days.", fieldErrors };
-  }
-  if (open.length === 0) {
-    return { message: "Open on at least one day. To close for a period, add a closure below." };
-  }
-
-  await db.transaction(async (tx) => {
-    // The week is edited as a whole, so it is replaced as a whole. `.delete()`
-    // on the ORM removes a single row; these are matched by a non-unique key.
-    const clear = tx.sql.public.ClinicHours
-      .delete()
-      .where((f, fns) => fns.eq(f.doctorId, doctorId))
-      .build();
-    await tx.execute(clear as never);
-    for (const day of open) {
-      await tx.orm.public.ClinicHours.create({ id: newId(), doctorId, ...day });
-    }
-  });
-
+  const problem = await writeDoctorWeek(manager.clinicId, doctorId, formData);
+  if (problem) return problem;
   done("hours", doctorId);
 }
 
@@ -340,21 +282,8 @@ export async function saveBookingRules(forDoctor: string, _prev: FormState, form
  */
 export async function saveClinicHours(_prev: FormState, formData: FormData): Promise<FormState> {
   const manager = await requireClinicManager();
-  const { open, fieldErrors } = readWeek(formData);
-  if (Object.keys(fieldErrors).length > 0) return { message: "Check the highlighted days.", fieldErrors };
-  if (open.length === 0) return { message: "Open on at least one day. To close for a period, add a closure." };
-
-  await db.transaction(async (tx) => {
-    const clear = tx.sql.public.ClinicOpeningHours
-      .delete()
-      .where((f, fns) => fns.eq(f.clinicId, manager.clinicId))
-      .build();
-    await tx.execute(clear as never);
-    for (const day of open) {
-      await tx.orm.public.ClinicOpeningHours.create({ id: newId(), clinicId: manager.clinicId, ...day });
-    }
-  });
-
+  const problem = await writeClinicWeek(manager.clinicId, formData);
+  if (problem) return problem;
   revalidatePath("/manage/schedule");
   revalidatePath("/manage");
   redirect("/manage/schedule?saved=clinic");
