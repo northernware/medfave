@@ -237,7 +237,9 @@ export default async function SchedulePage({ searchParams }: PageProps<"/manage/
           title={doctors.length > 1 && whose ? `${whose.fullName}'s hours` : "Opening hours"}
           subtitle={
             configured
-              ? "The clinic's week. Bookings are only offered inside these hours."
+              ? clinicWeek.length > 0
+                ? "When patients can book this doctor, inside the clinic's hours."
+                : "When patients can book this doctor."
               : "Not set yet, so the clinic runs on the standard week shown here. Saving makes it the clinic's own."
           }
         />
