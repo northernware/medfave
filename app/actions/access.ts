@@ -7,12 +7,12 @@ import { requireClinicManager, requireStaff } from "@/lib/auth";
 import { instantToDb } from "@/lib/datetime";
 import { newId } from "@/lib/ids";
 import { issueToken } from "@/lib/tokens";
-import { appUrl, sendPatientActivation, sendStaffInvite } from "@/lib/email";
+import { appUrl, sendPatientActivation } from "@/lib/email";
 import type { FormState } from "@/lib/validation";
+import { createStaffInvite } from "@/lib/staff";
 
 /** Long enough to hand over and be typed in later; short enough to expire. */
 const ACTIVATION_DAYS = 14;
-const INVITE_DAYS = 7;
 
 const days = (n: number) => new Date(Date.now() + n * 24 * 60 * 60 * 1000);
 
@@ -129,57 +129,15 @@ export async function revokePatientActivation(formData: FormData) {
  */
 export async function inviteStaff(_prev: FormState, formData: FormData): Promise<FormState> {
   const manager = await requireClinicManager();
-  if (!manager.clinicOpen) {
-    return { message: "You can invite staff once your license is verified." };
-  }
-
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const rawRole = String(formData.get("role") ?? "SECRETARY");
-  if (!email || !email.includes("@")) {
-    return { message: "Enter the address to send it to.", fieldErrors: { email: ["Not an email address"] } };
-  }
-  if (rawRole !== "SECRETARY" && rawRole !== "ADMIN" && rawRole !== "DOCTOR") {
-    return { message: "Invite a doctor, a secretary or an administrator.", fieldErrors: { role: ["Not a role"] } };
-  }
-  const role = rawRole;
-
-  const already = await orm.ClinicMember
-    .select("id")
-    .include("account", (a) => a.select("email"))
-    .where((m) => m.clinicId.eq(manager.clinicId))
-    .where((m) => m.account.some((a) => a.email.eq(email)))
-    .first();
-  if (already) return { message: "That person is already a member of this clinic." };
-
-  const now = instantToDb(new Date());
-  const { token, hash } = issueToken();
-
-  await orm.StaffInvite.create({
-    id: newId(),
-    clinicId: manager.clinicId,
-    email,
-    role,
-    tokenHash: hash,
-    invitedById: manager.accountId,
-    expiresAt: instantToDb(days(INVITE_DAYS)),
-    createdAt: now,
-  });
-
-  const outcome = await sendStaffInvite({
-    to: email,
-    clinicName: manager.clinicName,
-    invitedBy: manager.fullName,
-    role: role === "ADMIN" ? "administrator" : role === "DOCTOR" ? "doctor" : "secretary",
-    code: token,
-    link: appUrl(`/invite?code=${encodeURIComponent(token)}`),
-  });
-  const mail = outcome.sent ? "sent" : outcome.reason === "not-configured" ? "off" : "failed";
+  const result = await createStaffInvite(manager, { email, role: formData.get("role") });
+  if (!result.ok) return result;
 
   revalidatePath("/manage/staff");
   // Shown on screen either way. Mail is a convenience here, not the record of
   // what was issued.
   redirect(
-    `/manage/staff?code=${encodeURIComponent(token)}&to=${encodeURIComponent(email)}&mail=${mail}`,
+    `/manage/staff?code=${encodeURIComponent(result.code)}&to=${encodeURIComponent(email)}&mail=${result.mail}`,
   );
 }
 
