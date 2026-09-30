@@ -8,7 +8,9 @@ import { EMPTY_FORM_STATE } from "@/lib/validation";
 /** A declined doctor's details, to correct and send again. */
 export function ResubmitForm({
   doctor,
+  submitLabel = "Send for checking again",
 }: {
+  submitLabel?: string;
   doctor: {
     fullName: string;
     licenseNumber: string | null;
@@ -64,7 +66,7 @@ export function ResubmitForm({
         </Field>
       </div>
       <SubmitButton pendingLabel="Sending…" className="w-full sm:w-auto">
-        Send for checking again
+        {submitLabel}
       </SubmitButton>
     </form>
   );

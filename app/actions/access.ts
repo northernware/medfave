@@ -121,10 +121,11 @@ export async function revokePatientActivation(formData: FormData) {
  * more staff. The role is fixed on the invitation, so accepting it cannot grant
  * anything that was not chosen here.
  *
- * A clinician is not invitable. Somebody who can write in a chart is more than
- * a form field, and an invitation carries no clinician profile to write with.
- * An administrator is, because the invitation names this clinic and nothing
- * else: it appoints somebody to run this practice, not to reach past it.
+ * A doctor can be invited too, but joins pending: they add their PRC license
+ * and a Medfave admin verifies it before they see any patient, exactly as a
+ * doctor who signs up alone (lib/practice.ts). An administrator invitation
+ * names this clinic and nothing else: it appoints somebody to run this
+ * practice, not to reach past it.
  */
 export async function inviteStaff(_prev: FormState, formData: FormData): Promise<FormState> {
   const manager = await requireClinicManager();
@@ -137,8 +138,8 @@ export async function inviteStaff(_prev: FormState, formData: FormData): Promise
   if (!email || !email.includes("@")) {
     return { message: "Enter the address to send it to.", fieldErrors: { email: ["Not an email address"] } };
   }
-  if (rawRole !== "SECRETARY" && rawRole !== "ADMIN") {
-    return { message: "Invite a secretary or an administrator.", fieldErrors: { role: ["Not a role"] } };
+  if (rawRole !== "SECRETARY" && rawRole !== "ADMIN" && rawRole !== "DOCTOR") {
+    return { message: "Invite a doctor, a secretary or an administrator.", fieldErrors: { role: ["Not a role"] } };
   }
   const role = rawRole;
 
@@ -168,7 +169,7 @@ export async function inviteStaff(_prev: FormState, formData: FormData): Promise
     to: email,
     clinicName: manager.clinicName,
     invitedBy: manager.fullName,
-    role: role === "ADMIN" ? "administrator" : "secretary",
+    role: role === "ADMIN" ? "administrator" : role === "DOCTOR" ? "doctor" : "secretary",
     code: token,
     link: appUrl(`/invite?code=${encodeURIComponent(token)}`),
   });

@@ -22,7 +22,7 @@ export default async function ManagePage({ searchParams }: PageProps<"/manage">)
   const manager = await requireClinicManager();
   const { welcome } = await searchParams;
   const me = manager.doctorId
-    ? await orm.Doctor.select("fullName", "licenseNumber", "specialty", "verificationStatus", "declineReason")
+    ? await orm.Doctor.select("fullName", "licenseNumber", "specialty", "verificationStatus", "declineReason", "verificationSubmittedAt")
         .where((d) => d.id.eq(manager.doctorId!))
         .first()
     : null;
@@ -74,7 +74,22 @@ export default async function ManagePage({ searchParams }: PageProps<"/manage">)
         }
       />
 
-      {me && me.verificationStatus === "PENDING" ? (
+      {me && me.verificationStatus === "PENDING" && !me.verificationSubmittedAt ? (
+        <Card raised>
+          <div className="space-y-5 p-5 sm:p-6">
+            <div>
+              <h2 className="text-xl leading-7 font-semibold tracking-[-0.01em]">Welcome to {manager.clinicName}</h2>
+              <p className="mt-1.5 text-sm leading-6 text-ink-muted">
+                One step before you see patients: add your PRC license. A Medfave admin checks it, usually within a
+                day, and we&rsquo;ll email you.
+              </p>
+            </div>
+            <ResubmitForm doctor={me} submitLabel="Send for checking" />
+          </div>
+        </Card>
+      ) : null}
+
+      {me && me.verificationStatus === "PENDING" && me.verificationSubmittedAt ? (
         <Card raised>
           <div className="space-y-5 p-5 sm:p-6">
             <VerificationTracker status="PENDING" />

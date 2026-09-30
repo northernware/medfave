@@ -136,17 +136,19 @@ export async function createPractice(accountId: string, input: Record<string, un
   return { ok: true, clinicId };
 }
 
-/** A declined doctor fixes their details and asks again. */
+/** A declined doctor fixes their details and asks again; an invited doctor sends theirs the first time. */
 export async function resubmitPractice(doctorId: string, input: Record<string, unknown>): Promise<FormState> {
   const parsed = resubmitSchema.safeParse(input);
   if (!parsed.success) return toFieldErrors(parsed.error);
 
   const doctor = await orm.Doctor
-    .select("id", "verificationStatus")
+    .select("id", "verificationStatus", "verificationSubmittedAt")
     .include("clinic", (c) => c.select("name"))
     .where((d) => d.id.eq(doctorId))
     .first();
-  if (!doctor || doctor.verificationStatus !== "DECLINED") return { message: "There's nothing to send again." };
+  // Declined and fixing it, or invited and sending it for the first time.
+  const firstTime = doctor?.verificationStatus === "PENDING" && !doctor.verificationSubmittedAt;
+  if (!doctor || (doctor.verificationStatus !== "DECLINED" && !firstTime)) return { message: "There's nothing to send." };
 
   const now = instantToDb(new Date());
   await orm.Doctor.where((d) => d.id.eq(doctorId)).update({
