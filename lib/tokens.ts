@@ -1,5 +1,5 @@
 import "server-only";
-import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, randomInt, randomBytes, timingSafeEqual } from "node:crypto";
 
 /**
  * A code somebody is handed once, and its hash, which is all that is stored.
@@ -39,4 +39,28 @@ export function tokenMatches(a: string, b: string) {
   const right = Buffer.from(b, "utf8");
   if (left.length !== right.length) return false;
   return timingSafeEqual(left, right);
+}
+
+/**
+ * A 6-digit code, to read out at the desk or type on a phone, and its keyed
+ * hash. Six digits are only a million possibilities, so it is safe only
+ * because it lives minutes, not days, and wrong tries are rate-limited; and it
+ * is hashed with a server key, so a copy of the table can't be reversed by
+ * trying all million.
+ */
+export function issuePin(): { pin: string; hash: string } {
+  const pin = String(randomInt(0, 1_000_000)).padStart(6, "0");
+  return { pin, hash: hashPin(pin) };
+}
+
+export function hashPin(pin: string) {
+  const key = process.env.SESSION_SECRET;
+  if (!key) throw new Error("SESSION_SECRET is not set — see .env.example");
+  return createHmac("sha256", key).update(`pin:${pin}`).digest("hex");
+}
+
+/** Six digits, however they were spaced or dashed, or null if it isn't a PIN. */
+export function asPin(code: string) {
+  const digits = code.replace(/[\s-]/g, "");
+  return /^\d{6}$/.test(digits) ? digits : null;
 }

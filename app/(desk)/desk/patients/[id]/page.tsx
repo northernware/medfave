@@ -20,11 +20,13 @@ export const metadata: Metadata = { title: "Patient" };
  */
 async function ActivationHandover({
   code,
+  pin,
   patientName,
   clinicName,
   mail,
 }: {
   code: string;
+  pin?: string;
   patientName: string;
   clinicName: string;
   mail?: string;
@@ -45,13 +47,23 @@ async function ActivationHandover({
         <div className="min-w-0 flex-1 space-y-3">
           <div>
             <p className="text-sm font-medium text-ok-ink">
-              Activation code — hand it over now, it is not shown again.
+              Hand it over now — it is not shown again.
             </p>
-            <p className="tabular mt-1 text-xl font-semibold tracking-wider">{code}</p>
+            {pin ? (
+              <>
+                <p className="tabular mt-1 text-4xl font-semibold tracking-[0.2em]">
+                  {pin.slice(0, 3)} {pin.slice(3)}
+                </p>
+                <p className="text-xs text-ink-muted">6-digit code · works for 30 minutes</p>
+              </>
+            ) : (
+              <p className="tabular mt-1 text-xl font-semibold tracking-wider">{code}</p>
+            )}
           </div>
           <p className="text-sm text-ink-muted">
-            {patientName} scans the QR code with their phone camera to set up their login, in the Medfave
-            app or on the web. Or share it to them, or read it out.
+            {patientName} scans the QR code in the Medfave app (Scan a clinic&rsquo;s QR code) or with their phone
+            camera. Or they type the 6-digit code in the app. To send it later, share the message: it carries a
+            longer code that lasts 14 days.
           </p>
           <ShareCode code={code} link={link} clinicName={clinicName} />
           <p className="text-xs text-ink-muted">
@@ -64,7 +76,7 @@ async function ActivationHandover({
             ) : (
               <>Email is not set up, so pass it on here.</>
             )}{" "}
-            It works once and expires in 14 days.
+            The QR code and the message work once, for 14 days.
           </p>
         </div>
       </div>
@@ -78,7 +90,7 @@ export default async function DeskPatientPage({
 }: PageProps<"/desk/patients/[id]">) {
   const staff = await requireStaff();
   const { id } = await params;
-  const { code, mail } = await searchParams;
+  const { code, pin, mail } = await searchParams;
 
   const patient = await orm.Patient
     .select(
@@ -173,6 +185,7 @@ export default async function DeskPatientPage({
       {code && typeof code === "string" ? (
         <ActivationHandover
           code={code}
+          pin={typeof pin === "string" && /^\d{6}$/.test(pin) ? pin : undefined}
           patientName={fullName(patient)}
           clinicName={staff.clinicName}
           mail={typeof mail === "string" ? mail : undefined}
