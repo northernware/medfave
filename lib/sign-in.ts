@@ -4,7 +4,7 @@ import { db, orm } from "@/src/prisma/db";
 import { hasPassed, instantToDb } from "@/lib/datetime";
 import { newId } from "@/lib/ids";
 import { hit, hitAll, LIMITS, TOO_MANY } from "@/lib/rate-limit";
-import { hashToken } from "@/lib/tokens";
+import { asPin, hashPin, hashToken } from "@/lib/tokens";
 import { activationSchema, loginSchema, toFieldErrors, type FormState } from "@/lib/validation";
 
 /*
@@ -50,15 +50,22 @@ const REFUSE_CODE = {
   fieldErrors: { code: ["Not valid"] },
 };
 
-/** An activation code that can still be used: known, unspent, unrevoked, unexpired, its chart unclaimed. */
+/**
+ * An activation code that can still be used: known, unspent, unrevoked,
+ * unexpired, its chart unclaimed. Either the long code (from the QR, the link
+ * or the email) or the 6-digit one, which also has its own, shorter expiry.
+ */
 async function liveActivation(code: string) {
+  const pin = asPin(code);
   const activation = await orm.PatientActivation
-    .select("id", "patientId", "clinicId", "expiresAt", "usedAt", "revokedAt")
+    .select("id", "patientId", "clinicId", "expiresAt", "usedAt", "revokedAt", "pinExpiresAt")
     .include("patient", (p) => p.select("id", "accountId"))
-    .where((a) => a.tokenHash.eq(hashToken(code)))
+    .where((a) => (pin ? a.pinHash.eq(hashPin(pin)) : a.tokenHash.eq(hashToken(code))))
+    .orderBy((a) => a.createdAt.desc())
     .first();
   if (!activation || activation.usedAt || activation.revokedAt) return null;
   if (hasPassed(activation.expiresAt)) return null;
+  if (pin && (!activation.pinExpiresAt || hasPassed(activation.pinExpiresAt))) return null;
   if (activation.patient.accountId) return null;
   return activation;
 }

@@ -6,13 +6,16 @@ import { orm } from "@/src/prisma/db";
 import { requireClinicManager, requireStaff } from "@/lib/auth";
 import { instantToDb } from "@/lib/datetime";
 import { newId } from "@/lib/ids";
-import { issueToken } from "@/lib/tokens";
+import { hashPin, issuePin, issueToken } from "@/lib/tokens";
 import { appUrl, sendPatientActivation } from "@/lib/email";
 import type { FormState } from "@/lib/validation";
 import { createStaffInvite } from "@/lib/staff";
 
 /** Long enough to hand over and be typed in later; short enough to expire. */
 const ACTIVATION_DAYS = 14;
+
+/** The 6-digit code is for the desk, there and then: minutes, not days. */
+const PIN_MINUTES = 30;
 
 const days = (n: number) => new Date(Date.now() + n * 24 * 60 * 60 * 1000);
 
@@ -53,11 +56,14 @@ export async function issuePatientActivation(formData: FormData) {
   }
 
   const { token, hash } = issueToken();
+  const pin = await unusedPin();
   await orm.PatientActivation.create({
     id: newId(),
     clinicId: staff.clinicId,
     patientId,
     tokenHash: hash,
+    pinHash: pin.hash,
+    pinExpiresAt: instantToDb(new Date(Date.now() + PIN_MINUTES * 60 * 1000)),
     issuedById: staff.accountId,
     expiresAt: instantToDb(days(ACTIVATION_DAYS)),
     createdAt: now,
@@ -83,7 +89,23 @@ export async function issuePatientActivation(formData: FormData) {
 
   revalidatePath(`/desk/patients/${patientId}`);
   // The code travels in the URL exactly once, to be read off the screen.
-  redirect(`/desk/patients/${patientId}?code=${encodeURIComponent(token)}&mail=${mail}`);
+  redirect(`/desk/patients/${patientId}?code=${encodeURIComponent(token)}&pin=${pin.pin}&mail=${mail}`);
+}
+
+/** A 6-digit code no other activation is using right now, so one PIN names one chart. */
+async function unusedPin() {
+  const now = instantToDb(new Date());
+  for (;;) {
+    const candidate = issuePin();
+    const clash = await orm.PatientActivation
+      .select("id")
+      .where((a) => a.pinHash.eq(hashPin(candidate.pin)))
+      .where((a) => a.pinExpiresAt.gt(now))
+      .where((a) => a.usedAt.isNull())
+      .where((a) => a.revokedAt.isNull())
+      .first();
+    if (!clash) return candidate;
+  }
 }
 
 export async function revokePatientActivation(formData: FormData) {

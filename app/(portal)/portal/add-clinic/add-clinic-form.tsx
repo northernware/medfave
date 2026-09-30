@@ -16,7 +16,7 @@ export function AddClinicForm({ code = "" }: { code?: string }) {
           name="code"
           defaultValue={code}
           required
-          placeholder="XXXX-XXXX-XXXX-XXXX"
+          placeholder="6-digit code"
           className="tabular"
           invalid={Boolean(state.fieldErrors?.code)}
         />

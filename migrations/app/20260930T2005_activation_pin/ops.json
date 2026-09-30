@@ -1,0 +1,125 @@
+[
+  {
+    "id": "column.public.PatientActivation.pinExpiresAt",
+    "label": "Add column \"pinExpiresAt\" to \"PatientActivation\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "pinExpiresAt",
+        "table": "PatientActivation"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"pinExpiresAt\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "PatientActivation",
+          "pinExpiresAt"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"pinExpiresAt\"",
+        "sql": "ALTER TABLE \"public\".\"PatientActivation\" ADD COLUMN \"pinExpiresAt\" timestamp(3)"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"pinExpiresAt\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "PatientActivation",
+          "pinExpiresAt"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.PatientActivation.pinHash",
+    "label": "Add column \"pinHash\" to \"PatientActivation\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "pinHash",
+        "table": "PatientActivation"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"pinHash\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "PatientActivation",
+          "pinHash"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"pinHash\"",
+        "sql": "ALTER TABLE \"public\".\"PatientActivation\" ADD COLUMN \"pinHash\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"pinHash\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "PatientActivation",
+          "pinHash"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.PatientActivation.PatientActivation_pinHash_idx",
+    "label": "Create index \"PatientActivation_pinHash_idx\" on \"PatientActivation\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "PatientActivation_pinHash_idx",
+        "table": "PatientActivation"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"PatientActivation_pinHash_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"PatientActivation_pinHash_idx\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"PatientActivation_pinHash_idx\"",
+        "sql": "CREATE INDEX \"PatientActivation_pinHash_idx\" ON \"public\".\"PatientActivation\" (\"pinHash\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"PatientActivation_pinHash_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"PatientActivation_pinHash_idx\""
+        ]
+      }
+    ]
+  }
+]

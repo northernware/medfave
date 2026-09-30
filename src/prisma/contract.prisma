@@ -745,6 +745,11 @@ namespace public {
     clinicId     String
     patientId    String
     tokenHash    String
+    /// A short 6-digit code for the same activation, to read out or type. Keyed
+    /// (HMAC) rather than a bare hash, since six digits are quick to enumerate,
+    /// and short-lived: it stops working at `pinExpiresAt`, the long code does not.
+    pinHash      String?
+    pinExpiresAt TimestampString(3)?
     issuedById   String
     expiresAt    TimestampString(3)
     usedAt       TimestampString(3)?
@@ -755,6 +760,7 @@ namespace public {
     issuedBy     Account @relation(fields: [issuedById], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "PatientActivation_issuedById_fkey")
 
     @@index([tokenHash], map: "PatientActivation_tokenHash_key", unique: true)
+    @@index([pinHash], map: "PatientActivation_pinHash_idx")
     @@index([patientId], map: "PatientActivation_patientId_idx")
     @@index([clinicId], map: "PatientActivation_clinicId_idx")
     @@index([issuedById], map: "PatientActivation_issuedById_idx")

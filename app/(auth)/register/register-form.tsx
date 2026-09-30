@@ -25,7 +25,7 @@ export function RegisterForm({ code = "" }: { code?: string }) {
           name="code"
           defaultValue={code}
           required
-          placeholder="XXXX-XXXX-XXXX-XXXX"
+          placeholder="6-digit code"
           className="tabular"
           invalid={Boolean(err?.code)}
         />
