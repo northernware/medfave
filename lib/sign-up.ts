@@ -19,7 +19,7 @@ import { toFieldErrors, type FormState } from "@/lib/validation";
  * The privacy notice somebody agrees to at sign-up. Bump it whenever the
  * notice at /privacy changes; the account records which one they agreed to.
  */
-export const PRIVACY_NOTICE_VERSION = "2026-09-29";
+export const PRIVACY_NOTICE_VERSION = "2026-09-30";
 
 const VERIFY_DAYS = 3;
 

@@ -41,7 +41,9 @@ export default function PrivacyPage() {
 
         <h2 className="text-xl font-semibold">Who sees it</h2>
         <p>
-          Your records are seen by the clinic that keeps them and the people it authorises. We don&rsquo;t sell your
+          Your records are seen by the clinic that keeps them and the people it authorises. Within a clinic,
+          your chart is read by the doctors caring for you; if the clinic has chosen to share charts between its
+          doctors, any of its doctors may read it. Every time a chart is opened, it&rsquo;s recorded who opened it. We don&rsquo;t sell your
           information or use it for advertising. Service providers that host Medfave or send its emails process data only
           on our instructions.
         </p>

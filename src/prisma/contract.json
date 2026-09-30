@@ -20,6 +20,10 @@
       "model": "AppointmentRequest",
       "namespace": "public"
     },
+    "ChartAccess": {
+      "model": "ChartAccess",
+      "namespace": "public"
+    },
     "Clinic": {
       "model": "Clinic",
       "namespace": "public"
@@ -258,6 +262,21 @@
                 },
                 "to": {
                   "model": "Appointment",
+                  "namespace": "public"
+                }
+              },
+              "chartAccesses": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "accountId"
+                  ]
+                },
+                "to": {
+                  "model": "ChartAccess",
                   "namespace": "public"
                 }
               },
@@ -1279,6 +1298,126 @@
               "table": "AppointmentRequest"
             }
           },
+          "ChartAccess": {
+            "fields": {
+              "accountId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "clinicId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "openedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "patientId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "recordId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "account": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "accountId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Account",
+                  "namespace": "public"
+                }
+              },
+              "clinic": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "clinicId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Clinic",
+                  "namespace": "public"
+                }
+              },
+              "patient": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "patientId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Patient",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "accountId": {
+                  "column": "accountId"
+                },
+                "clinicId": {
+                  "column": "clinicId"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "openedAt": {
+                  "column": "openedAt"
+                },
+                "patientId": {
+                  "column": "patientId"
+                },
+                "recordId": {
+                  "column": "recordId"
+                }
+              },
+              "namespaceId": "public",
+              "table": "ChartAccess"
+            }
+          },
           "Clinic": {
             "fields": {
               "address": {
@@ -1316,6 +1455,13 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "sharedCharts": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
                   "kind": "scalar"
                 }
               },
@@ -1358,6 +1504,21 @@
                 },
                 "to": {
                   "model": "Appointment",
+                  "namespace": "public"
+                }
+              },
+              "chartAccesses": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "clinicId"
+                  ]
+                },
+                "to": {
+                  "model": "ChartAccess",
                   "namespace": "public"
                 }
               },
@@ -1513,6 +1674,9 @@
                 },
                 "name": {
                   "column": "name"
+                },
+                "sharedCharts": {
+                  "column": "sharedCharts"
                 },
                 "updatedAt": {
                   "column": "updatedAt"
@@ -4081,6 +4245,21 @@
                   "namespace": "public"
                 }
               },
+              "chartAccesses": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "patientId"
+                  ]
+                },
+                "to": {
+                  "model": "ChartAccess",
+                  "namespace": "public"
+                }
+              },
               "clinic": {
                 "cardinality": "N:1",
                 "on": {
@@ -6403,6 +6582,147 @@
               },
               "uniques": []
             },
+            "ChartAccess": {
+              "columns": {
+                "accountId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "clinicId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "openedAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamp",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "patientId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "recordId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                }
+              },
+              "foreignKeys": [
+                {
+                  "name": "ChartAccess_clinicId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "clinicId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "ChartAccess"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Clinic"
+                  }
+                },
+                {
+                  "name": "ChartAccess_patientId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "patientId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "ChartAccess"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Patient"
+                  }
+                },
+                {
+                  "name": "ChartAccess_accountId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "accountId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "ChartAccess"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Account"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "accountId"
+                  ],
+                  "name": "ChartAccess_accountId_idx_cbfb3085",
+                  "prefix": "ChartAccess_accountId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "clinicId"
+                  ],
+                  "name": "ChartAccess_clinicId_idx_8f933800",
+                  "prefix": "ChartAccess_clinicId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "patientId"
+                  ],
+                  "name": "ChartAccess_patientId_idx_e5f07e88",
+                  "prefix": "ChartAccess_patientId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "patientId",
+                    "openedAt"
+                  ],
+                  "name": "ChartAccess_patientId_openedAt_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ],
+                "name": "ChartAccess_pkey"
+              },
+              "uniques": []
+            },
             "Clinic": {
               "columns": {
                 "address": {
@@ -6435,6 +6755,15 @@
                 "name": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
+                  "nullable": false
+                },
+                "sharedCharts": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nativeType": "bool",
                   "nullable": false
                 },
                 "updatedAt": {
@@ -9814,7 +10143,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "c981f5554787b022f55c0cd8958237b1f65e795bb51f2f73942504c41379e12e"
+    "storageHash": "a1691519be19b68ea63b9337f39f9be2e78e4c31871f55d91217d68691f34d3e"
   },
   "capabilities": {
     "postgres": {

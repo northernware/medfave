@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { archivePatient, deletePatient, restorePatient } from "@/app/actions/patients";
 import { requireDoctor } from "@/lib/auth";
-import { caresFor } from "@/lib/care";
+import { caresFor, logChartAccess, sharesCharts } from "@/lib/care";
 import { orm } from "@/src/prisma/db";
 import { appointmentListQuery, toAppointmentListItem } from "@/lib/queries";
 import { calendarDateFromDb, instantFromDb } from "@/lib/datetime";
@@ -53,6 +53,7 @@ export default async function PatientPage({
     return <DetailsOnly patient={basic} />;
   }
 
+  const shared = await sharesCharts(doctor.clinicId);
   const patient = await orm.Patient
     .include("household", (h) => h.select("id", "name", "contactNumber"))
     .include("allergies", (a) => a.select("id", "label", "reaction", "severity", "notes"))
@@ -69,6 +70,7 @@ export default async function PatientPage({
       r
         .select(
           "id",
+          "doctorId",
           "status",
           "archivedAt",
           "visitDate",
@@ -80,8 +82,8 @@ export default async function PatientPage({
           "weightKg",
         )
         .include("prescriptions", (rx) => rx.count())
-        // Visit notes are their author's (layer 3).
-        .where((x) => x.doctorId.eq(doctor.id))
+        // Visit notes are their author's (layer 3), unless the clinic shares charts.
+        .where((x) => (shared ? x.clinicId.eq(doctor.clinicId) : x.doctorId.eq(doctor.id)))
         .orderBy((x) => x.visitDate.desc()),
     )
     // Counted for one decision only: whether this chart can still be deleted,
@@ -93,6 +95,20 @@ export default async function PatientPage({
     .where((p) => p.clinicId.eq(doctor.clinicId))
     .first();
   if (!patient) notFound();
+
+  // Every chart opened is logged, and shown to the doctors caring for them.
+  await logChartAccess({ clinicId: doctor.clinicId, patientId: patient.id, accountId: doctor.accountId });
+  const [authors, accessLog] = await Promise.all([
+    orm.Doctor.select("id", "fullName").where((d) => d.clinicId.eq(doctor.clinicId)).all(),
+    orm.ChartAccess
+      .select("openedAt", "recordId")
+      .include("account", (a) => a.select("fullName"))
+      .where((c) => c.patientId.eq(patient.id))
+      .orderBy((c) => c.openedAt.desc())
+      .limit(12)
+      .all(),
+  ]);
+  const authorName = (id: string) => authors.find((d) => d.id === id)?.fullName ?? "Another doctor";
 
   const appointments = (
     await appointmentListQuery()
@@ -250,6 +266,9 @@ export default async function PatientPage({
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-medium">{record.chiefComplaint}</span>
+                        {record.doctorId !== doctor.id ? (
+                          <span className="mt-0.5 block text-xs text-ink-faint">by {authorName(record.doctorId)}</span>
+                        ) : null}
                         {record.assessment ? (
                           <span className="mt-0.5 block truncate text-xs text-ink-muted">
                             {record.assessment}
@@ -413,6 +432,24 @@ export default async function PatientPage({
               ))}
           </dl>
         ) : null}
+      </Card>
+
+      <Card className="p-4">
+        <h2 className="text-sm font-semibold">Who opened this chart</h2>
+        <p className="mt-0.5 text-xs text-ink-muted">
+          {shared ? "This clinic shares charts between its doctors." : "Only doctors caring for this patient can open it."}
+        </p>
+        <ul className="mt-3 space-y-2.5 text-xs">
+          {accessLog.map((entry, i) => (
+            <li key={i}>
+              <span className="block">
+                {entry.account.fullName}
+                {entry.recordId ? <span className="text-ink-faint"> · a visit note</span> : null}
+              </span>
+              <span className="tabular block text-ink-muted">{formatDateTime(instantFromDb(entry.openedAt))}</span>
+            </li>
+          ))}
+        </ul>
       </Card>
 
         </aside>

@@ -219,6 +219,7 @@ type PatientScalars = Omit<
   | "medications"
   | "alerts"
   | "primaryContactFor"
+  | "chartAccesses"
   | "documentRequests"
   | "clinic"
   | "account"
