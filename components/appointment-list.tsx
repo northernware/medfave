@@ -218,9 +218,11 @@ function AppointmentRow({
           </span>
         </span>
 
+        {/* On a phone the badges go under the name, so the name gets the width. */}
+        <span className="flex min-w-0 flex-1 flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-3">
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-medium">{fullName(patient)}</span>
-          <span className="block truncate text-sm text-ink-muted">
+          <span className="block text-sm font-medium sm:truncate">{fullName(patient)}</span>
+          <span className="line-clamp-2 block text-sm text-ink-muted sm:line-clamp-none sm:truncate">
             {SERVICE_LABELS[appointment.service]} · {appointment.reason}
           </span>
           <span className="block truncate text-xs text-ink-faint">
@@ -228,14 +230,14 @@ function AppointmentRow({
           </span>
         </span>
 
-        <span className="flex shrink-0 flex-col items-end justify-center gap-1">
+        <span className="flex flex-wrap items-center gap-1 sm:shrink-0 sm:flex-col sm:items-end sm:justify-center">
           <Badge dot tone={APPOINTMENT_STATUS_TONE[appointment.status]}>
             {APPOINTMENT_STATUS_LABELS[appointment.status]}
           </Badge>
           {/* Only the exceptions are labelled. A badge on every row for the
               ordinary case is a badge nobody reads. */}
           {urgent || remote || appointment.medicalRecord ? (
-            <span className="flex flex-wrap justify-end gap-1">
+            <span className="flex flex-wrap gap-1 sm:justify-end">
               {urgent ? (
                 <Badge tone={VISIT_PRIORITY_TONE[appointment.priority]}>
                   {VISIT_PRIORITY_LABELS[appointment.priority]}
@@ -247,6 +249,7 @@ function AppointmentRow({
               {appointment.medicalRecord ? <Badge tone="neutral">Documented</Badge> : null}
             </span>
           ) : null}
+        </span>
         </span>
       </Link>
     </li>
