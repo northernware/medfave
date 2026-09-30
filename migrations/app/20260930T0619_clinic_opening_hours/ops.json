@@ -1,0 +1,161 @@
+[
+  {
+    "id": "table.ClinicOpeningHours",
+    "label": "Create table \"ClinicOpeningHours\"",
+    "summary": "Creates table \"ClinicOpeningHours\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "ClinicOpeningHours"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"ClinicOpeningHours\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ClinicOpeningHours\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"ClinicOpeningHours\"",
+        "sql": "CREATE TABLE \"public\".\"ClinicOpeningHours\" (\n  \"clinicId\" text NOT NULL,\n  \"closeMinute\" int4 NOT NULL,\n  \"id\" text NOT NULL,\n  \"openMinute\" int4 NOT NULL,\n  \"weekday\" int4 NOT NULL,\n  CONSTRAINT \"ClinicOpeningHours_pkey\" PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"ClinicOpeningHours\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ClinicOpeningHours\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.ClinicOpeningHours.ClinicOpeningHours_clinicId_idx_8f933800",
+    "label": "Create index \"ClinicOpeningHours_clinicId_idx_8f933800\" on \"ClinicOpeningHours\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "ClinicOpeningHours_clinicId_idx_8f933800",
+        "table": "ClinicOpeningHours"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"ClinicOpeningHours_clinicId_idx_8f933800\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ClinicOpeningHours_clinicId_idx_8f933800\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"ClinicOpeningHours_clinicId_idx_8f933800\"",
+        "sql": "CREATE INDEX \"ClinicOpeningHours_clinicId_idx_8f933800\" ON \"public\".\"ClinicOpeningHours\" (\"clinicId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"ClinicOpeningHours_clinicId_idx_8f933800\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ClinicOpeningHours_clinicId_idx_8f933800\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.ClinicOpeningHours.ClinicOpeningHours_clinicId_weekday_key",
+    "label": "Create index \"ClinicOpeningHours_clinicId_weekday_key\" on \"ClinicOpeningHours\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "ClinicOpeningHours_clinicId_weekday_key",
+        "table": "ClinicOpeningHours"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"ClinicOpeningHours_clinicId_weekday_key\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ClinicOpeningHours_clinicId_weekday_key\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"ClinicOpeningHours_clinicId_weekday_key\"",
+        "sql": "CREATE UNIQUE INDEX \"ClinicOpeningHours_clinicId_weekday_key\" ON \"public\".\"ClinicOpeningHours\" (\"clinicId\", \"weekday\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"ClinicOpeningHours_clinicId_weekday_key\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"ClinicOpeningHours_clinicId_weekday_key\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.ClinicOpeningHours.ClinicOpeningHours_clinicId_fkey",
+    "label": "Add foreign key \"ClinicOpeningHours_clinicId_fkey\" on \"ClinicOpeningHours\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "ClinicOpeningHours_clinicId_fkey",
+        "table": "ClinicOpeningHours"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"ClinicOpeningHours_clinicId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ClinicOpeningHours_clinicId_fkey",
+          "public",
+          "\"public\".\"ClinicOpeningHours\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"ClinicOpeningHours_clinicId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"ClinicOpeningHours\"\nADD CONSTRAINT \"ClinicOpeningHours_clinicId_fkey\"\nFOREIGN KEY (\"clinicId\")\nREFERENCES \"public\".\"Clinic\" (\"id\")\nON DELETE CASCADE\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"ClinicOpeningHours_clinicId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "ClinicOpeningHours_clinicId_fkey",
+          "public",
+          "\"public\".\"ClinicOpeningHours\""
+        ]
+      }
+    ]
+  }
+]

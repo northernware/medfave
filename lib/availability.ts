@@ -179,7 +179,7 @@ function describeLead(minutes: number) {
   return hours === 1 ? "an hour's" : `${hours} hours'`;
 }
 
-function label(m: number) {
+export function label(m: number) {
   const h24 = Math.floor(m / 60);
   const suffix = h24 < 12 ? "AM" : "PM";
   const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
@@ -191,7 +191,7 @@ function label(m: number) {
  * The week as lines, one per run of consecutive days that share their hours:
  * "Monday to Friday, 9:00 AM to 5:00 PM", "Saturday, 9:00 AM to 12:00 PM".
  */
-export function weekLines(schedule: Schedule): string[] {
+export function weekLines(schedule: Pick<Schedule, "hours">): string[] {
   const NAMES = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
   const days = [...schedule.hours].sort((a, b) => a.weekday - b.weekday);
   if (days.length === 0) return [];

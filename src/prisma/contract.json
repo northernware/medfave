@@ -40,6 +40,10 @@
       "model": "ClinicMember",
       "namespace": "public"
     },
+    "ClinicOpeningHours": {
+      "model": "ClinicOpeningHours",
+      "namespace": "public"
+    },
     "Doctor": {
       "model": "Doctor",
       "namespace": "public"
@@ -1432,6 +1436,21 @@
                   "namespace": "public"
                 }
               },
+              "openingHours": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "clinicId"
+                  ]
+                },
+                "to": {
+                  "model": "ClinicOpeningHours",
+                  "namespace": "public"
+                }
+              },
               "patientActivations": {
                 "cardinality": "1:N",
                 "on": {
@@ -1873,6 +1892,83 @@
               },
               "namespaceId": "public",
               "table": "ClinicMember"
+            }
+          },
+          "ClinicOpeningHours": {
+            "fields": {
+              "clinicId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "closeMinute": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "openMinute": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "weekday": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "clinic": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "clinicId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Clinic",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "clinicId": {
+                  "column": "clinicId"
+                },
+                "closeMinute": {
+                  "column": "closeMinute"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "openMinute": {
+                  "column": "openMinute"
+                },
+                "weekday": {
+                  "column": "weekday"
+                }
+              },
+              "namespaceId": "public",
+              "table": "ClinicOpeningHours"
             }
           },
           "Doctor": {
@@ -6708,6 +6804,81 @@
               },
               "uniques": []
             },
+            "ClinicOpeningHours": {
+              "columns": {
+                "clinicId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "closeMinute": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "openMinute": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "weekday": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "name": "ClinicOpeningHours_clinicId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "clinicId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "ClinicOpeningHours"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Clinic"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "clinicId"
+                  ],
+                  "name": "ClinicOpeningHours_clinicId_idx_8f933800",
+                  "prefix": "ClinicOpeningHours_clinicId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "clinicId",
+                    "weekday"
+                  ],
+                  "name": "ClinicOpeningHours_clinicId_weekday_key",
+                  "unique": true
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ],
+                "name": "ClinicOpeningHours_pkey"
+              },
+              "uniques": []
+            },
             "Doctor": {
               "columns": {
                 "accountId": {
@@ -9643,7 +9814,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "0b1cd57301ca424643f8d57385d6122ad907b1c2f7f954dbd5210364ee05a4f9"
+    "storageHash": "c981f5554787b022f55c0cd8958237b1f65e795bb51f2f73942504c41379e12e"
   },
   "capabilities": {
     "postgres": {

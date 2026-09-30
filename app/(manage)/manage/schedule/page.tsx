@@ -6,6 +6,7 @@ import {
   removeBreak,
   removeClosure,
   saveBookingRules,
+  saveClinicHours,
   saveOpeningHours,
   saveServiceLengths,
 } from "@/app/actions/schedule";
@@ -16,7 +17,7 @@ import { orm } from "@/src/prisma/db";
 import { DEFAULT_SCHEDULE, describeWeek, scheduleConflict } from "@/lib/availability";
 import { dayKey, formatCalendarDate, calendarDateFromDb, formatDateTime, instantFromDb, instantToDb } from "@/lib/datetime";
 import { ACTIVE_STATUSES, fullName, SERVICES } from "@/lib/domain";
-import { loadSchedule } from "@/lib/queries";
+import { loadClinicHours, loadSchedule, withinClinicHours } from "@/lib/queries";
 import { labelForMinute, minuteOfDay } from "@/lib/scheduling";
 import { WEEKDAY_NAMES } from "@/lib/schedule-options";
 import { buttonClass, Card, CardHeader, EmptyState, PageHeader } from "@/components/ui";
@@ -32,6 +33,7 @@ export const metadata: Metadata = { title: "Clinic schedule" };
 
 const SAVED: Record<string, string> = {
   hours: "Opening hours saved. The booking form offers the new week straight away.",
+  clinic: "Clinic opening hours saved. Doctors' hours are kept inside them.",
   breaks: "Breaks updated.",
   closures: "Closures updated.",
   lengths: "Service lengths saved. They apply to new bookings.",
@@ -55,10 +57,54 @@ export default async function SchedulePage({ searchParams }: PageProps<"/manage/
   const doctorId = manager.doctorId ?? picked;
   const whose = doctors.find((d) => d.id === doctorId);
 
+  // The clinic's own week, and any doctor whose hours reach outside it.
+  const clinicWeek = await loadClinicHours(manager.clinicId);
+  const outside: string[] = [];
+  if (clinicWeek.length > 0) {
+    for (const d of doctors) {
+      const own = await orm.ClinicHours.select("weekday", "openMinute", "closeMinute").where((h) => h.doctorId.eq(d.id)).all();
+      const kept = withinClinicHours(own, clinicWeek);
+      const same = own.length === kept.length && own.every((o) => kept.some((k) => k.weekday === o.weekday && k.openMinute === o.openMinute && k.closeMinute === o.closeMinute));
+      if (own.length > 0 && !same) outside.push(d.fullName);
+    }
+  }
+  const clinicCard = (
+    <Card>
+      <CardHeader
+        title="Clinic opening hours"
+        subtitle={
+          clinicWeek.length > 0
+            ? "When the clinic itself is open. Every doctor's hours sit inside these."
+            : "Not set: each doctor's hours stand on their own. Set them to keep every doctor inside the clinic's week."
+        }
+      />
+      {outside.length > 0 ? (
+        <p className="border-b border-border bg-warn-tint px-5 py-3 text-sm text-warn-ink">
+          {outside.join(" and ")}
+          {outside.length === 1 ? " has" : " have"} hours outside these. Patients are only offered the times inside
+          them; update {outside.length === 1 ? "that schedule" : "those schedules"} to match.
+        </p>
+      ) : null}
+      <div className="px-5 py-4">
+        <OpeningHoursForm
+          action={saveClinicHours}
+          hours={clinicWeek.length > 0 ? clinicWeek : DEFAULT_SCHEDULE.hours}
+          submitLabel="Save clinic hours"
+        />
+      </div>
+    </Card>
+  );
+
   if (!doctorId && doctors.length > 1) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Schedules" subtitle="Each doctor has their own hours. Choose whose to change." />
+        <PageHeader title="Schedules" subtitle="The clinic's hours, and each doctor's own inside them." />
+        {typeof saved === "string" && SAVED[saved] ? (
+          <div className="rounded-lg border border-ok/40 bg-ok-tint px-4 py-3 text-sm">
+            <p className="font-medium text-ok-ink">{SAVED[saved]}</p>
+          </div>
+        ) : null}
+        {clinicCard}
         <Card className="p-5 sm:p-6">
           <DoctorPicker
             label="Doctor"
@@ -184,19 +230,23 @@ export default async function SchedulePage({ searchParams }: PageProps<"/manage/
         </Card>
       ) : null}
 
+      {clinicCard}
+
       <Card>
         <CardHeader
-          title="Opening hours"
+          title={doctors.length > 1 && whose ? `${whose.fullName}'s hours` : "Opening hours"}
           subtitle={
             configured
-              ? "The clinic's week. Bookings are only offered inside these hours."
+              ? clinicWeek.length > 0
+                ? "When patients can book this doctor, inside the clinic's hours."
+                : "When patients can book this doctor."
               : "Not set yet, so the clinic runs on the standard week shown here. Saving makes it the clinic's own."
           }
         />
         <div className="px-5 py-4">
           <OpeningHoursForm
             action={saveOpeningHours.bind(null, doctorId)}
-            hours={configured ? hoursRows : DEFAULT_SCHEDULE.hours}
+            hours={configured ? hoursRows : withinClinicHours(DEFAULT_SCHEDULE.hours, clinicWeek)}
           />
         </div>
       </Card>

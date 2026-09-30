@@ -16,6 +16,7 @@ import { ClinicalListStatus, Relationship, Sex } from "../../lib/enums";
  *
  *   Dr. Bea Ramos (Family Medicine)   group.doctor1@medfave.com   Mon–Fri 8–12
  *   Dr. Carlo Lim (Pediatrics)        group.doctor2@medfave.com   Mon–Fri 1–5, Sat 9–12
+ *   Clinic opening hours: Mon–Fri 8–5, Sat 9–12
  *   Desk: Joy Santos                  group.desk@medfave.com
  *   Password for all three: password
  *
@@ -102,6 +103,11 @@ async function main() {
     updatedAt: now,
   });
   const passwordHash = await bcrypt.hash(PASSWORD, 12);
+  // The clinic is open 8–5 on weekdays and Saturday morning; each doctor's hours sit inside.
+  for (const weekday of [1, 2, 3, 4, 5]) {
+    await orm.ClinicOpeningHours.create({ id: newId(), clinicId: clinic.id, weekday, openMinute: 8 * 60, closeMinute: 17 * 60 });
+  }
+  await orm.ClinicOpeningHours.create({ id: newId(), clinicId: clinic.id, weekday: 6, openMinute: 9 * 60, closeMinute: 12 * 60 });
 
   const lines: string[] = [];
   for (const [i, d] of DOCTORS.entries()) {

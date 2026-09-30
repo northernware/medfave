@@ -19,9 +19,11 @@ const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
 export function OpeningHoursForm({
   action,
   hours,
+  submitLabel = "Save opening hours",
 }: {
   action: Action;
   hours: { weekday: number; openMinute: number; closeMinute: number }[];
+  submitLabel?: string;
 }) {
   const [state, formAction] = useActionState(action, EMPTY_FORM_STATE);
   const err = state.fieldErrors;
@@ -52,7 +54,7 @@ export function OpeningHoursForm({
                   aria-label={`${WEEKDAY_NAMES[weekday]} opens`}
                   defaultValue={timeValue(day?.openMinute ?? 8 * 60)}
                   invalid={Boolean(problem)}
-                  className="min-w-0 flex-1 sm:w-32 sm:flex-none"
+                  className="min-w-0 flex-1 sm:w-40 sm:flex-none"
                 />
                 to
                 <TextInput
@@ -62,7 +64,7 @@ export function OpeningHoursForm({
                   aria-label={`${WEEKDAY_NAMES[weekday]} closes`}
                   defaultValue={timeValue(day?.closeMinute ?? 17 * 60)}
                   invalid={Boolean(problem)}
-                  className="min-w-0 flex-1 sm:w-32 sm:flex-none"
+                  className="min-w-0 flex-1 sm:w-40 sm:flex-none"
                 />
               </span>
               {problem ? <span className="text-xs text-danger-ink">{problem}</span> : null}
@@ -73,7 +75,7 @@ export function OpeningHoursForm({
       <p className="text-xs text-ink-muted">
         Untick a day to close on it every week. For a holiday or leave, add a closure instead.
       </p>
-      <SubmitButton>Save opening hours</SubmitButton>
+      <SubmitButton>{submitLabel}</SubmitButton>
     </form>
   );
 }
