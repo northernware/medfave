@@ -1,18 +1,42 @@
 # Medfave
 
-Appointments and medical records for family practice, organised by household.
+**Care, with a little heart.** Medfave connects family practices in the
+Philippines with the patients and households they look after: the clinic runs its
+day on the web, and patients and doctors carry it in the Medfave app.
 
-A doctor signs in, creates a **household**, adds its members as **patients**,
-books **appointments** against one of fifteen services, and documents each visit
-as a **medical record** with vitals, assessment, plan and prescriptions. A month
-**calendar** shows which days are booked and at what times. Everything a doctor
-creates is visible only to that doctor.
+Live: **[medfave.vercel.app](https://medfave.vercel.app)** · App:
+[medfave-mobile](https://github.com/northernware/medfave-mobile) (Expo) · Brand
+and product: [medfave-design](https://github.com/northernware/medfave-design)
 
-Every patient keeps their own record, appointment history, diagnoses and
-prescriptions. The household is a grouping, not a merged chart — it exists so a
-doctor can find relatives quickly, schedule a family checkup, see hereditary
-risk, record how members relate to one another, and hold one shared address and
-contact number.
+## What it does
+
+**For patients (mobile app first)**
+- **Find a doctor.** Search verified doctors by name, specialty, clinic or town, or
+  scan a clinic's QR code from its poster, card or a screenshot, and ask for a visit.
+- **Link the records the clinic already keeps.** The desk hands over a
+  6-digit code or a QR to scan; one login can hold charts at several clinics.
+- **See visits and documents,** request, reschedule or cancel appointments, and
+  choose how to be reminded.
+
+**For doctors (app and web)**
+- **Today, calendar and appointments,** with a waiting room that shows who has
+  arrived and for how long.
+- **Charts and visit notes:** allergies, alerts, conditions, medications, vitals,
+  assessment, plan and prescriptions. Details are clinic-wide, the chart is for the
+  doctors caring for the patient, and a note belongs to its author.
+- **My hours and clinic settings:** weekly hours inside the clinic's, the clinic's
+  public page and QR (share it like a GCash QR, or print a poster), listing in
+  Find a doctor, staff invitations and chart sharing.
+
+**For the front desk (web)**
+- A day view with walk-ins, bookings and check-ins; booking requests from the
+  app, each answered by the desk or the doctor; patient registration by household.
+- Linking a patient's Medfave account in person: a QR and a 6-digit code on screen.
+
+**Built in:** households (relatives grouped, never merged into one chart),
+PRC license verification of every doctor before a clinic opens, email
+reminders, light and dark themes, and a JSON API (`app/api/v1`, see
+[`docs/api.md`](docs/api.md)) that the app uses with the same rules as the web.
 
 ## Stack
 
