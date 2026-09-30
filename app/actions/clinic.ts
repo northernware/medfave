@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { ensureSlug } from "@/lib/clinic-link";
 import { redirect } from "next/navigation";
 import { orm } from "@/src/prisma/db";
 import { requireClinicManager } from "@/lib/auth";
@@ -41,6 +42,18 @@ export async function updateClinicDetails(
  * patient's chart and visit notes (notes stay the author's to change). Off by
  * default. Every chart opened is logged either way (lib/care.ts).
  */
+/** Whether the clinic appears in the app's "Find a doctor". Its link works either way. */
+export async function setListed(formData: FormData) {
+  const manager = await requireClinicManager();
+  await orm.Clinic.where((c) => c.id.eq(manager.clinicId)).update({
+    listed: formData.get("listed") === "on",
+    updatedAt: instantToDb(new Date()),
+  });
+  await ensureSlug(manager.clinicId);
+  revalidatePath("/manage/clinic");
+  redirect("/manage/clinic?saved=listing");
+}
+
 export async function setSharedCharts(formData: FormData) {
   const manager = await requireClinicManager();
   await orm.Clinic.where((c) => c.id.eq(manager.clinicId)).update({

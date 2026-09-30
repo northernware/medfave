@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { acceptRequest, declineRequest } from "@/app/actions/requests";
+import { findPossibleDuplicates } from "@/lib/queries";
 import { requireStaff } from "@/lib/auth";
 import { orm } from "@/src/prisma/db";
 import { calendarDateFromDb, formatCalendarDate, formatDateTime, instantFromDb } from "@/lib/datetime";
@@ -15,7 +16,10 @@ export default async function DeskRequestsPage({ searchParams }: PageProps<"/des
 
   const [pending, decided] = await Promise.all([
     orm.AppointmentRequest
-      .select("id", "preferredDate", "preferredTime", "service", "reason", "createdAt")
+      .select(
+        "id", "preferredDate", "preferredTime", "service", "reason", "createdAt",
+        "newFirstName", "newMiddleName", "newLastName", "newDateOfBirth", "newContactNumber", "newEmail",
+      )
       .include("doctor", (d) => d.select("fullName"))
       .include("patient", (p) =>
         p.select("id", "firstName", "middleName", "lastName", "contactNumber", "patientNumber"),
@@ -25,7 +29,7 @@ export default async function DeskRequestsPage({ searchParams }: PageProps<"/des
       .orderBy((r) => r.createdAt.asc())
       .all(),
     orm.AppointmentRequest
-      .select("id", "preferredDate", "preferredTime", "service", "status", "decisionNote", "decidedAt", "appointmentId")
+      .select("id", "preferredDate", "preferredTime", "service", "status", "decisionNote", "decidedAt", "appointmentId", "newFirstName", "newMiddleName", "newLastName")
       .include("patient", (p) => p.select("id", "firstName", "middleName", "lastName"))
       .where((r) => r.clinicId.eq(staff.clinicId))
       .where((r) => r.status.in(["ACCEPTED", "DECLINED", "WITHDRAWN"]))
@@ -33,6 +37,27 @@ export default async function DeskRequestsPage({ searchParams }: PageProps<"/des
       .limit(15)
       .all(),
   ]);
+
+  // New patients: look-alikes the clinic may already have, so nobody is
+  // registered twice. The desk decides; nothing is merged automatically.
+  const lookalikes = new Map(
+    await Promise.all(
+      pending
+        .filter((r) => !r.patient)
+        .map(async (r) => [
+          r.id,
+          await findPossibleDuplicates(staff.clinicId, {
+            firstName: r.newFirstName ?? "",
+            lastName: r.newLastName ?? "",
+            dateOfBirth: r.newDateOfBirth ?? "",
+            contactNumber: r.newContactNumber,
+            email: r.newEmail,
+          }),
+        ] as const),
+    ),
+  );
+  const nameOf = (r: { patient: Parameters<typeof fullName>[0] | null; newFirstName: string | null; newMiddleName: string | null; newLastName: string | null }) =>
+    r.patient ? fullName(r.patient) : fullName({ firstName: r.newFirstName ?? "", middleName: r.newMiddleName, lastName: r.newLastName ?? "" });
 
   return (
     <div className="space-y-6">
@@ -69,19 +94,23 @@ export default async function DeskRequestsPage({ searchParams }: PageProps<"/des
               <li key={r.id} className="px-5 py-4">
                 <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
                   <div className="min-w-0">
-                    <Link
-                      href={`/desk/patients/${r.patient.id}`}
-                      className="text-sm font-medium hover:underline"
-                    >
-                      {fullName(r.patient)}
-                    </Link>
+                    {r.patient ? (
+                      <Link href={`/desk/patients/${r.patient.id}`} className="text-sm font-medium hover:underline">
+                        {fullName(r.patient)}
+                      </Link>
+                    ) : (
+                      <span className="text-sm font-medium">
+                        {nameOf(r)} <Badge tone="accent">New patient</Badge>
+                      </span>
+                    )}
                     <p className="text-sm text-ink-muted">
                       {r.doctor ? <span className="font-medium text-ink">For {r.doctor.fullName} · </span> : null}
                       {SERVICE_LABELS[r.service]} · {r.reason}
                     </p>
                     <p className="text-xs text-ink-faint">
                       Asked {formatDateTime(instantFromDb(r.createdAt))}
-                      {r.patient.contactNumber ? ` · ${r.patient.contactNumber}` : ""}
+                      {(r.patient?.contactNumber ?? r.newContactNumber) ? ` · ${r.patient?.contactNumber ?? r.newContactNumber}` : ""}
+                      {!r.patient && r.newDateOfBirth ? ` · born ${formatCalendarDate(calendarDateFromDb(r.newDateOfBirth))}` : ""}
                     </p>
                   </div>
                   <p className="tabular text-sm">
@@ -93,6 +122,24 @@ export default async function DeskRequestsPage({ searchParams }: PageProps<"/des
                 <div className="mt-3 flex flex-wrap items-end gap-2">
                   <form action={acceptRequest} className="flex flex-wrap items-end gap-2">
                     <input type="hidden" name="requestId" value={r.id} />
+                    {r.patient ? null : (
+                      <fieldset className="w-full space-y-1 text-sm">
+                        <legend className="mb-1 font-medium">Their record</legend>
+                        <label className="flex gap-2">
+                          <input type="radio" name="record" value="new" defaultChecked className="accent-[var(--accent)]" />
+                          Create a new record from their details
+                        </label>
+                        {(lookalikes.get(r.id) ?? []).map((m) => (
+                          <label key={m.id} className="flex gap-2">
+                            <input type="radio" name="record" value={m.id} className="accent-[var(--accent)]" />
+                            <span>
+                              Same person as <strong>{m.name}</strong> · born {m.dateOfBirth} · {m.householdName} household
+                              <span className="text-ink-faint"> (matched on {m.matchedOn.join(", ")})</span>
+                            </span>
+                          </label>
+                        ))}
+                      </fieldset>
+                    )}
                     <label className="text-sm">
                       <span className="mb-1 block font-medium">Time</span>
                       <input
@@ -132,7 +179,7 @@ export default async function DeskRequestsPage({ searchParams }: PageProps<"/des
               <li key={r.id} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-5 py-3">
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-sm font-medium">
-                    {fullName(r.patient)}
+                    {nameOf(r)}
                   </span>
                   <span className="block truncate text-xs text-ink-muted">
                     {SERVICE_LABELS[r.service]} ·{" "}

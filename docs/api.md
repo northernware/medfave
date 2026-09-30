@@ -159,6 +159,20 @@ the visit is now.
 | `GET /doctor/clinic-settings` | `{ clinic: { name, address, contactNumber, sharedCharts }, staff: [{ fullName, email, role }], invites: [{ email, role }] }` |
 | `PUT /doctor/clinic-settings` | `{ name, address, contactNumber }` and/or `{ sharedCharts }` → the same as GET. Details follow the web's rules (`422` with `fieldErrors`) |
 | `POST /doctor/staff` | `{ email, role: "SECRETARY" \| "DOCTOR" \| "ADMIN" }` → `201 { code, mail }`. Invites somebody, as Manage → Staff; `mail` is `sent`, `off` or `failed` and the code is shown either way |
+
+### Finding a doctor
+
+Any signed-in account. Only verified doctors appear.
+
+| | |
+| --- | --- |
+| `GET /discover?q=&specialty=` | `{ doctors: [{ id, fullName, specialty, clinic: { id, name, address, slug } }], specialties[] }` — doctors at clinics that list themselves |
+| `GET /discover/doctors/:id` | `{ doctor, booking, knownPatient }` — `booking` is `/patient/clinic`'s shape for this doctor (services, hours, window); `knownPatient` says the caller already has a record there |
+| `GET /discover/clinics/:slug` | `{ clinic, doctors[] }` — a clinic by its link, listed or not |
+| `POST /discover/requests` | `{ doctorId, service, preferredDate, preferredTime?, reason, details? }` → `201 { id, status, newPatient }`. Without a record at that clinic, `details` (`{ firstName, middleName?, lastName, dateOfBirth, sex, contactNumber, address, email? }`) is required and the request is a new patient's |
+| `GET /discover/requests` | `{ requests[] }` — every request this account sent, at any clinic |
+
+`GET /doctor/requests` marks a new patient's request with `newPatient: { dateOfBirth, contactNumber, email, lookalikes[] }` (`patient.id` is null). Accepting one needs `record`: `"new"` to create their record, or a look-alike's patient id to link it. `/doctor/clinic-settings` adds `listed` and `link`.
 | `GET /doctor/patients?q=&who=` | `{ patients[] }`, each `{ id, fullName, patientNumber, household, mine }`. The clinic's patients (for booking); `who=mine` keeps those this doctor cares for. Name or number match; at most 50; archived charts left out |
 | `GET /doctor/patients/:id` | `{ patient, caresFor, chart, visits, upcoming[], past[] }`. Details for any clinic patient. `chart` (`allergies`, `alerts`, `conditions`, `medications`, and the three `…Status` values) and `visits` (`{ id, status, visitDate, chiefComplaint, assessment, mine, author }`) only when `caresFor`, else `null`; in a clinic that shares charts every doctor cares for every patient. `upcoming` / `past` are this doctor's own appointments. Opening a chart is logged |
 | `GET /doctor/records?appointmentId=` | `{ record }`: the note this doctor already started for that appointment, or `null` |

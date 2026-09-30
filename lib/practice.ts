@@ -4,6 +4,7 @@ import { db, orm } from "@/src/prisma/db";
 import { instantToDb } from "@/lib/datetime";
 import { appUrl, sendVerificationOutcome, sendVerificationRequest } from "@/lib/email";
 import { newId } from "@/lib/ids";
+import { ensureSlug } from "@/lib/clinic-link";
 import { toFieldErrors, type FormState } from "@/lib/validation";
 
 /*
@@ -132,6 +133,7 @@ export async function createPractice(accountId: string, input: Record<string, un
     await t.ClinicBreak.create({ id: newId(), doctorId, weekday: null, ...DEFAULT_LUNCH });
   });
 
+  await ensureSlug(clinicId);
   await notifyAdmins({ doctorName: p.licenseName, clinicName: p.clinicName, licenseNumber: p.licenseNumber });
   return { ok: true, clinicId };
 }

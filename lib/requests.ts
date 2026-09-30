@@ -4,6 +4,7 @@ import { db, orm } from "@/src/prisma/db";
 import type { CurrentPatient } from "@/lib/auth";
 import { confirmByEmail, findClash, lockDoctorSchedule, type Actor } from "@/lib/booking";
 import { lastDoctorFor, pickDoctor } from "@/lib/clinic";
+import { allocatePatientNumber } from "@/lib/patient-number";
 import {
   calendarDateToDb,
   fromDateInputValue,
@@ -49,9 +50,24 @@ export type CreateRequestResult = { ok: true; id: string } | ({ ok: false } & Fo
  * The consequence is stated plainly to the patient: asking is not booking, and
  * the time can go to somebody else before the clinic answers.
  */
+/** A new patient's details, for a clinic where they have no record yet. */
+export type NewPatientDetails = {
+  firstName: string;
+  middleName: string | null;
+  lastName: string;
+  /** YYYY-MM-DD */
+  dateOfBirth: string;
+  sex: "MALE" | "FEMALE";
+  contactNumber: string;
+  address: string;
+  email: string | null;
+};
+
 export async function createAppointmentRequest(
-  patient: CurrentPatient,
+  /** Who is asking: their record at the clinic, or `patientId: null` with `newPatient`. */
+  patient: Pick<CurrentPatient, "clinicId" | "accountId"> & { patientId: string | null },
   input: RequestInput,
+  newPatient?: NewPatientDetails,
 ): Promise<CreateRequestResult> {
   const rawService = input.service;
   const preferredDate = input.preferredDate.trim();
@@ -75,17 +91,17 @@ export async function createAppointmentRequest(
   const { doctorId, doctors } = await pickDoctor(
     patient.clinicId,
     input.doctorId,
-    await lastDoctorFor(patient.clinicId, patient.patientId),
+    patient.patientId ? await lastDoctorFor(patient.clinicId, patient.patientId) : null,
   );
   if (doctors.length === 0) return { ok: false, message: "This clinic is not taking requests at the moment." };
   if (!doctorId) return { ok: false, message: "Choose which doctor you'd like to see.", fieldErrors: { doctorId: ["Required"] } };
 
   // The login outlives an archived chart on purpose, but a request would land in
   // the desk's queue for somebody the desk cannot find. Asked to ring instead.
-  const chart = await orm.Patient
-    .select("archivedAt")
-    .where((p) => p.id.eq(patient.patientId))
-    .first();
+  if (!patient.patientId && !newPatient) return { ok: false, message: "Tell the clinic who you are." };
+  const chart = patient.patientId
+    ? await orm.Patient.select("archivedAt").where((p) => p.id.eq(patient.patientId!)).first()
+    : null;
   if (chart?.archivedAt) {
     return { ok: false, message: "Your record at this clinic is closed. Please contact the clinic to book." };
   }
@@ -117,6 +133,18 @@ export async function createAppointmentRequest(
     id,
     clinicId: patient.clinicId,
     patientId: patient.patientId,
+    ...(newPatient
+      ? {
+          newFirstName: newPatient.firstName,
+          newMiddleName: newPatient.middleName,
+          newLastName: newPatient.lastName,
+          newDateOfBirth: calendarDateToDb(fromDateInputValue(newPatient.dateOfBirth)!),
+          newSex: newPatient.sex,
+          newContactNumber: newPatient.contactNumber,
+          newEmail: newPatient.email,
+          newAddress: newPatient.address,
+        }
+      : {}),
     doctorId,
     requestedById: patient.accountId,
     preferredDate: calendarDateToDb(day),
@@ -164,6 +192,8 @@ export type AcceptResult =
   | { ok: true; appointmentId: string }
   | { ok: false; reason: "not-found" }
   | { ok: false; reason: "needs-time" }
+  /** A new patient: say whether to link an existing record (`linkTo`) or create one. */
+  | { ok: false; reason: "needs-record" }
   | { ok: false; reason: "refused"; message: string };
 
 /**
@@ -175,11 +205,26 @@ export type AcceptResult =
  * so it can offer another time. `time` (HH:MM) overrides the patient's
  * preference, and is required when they asked for "any time".
  */
-export async function acceptAppointmentRequest(actor: Actor, requestId: string, time: string): Promise<AcceptResult> {
+/**
+ * For a **new patient's** request: `{ linkTo: patientId }` joins them to a
+ * record the clinic already has (a look-alike the desk recognised), or
+ * `{ create: true }` makes a new record from the details they gave.
+ */
+export type RecordChoice = { linkTo: string } | { create: true };
+
+export async function acceptAppointmentRequest(
+  actor: Actor,
+  requestId: string,
+  time: string,
+  record?: RecordChoice,
+): Promise<AcceptResult> {
   if (!requestId) return { ok: false, reason: "not-found" };
 
   const request = await orm.AppointmentRequest
-    .select("id", "status", "patientId", "doctorId", "preferredDate", "preferredTime", "service", "reason")
+    .select(
+      "id", "status", "patientId", "doctorId", "preferredDate", "preferredTime", "service", "reason", "requestedById",
+      "newFirstName", "newMiddleName", "newLastName", "newDateOfBirth", "newSex", "newContactNumber", "newEmail", "newAddress",
+    )
     .include("patient", (p) => p.select("reminderPreference"))
     .where((r) => r.id.eq(requestId))
     .where((r) => r.clinicId.eq(actor.clinicId))
@@ -187,6 +232,19 @@ export async function acceptAppointmentRequest(actor: Actor, requestId: string, 
   if (!request || request.status !== "PENDING") return { ok: false, reason: "not-found" };
   // The desk answers any request; a doctor only their own.
   if (actor.doctorId && request.doctorId !== actor.doctorId) return { ok: false, reason: "not-found" };
+
+  if (!request.patientId && !record) return { ok: false, reason: "needs-record" };
+  if (record && "linkTo" in record) {
+    const target = await orm.Patient
+      .select("id", "accountId")
+      .where((p) => p.id.eq(record.linkTo))
+      .where((p) => p.clinicId.eq(actor.clinicId))
+      .first();
+    if (!target) return { ok: false, reason: "refused", message: "That record isn't at this clinic." };
+    if (target.accountId && target.accountId !== request.requestedById) {
+      return { ok: false, reason: "refused", message: "That record already belongs to another login. Create a new record instead." };
+    }
+  }
 
   const chosen = time.trim() || request.preferredTime;
   if (!chosen || !/^([01]\d|2[0-3]):[0-5]\d$/.test(chosen)) return { ok: false, reason: "needs-time" };
@@ -206,10 +264,53 @@ export async function acceptAppointmentRequest(actor: Actor, requestId: string, 
     await lockDoctorSchedule(tx, request.doctorId);
     if (await findClash(tx, request.doctorId, at, duration)) return { taken: true as const, created: null };
 
+    // A new patient's record: the one chosen, or a new one from their details.
+    // Either way their login is linked to it, so the visit shows in their app.
+    const t = tx.orm.public;
+    let patientId = request.patientId;
+    if (!patientId) {
+      if (record && "linkTo" in record) {
+        patientId = record.linkTo;
+      } else {
+        const household = await t.Household.select("id").create({
+          id: newId(),
+          clinicId: actor.clinicId,
+          doctorId: request.doctorId,
+          name: request.newLastName ?? "New patient",
+          address: request.newAddress,
+          contactNumber: request.newContactNumber,
+          createdAt: now,
+          updatedAt: now,
+        } as Parameters<typeof t.Household.create>[0]);
+        const created = await t.Patient.select("id").create({
+          id: newId(),
+          clinicId: actor.clinicId,
+          householdId: household.id,
+          patientNumber: await allocatePatientNumber(tx),
+          firstName: request.newFirstName ?? "",
+          middleName: request.newMiddleName,
+          lastName: request.newLastName ?? "",
+          dateOfBirth: request.newDateOfBirth!,
+          sex: request.newSex!,
+          relationship: "HEAD",
+          contactNumber: request.newContactNumber,
+          email: request.newEmail,
+          allergyStatus: "UNKNOWN",
+          medicationStatus: "UNKNOWN",
+          conditionStatus: "UNKNOWN",
+          createdAt: now,
+          updatedAt: now,
+        } as Parameters<typeof t.Patient.create>[0]);
+        patientId = created.id;
+      }
+      await t.Patient.where((p) => p.id.eq(patientId!)).update({ accountId: request.requestedById, updatedAt: now });
+      await t.AppointmentRequest.where((r) => r.id.eq(requestId)).update({ patientId });
+    }
+
     const created = await tx.orm.public.Appointment.select("id").create({
       id: newId(),
       clinicId: actor.clinicId,
-      patientId: request.patientId,
+      patientId: patientId!,
       doctorId: request.doctorId,
       bookedById: actor.accountId,
       scheduledAt: instantToDb(at),
@@ -222,7 +323,7 @@ export async function acceptAppointmentRequest(actor: Actor, requestId: string, 
       priority: "ROUTINE",
       // The patient asked for this visit themselves, so their standing choice
       // about hearing from the clinic is the only signal there is.
-      reminderPreference: request.patient.reminderPreference,
+      reminderPreference: request.patient?.reminderPreference ?? "NONE",
       createdAt: now,
       updatedAt: now,
     });

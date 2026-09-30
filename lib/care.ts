@@ -46,7 +46,7 @@ export async function caredForIds(doctor: { id: string; clinicId: string }): Pro
     ...registered.map((p) => p.id),
     ...booked.map((a) => a.patientId),
     ...written.map((r) => r.patientId),
-    ...asked.map((r) => r.patientId),
+    ...asked.flatMap((r) => (r.patientId ? [r.patientId] : [])),
   ]);
 }
 

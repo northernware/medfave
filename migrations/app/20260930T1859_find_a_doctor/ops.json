@@ -1,0 +1,504 @@
+[
+  {
+    "id": "column.public.AppointmentRequest.newAddress",
+    "label": "Add column \"newAddress\" to \"AppointmentRequest\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "newAddress",
+        "table": "AppointmentRequest"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"newAddress\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AppointmentRequest",
+          "newAddress"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"newAddress\"",
+        "sql": "ALTER TABLE \"public\".\"AppointmentRequest\" ADD COLUMN \"newAddress\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"newAddress\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AppointmentRequest",
+          "newAddress"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.AppointmentRequest.newContactNumber",
+    "label": "Add column \"newContactNumber\" to \"AppointmentRequest\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "newContactNumber",
+        "table": "AppointmentRequest"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"newContactNumber\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AppointmentRequest",
+          "newContactNumber"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"newContactNumber\"",
+        "sql": "ALTER TABLE \"public\".\"AppointmentRequest\" ADD COLUMN \"newContactNumber\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"newContactNumber\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AppointmentRequest",
+          "newContactNumber"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.AppointmentRequest.newDateOfBirth",
+    "label": "Add column \"newDateOfBirth\" to \"AppointmentRequest\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "newDateOfBirth",
+        "table": "AppointmentRequest"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"newDateOfBirth\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AppointmentRequest",
+          "newDateOfBirth"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"newDateOfBirth\"",
+        "sql": "ALTER TABLE \"public\".\"AppointmentRequest\" ADD COLUMN \"newDateOfBirth\" date"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"newDateOfBirth\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AppointmentRequest",
+          "newDateOfBirth"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.AppointmentRequest.newEmail",
+    "label": "Add column \"newEmail\" to \"AppointmentRequest\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "newEmail",
+        "table": "AppointmentRequest"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"newEmail\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AppointmentRequest",
+          "newEmail"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"newEmail\"",
+        "sql": "ALTER TABLE \"public\".\"AppointmentRequest\" ADD COLUMN \"newEmail\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"newEmail\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AppointmentRequest",
+          "newEmail"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.AppointmentRequest.newFirstName",
+    "label": "Add column \"newFirstName\" to \"AppointmentRequest\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "newFirstName",
+        "table": "AppointmentRequest"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"newFirstName\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AppointmentRequest",
+          "newFirstName"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"newFirstName\"",
+        "sql": "ALTER TABLE \"public\".\"AppointmentRequest\" ADD COLUMN \"newFirstName\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"newFirstName\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AppointmentRequest",
+          "newFirstName"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.AppointmentRequest.newLastName",
+    "label": "Add column \"newLastName\" to \"AppointmentRequest\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "newLastName",
+        "table": "AppointmentRequest"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"newLastName\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AppointmentRequest",
+          "newLastName"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"newLastName\"",
+        "sql": "ALTER TABLE \"public\".\"AppointmentRequest\" ADD COLUMN \"newLastName\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"newLastName\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AppointmentRequest",
+          "newLastName"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.AppointmentRequest.newMiddleName",
+    "label": "Add column \"newMiddleName\" to \"AppointmentRequest\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "newMiddleName",
+        "table": "AppointmentRequest"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"newMiddleName\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AppointmentRequest",
+          "newMiddleName"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"newMiddleName\"",
+        "sql": "ALTER TABLE \"public\".\"AppointmentRequest\" ADD COLUMN \"newMiddleName\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"newMiddleName\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AppointmentRequest",
+          "newMiddleName"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.AppointmentRequest.newSex",
+    "label": "Add column \"newSex\" to \"AppointmentRequest\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "newSex",
+        "table": "AppointmentRequest"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"newSex\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AppointmentRequest",
+          "newSex"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"newSex\"",
+        "sql": "ALTER TABLE \"public\".\"AppointmentRequest\" ADD COLUMN \"newSex\" \"Sex\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"newSex\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AppointmentRequest",
+          "newSex"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Clinic.listed",
+    "label": "Add column \"listed\" to \"Clinic\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "listed",
+        "table": "Clinic"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"listed\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Clinic",
+          "listed"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"listed\"",
+        "sql": "ALTER TABLE \"public\".\"Clinic\" ADD COLUMN \"listed\" bool DEFAULT false NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"listed\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Clinic",
+          "listed"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Clinic.slug",
+    "label": "Add column \"slug\" to \"Clinic\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "slug",
+        "table": "Clinic"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"slug\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Clinic",
+          "slug"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"slug\"",
+        "sql": "ALTER TABLE \"public\".\"Clinic\" ADD COLUMN \"slug\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"slug\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Clinic",
+          "slug"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "alterNullability.dropNotNull.AppointmentRequest.patientId",
+    "label": "Drop NOT NULL on \"AppointmentRequest\".\"patientId\"",
+    "operationClass": "widening",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "patientId",
+        "table": "AppointmentRequest"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"patientId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AppointmentRequest",
+          "patientId"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "drop NOT NULL on \"patientId\"",
+        "sql": "ALTER TABLE \"public\".\"AppointmentRequest\" ALTER COLUMN \"patientId\" DROP NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"patientId\" is nullable",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3 AND \"is_nullable\" = $4)) AS \"result\"",
+        "params": [
+          "public",
+          "AppointmentRequest",
+          "patientId",
+          "YES"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.Clinic.Clinic_slug_key",
+    "label": "Create index \"Clinic_slug_key\" on \"Clinic\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "Clinic_slug_key",
+        "table": "Clinic"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"Clinic_slug_key\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Clinic_slug_key\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"Clinic_slug_key\"",
+        "sql": "CREATE UNIQUE INDEX \"Clinic_slug_key\" ON \"public\".\"Clinic\" (\"slug\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"Clinic_slug_key\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Clinic_slug_key\""
+        ]
+      }
+    ]
+  }
+]

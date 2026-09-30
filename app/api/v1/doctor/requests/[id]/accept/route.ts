@@ -12,7 +12,10 @@ export async function POST(request: Request, ctx: RouteContext<"/api/v1/doctor/r
   const { id } = await ctx.params;
   const body = (await readJson(request)) ?? {};
 
-  const result = await acceptAppointmentRequest(doctor, id, typeof body.time === "string" ? body.time : "");
+  // A new patient: "new" creates their record, a patient id links an existing one.
+  const choice = typeof body.record === "string" ? body.record : "";
+  const record = choice === "new" ? { create: true as const } : choice ? { linkTo: choice } : undefined;
+  const result = await acceptAppointmentRequest(doctor, id, typeof body.time === "string" ? body.time : "", record);
   if (result.ok) return Response.json({ id, status: "ACCEPTED", appointmentId: result.appointmentId });
 
   switch (result.reason) {
@@ -20,6 +23,8 @@ export async function POST(request: Request, ctx: RouteContext<"/api/v1/doctor/r
       return apiError(404, "No open request with that id.");
     case "needs-time":
       return apiError(422, "The patient asked for any time. Choose one.", { time: ["Choose a time"] });
+    case "needs-record":
+      return apiError(422, "A new patient: choose a record — record: \"new\" or an existing patient's id.", { record: ["Required"] });
     case "refused":
       return apiError(409, result.message, { time: [result.message] });
   }
