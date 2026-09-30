@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { AllergySeverity } from "@/lib/enums";
 import { requireDoctor, requireStaff } from "@/lib/auth";
+import { caresFor } from "@/lib/care";
 import { pickDoctor } from "@/lib/clinic";
 import { db, orm } from "@/src/prisma/db";
 import { calendarDateToDb, instantToDb } from "@/lib/datetime";
@@ -441,6 +442,10 @@ export async function updatePatient(
   if (owned.archivedAt) {
     return { message: "This chart is archived. It has to be restored before its details change." };
   }
+  // The chart is for doctors caring for this patient; the desk edits details only.
+  if (staff.doctorId && !(await caresFor({ id: staff.doctorId, clinicId: staff.clinicId }, patientId))) {
+    return { message: "Book this patient with you first; then you can edit their chart." };
+  }
 
   // A new household is somebody's: the doctor's own, or the one the desk
   // chose. An existing household already has its doctor.
@@ -579,6 +584,8 @@ export async function archivePatient(formData: FormData) {
   const patientId = String(formData.get("patientId") ?? "");
   const reason = String(formData.get("archiveReason") ?? "").trim().slice(0, 300);
   if (!patientId) return;
+  // Only a doctor caring for this patient decides about their chart.
+  if (!(await caresFor(doctor, patientId))) return;
 
   const patient = await orm.Patient
     .select("id", "householdId", "archivedAt")
@@ -635,6 +642,8 @@ export async function restorePatient(formData: FormData) {
   const doctor = await requireDoctor();
   const patientId = String(formData.get("patientId") ?? "");
   if (!patientId) return;
+  // Only a doctor caring for this patient decides about their chart.
+  if (!(await caresFor(doctor, patientId))) return;
 
   const patient = await orm.Patient
     .select("id", "householdId", "archivedAt")
@@ -681,6 +690,8 @@ export async function deletePatient(formData: FormData) {
   const doctor = await requireDoctor();
   const patientId = String(formData.get("patientId") ?? "");
   if (!patientId) return;
+  // Only a doctor caring for this patient decides about their chart.
+  if (!(await caresFor(doctor, patientId))) return;
 
   const found = await clinicalHistory(doctor.clinicId, patientId);
   if (!found) return;

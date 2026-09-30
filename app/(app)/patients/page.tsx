@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { requireDoctor } from "@/lib/auth";
+import { caredForIds, idsOrNone } from "@/lib/care";
 import { orm } from "@/src/prisma/db";
 import { calendarDateFromDb } from "@/lib/datetime";
 import { or } from "@prisma/orm-postgres/orm-client";
@@ -12,7 +13,11 @@ export const metadata: Metadata = { title: "Patients" };
 
 export default async function PatientsPage({ searchParams }: PageProps<"/patients">) {
   const doctor = await requireDoctor();
-  const { q, view } = await searchParams;
+  const { q, view, who } = await searchParams;
+  // "Mine" are the patients this doctor cares for; "everyone" is the whole
+  // clinic, whose details every doctor there may see (lib/care.ts).
+  const everyone = who === "all";
+  const mine = await caredForIds(doctor);
   const query = typeof q === "string" ? q.trim() : "";
   // Archived charts are out of the working list, not out of reach: they have a
   // list of their own, which is where they are restored from.
@@ -34,7 +39,8 @@ export default async function PatientsPage({ searchParams }: PageProps<"/patient
     )
     .include("allergies", (a) => a.select("id", "severity"))
     .include("household", (h) => h.select("id", "name"))
-    .where((p) => p.household.some((h) => h.doctorId.eq(doctor.id)))
+    .where((p) => p.clinicId.eq(doctor.clinicId))
+    .where((p) => (everyone ? p.clinicId.eq(doctor.clinicId) : p.id.in(idsOrNone(mine))))
     .where((p) => (archived ? p.archivedAt.isNotNull() : p.archivedAt.isNull()))
     .orderBy([(p) => p.lastName.asc(), (p) => p.firstName.asc()]);
 
@@ -54,11 +60,11 @@ export default async function PatientsPage({ searchParams }: PageProps<"/patient
 
   const [{ householdCount }, { archivedCount }] = await Promise.all([
     orm.Household
-      .where((h) => h.doctorId.eq(doctor.id))
+      .where((h) => h.clinicId.eq(doctor.clinicId))
       .where((h) => h.archivedAt.isNull())
       .aggregate((a) => ({ householdCount: a.count() })),
     orm.Patient
-      .where((p) => p.household.some((h) => h.doctorId.eq(doctor.id)))
+      .where((p) => p.id.in(idsOrNone(mine)))
       .where((p) => p.archivedAt.isNotNull())
       .aggregate((a) => ({ archivedCount: a.count() })),
   ]);
@@ -67,7 +73,7 @@ export default async function PatientsPage({ searchParams }: PageProps<"/patient
     <div className="space-y-6">
       <PageHeader
         title={archived ? "Archived patients" : "Patients"}
-        subtitle={`${patients.length} ${patients.length === 1 ? "person" : "people"}${query ? " matching" : archived ? " set aside" : " on your list"}`}
+        subtitle={`${patients.length} ${patients.length === 1 ? "person" : "people"}${query ? " matching" : archived ? " set aside" : everyone ? " at the clinic" : " on your list"}`}
         actions={
           householdCount > 0 ? (
             <Link href="/patients/new" className={buttonClass("secondary")}>
@@ -87,9 +93,27 @@ export default async function PatientsPage({ searchParams }: PageProps<"/patient
             action="/patients"
             placeholder="Search by name, number or household"
             defaultValue={query}
-            keep={archived ? { view: "archived" } : undefined}
+            keep={archived ? { view: "archived" } : everyone ? { who: "all" } : undefined}
           />
         </div>
+        {archived ? null : (
+          <div className="flex rounded-full border border-border-strong p-0.5 text-sm" role="group" aria-label="Whose patients">
+            <Link
+              href={query ? `/patients?q=${encodeURIComponent(query)}` : "/patients"}
+              aria-current={everyone ? undefined : "true"}
+              className={`rounded-full px-3 py-1 ${everyone ? "text-ink-muted hover:text-ink" : "bg-accent-tint font-semibold text-accent-ink"}`}
+            >
+              Mine
+            </Link>
+            <Link
+              href={`/patients?who=all${query ? `&q=${encodeURIComponent(query)}` : ""}`}
+              aria-current={everyone ? "true" : undefined}
+              className={`rounded-full px-3 py-1 ${everyone ? "bg-accent-tint font-semibold text-accent-ink" : "text-ink-muted hover:text-ink"}`}
+            >
+              Everyone at the clinic
+            </Link>
+          </div>
+        )}
         {archived ? (
           <Link href="/patients" className="text-sm font-medium text-accent-ink hover:underline">
             Back to the working list
@@ -139,7 +163,9 @@ export default async function PatientsPage({ searchParams }: PageProps<"/patient
                   <span className="min-w-0 flex-1">
                     <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                       <span className="truncate text-sm font-medium">{fullName(patient)}</span>
-                      {patient.allergies.length > 0 ? (
+                      {!mine.has(patient.id) ? (
+                        <Badge tone="neutral">Not yet your patient</Badge>
+                      ) : patient.allergies.length > 0 ? (
                         <Badge tone={patient.allergies.some((a) => a.severity === "SEVERE") ? "danger" : "warn"}>
                           {patient.allergies.length} {patient.allergies.length === 1 ? "allergy" : "allergies"}
                         </Badge>

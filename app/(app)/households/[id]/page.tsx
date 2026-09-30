@@ -10,9 +10,11 @@ import { calendarDateFromDb, formatCalendarDate } from "@/lib/datetime";
 import { ageFrom, fullName, RELATIONSHIP_LABELS, SEX_LABELS } from "@/lib/domain";
 import { AppointmentList } from "@/components/appointment-list";
 import { DangerZone } from "@/components/danger-zone";
+import { caredForIds } from "@/lib/care";
 import { Badge, buttonClass, Card, CardHeader, Detail, EmptyState, PageHeader, Prose } from "@/components/ui";
 
-async function loadHousehold(doctorId: string, householdId: string) {
+/** A household of the clinic: households are the clinic's, like its patients. */
+async function loadHousehold(doctor: { id: string; clinicId: string }, householdId: string) {
   return orm.Household
     .include("patients", (p) =>
       p
@@ -29,11 +31,14 @@ async function loadHousehold(doctorId: string, householdId: string) {
         )
         .include("allergies", (a) => a.select("id", "severity"))
         // Archived visits are out of the chart, so they are out of its count.
-        .include("medicalRecords", (r) => r.where((x) => x.archivedAt.isNull()).count())
+        // This doctor's own visits only: notes are their author's.
+        .include("medicalRecords", (r) =>
+          r.where((x) => x.archivedAt.isNull()).where((x) => x.doctorId.eq(doctor.id)).count(),
+        )
         .orderBy((x) => x.dateOfBirth.asc()),
     )
     .where((h) => h.id.eq(householdId))
-    .where((h) => h.doctorId.eq(doctorId))
+    .where((h) => h.clinicId.eq(doctor.clinicId))
     .first();
 }
 
@@ -43,7 +48,7 @@ export async function generateMetadata({ params }: PageProps<"/households/[id]">
   const household = await orm.Household
     .select("name")
     .where((h) => h.id.eq(id))
-    .where((h) => h.doctorId.eq(doctor.id))
+    .where((h) => h.clinicId.eq(doctor.clinicId))
     .first();
   return { title: household ? `${household.name} household` : "Household" };
 }
@@ -56,8 +61,10 @@ export default async function HouseholdPage({
   const { id } = await params;
   const { blocked } = await searchParams;
 
-  const household = await loadHousehold(doctor.id, id);
+  const household = await loadHousehold(doctor, id);
   if (!household) notFound();
+  // Allergy badges are chart data: shown only for members this doctor cares for.
+  const mine = await caredForIds(doctor);
 
   // Archived members stay listed here, apart from the rest: this is where
   // somebody looking for them would come.
@@ -198,7 +205,7 @@ export default async function HouseholdPage({
                   <span className="min-w-0 flex-1">
                     <span className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
                       <span className="truncate font-medium">{fullName(patient)}</span>
-                      {patient.allergies.length > 0 ? (
+                      {!mine.has(patient.id) ? null : patient.allergies.length > 0 ? (
                         <Badge tone={patient.allergies.some((a) => a.severity === "SEVERE") ? "danger" : "warn"}>
                           {patient.allergies.length} {patient.allergies.length === 1 ? "allergy" : "allergies"}
                         </Badge>

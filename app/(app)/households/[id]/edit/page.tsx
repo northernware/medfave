@@ -21,7 +21,7 @@ export default async function EditHouseholdPage({ params }: PageProps<"/househol
         .orderBy((x) => x.firstName.asc()),
     )
     .where((h) => h.id.eq(id))
-    .where((h) => h.doctorId.eq(doctor.id))
+    .where((h) => h.clinicId.eq(doctor.clinicId))
     .first();
   if (!household) notFound();
 

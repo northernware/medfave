@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { updatePatient } from "@/app/actions/patients";
 import { requireDoctor } from "@/lib/auth";
+import { caresFor } from "@/lib/care";
 import { orm } from "@/src/prisma/db";
 import { calendarDateFromDb } from "@/lib/datetime";
 import { toDateInputValue } from "@/lib/datetime";
@@ -15,6 +16,8 @@ export const metadata: Metadata = { title: "Edit patient" };
 export default async function EditPatientPage({ params }: PageProps<"/patients/[id]/edit">) {
   const doctor = await requireDoctor();
   const { id } = await params;
+  // Only doctors caring for this patient edit their chart (lib/care.ts).
+  if (!(await caresFor(doctor, id))) notFound();
 
   const patient = await orm.Patient
     .include("allergies", (a) =>
@@ -32,13 +35,13 @@ export default async function EditPatientPage({ params }: PageProps<"/patients/[
       a.select("id", "label", "notes").orderBy((x) => x.createdAt.asc()),
     )
     .where((p) => p.id.eq(id))
-    .where((p) => p.household.some((h) => h.doctorId.eq(doctor.id)))
+    .where((p) => p.clinicId.eq(doctor.clinicId))
     .first();
   if (!patient) notFound();
 
   const households = await orm.Household
     .select("id", "name")
-    .where((h) => h.doctorId.eq(doctor.id))
+    .where((h) => h.clinicId.eq(doctor.clinicId))
     .where((h) => h.archivedAt.isNull())
     .orderBy((h) => h.name.asc())
     .all();

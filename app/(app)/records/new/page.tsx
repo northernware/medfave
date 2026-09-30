@@ -26,7 +26,7 @@ export default async function NewRecordPage({ searchParams }: PageProps<"/record
     .include("alerts", (x) => x.select("id", "label", "notes").orderBy((y) => y.label.asc()))
     .include("household", (h) => h.select("id", "name"))
     .where((p) => p.id.eq(patientId))
-    .where((p) => p.household.some((h) => h.doctorId.eq(doctor.id)))
+    .where((p) => p.clinicId.eq(doctor.clinicId))
     .first();
   if (!patient) notFound();
   // Saving would be refused; better not to let a note be written first.

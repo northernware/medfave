@@ -12,6 +12,7 @@ import { and, or } from "@prisma/orm-postgres/orm-client";
 import { fullName, SERVICE_LABELS } from "./domain";
 import type { DuplicateMatch } from "./validation";
 import { DEFAULT_SCHEDULE, type Schedule } from "./availability";
+import { caredForIds, idsOrNone } from "./care";
 import { addDays, minuteOfDay, occupiesSlot } from "./scheduling";
 import { earliestBookableDay, latestBookableDay } from "./availability";
 import type { AppointmentListItem } from "@/components/appointment-list";
@@ -52,11 +53,16 @@ export function toAppointmentListItem(
 }
 
 /** Every patient this doctor can book, ready for a grouped <select>. */
+/** The patients a doctor cares for (lib/care.ts), for pickers of clinical work. */
 export async function patientOptions(doctorId: string): Promise<PatientOption[]> {
+  const doctor = await orm.Doctor.select("id", "clinicId").where((d) => d.id.eq(doctorId)).first();
+  if (!doctor?.clinicId) return [];
+  const mine = await caredForIds({ id: doctor.id, clinicId: doctor.clinicId });
   const patients = await orm.Patient
     .select("id", "firstName", "middleName", "lastName")
     .include("household", (h) => h.select("name"))
-    .where((p) => p.household.some((h) => h.doctorId.eq(doctorId)))
+    .where((p) => p.clinicId.eq(doctor.clinicId!))
+    .where((p) => p.id.in(idsOrNone(mine)))
     .where((p) => p.archivedAt.isNull())
     .all();
 
@@ -71,7 +77,12 @@ export async function patientOptions(doctorId: string): Promise<PatientOption[]>
     );
 }
 
-/** Every current patient of a clinic, for the desk: it books for all its doctors. */
+async function doctorClinic(doctorId: string) {
+  const d = await orm.Doctor.select("clinicId").where((x) => x.id.eq(doctorId)).first();
+  return d?.clinicId ?? "";
+}
+
+/** Every current patient of a clinic, for booking: any of them, with any of its doctors. */
 export async function clinicPatientOptions(clinicId: string): Promise<PatientOption[]> {
   const patients = await orm.Patient
     .select("id", "firstName", "middleName", "lastName")
@@ -130,7 +141,8 @@ export async function bookingFormData(
   }
 
   const [patients, booked, previous] = await Promise.all([
-    options.clinicId ? clinicPatientOptions(options.clinicId) : patientOptions(doctorId),
+    // Any of the clinic's patients can be booked with any of its doctors.
+    clinicPatientOptions(options.clinicId ?? (await doctorClinic(doctorId))),
     bookedQuery.all(),
     previousQuery.all(),
   ]);
