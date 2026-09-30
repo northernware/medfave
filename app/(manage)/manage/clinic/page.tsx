@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { setSharedCharts, updateClinicDetails } from "@/app/actions/clinic";
+import { setListed, setSharedCharts, updateClinicDetails } from "@/app/actions/clinic";
+import { ensureSlug } from "@/lib/clinic-link";
+import { appUrl } from "@/lib/email";
 import { sharesCharts } from "@/lib/care";
 import { orm } from "@/src/prisma/db";
 import { requireClinicManager } from "@/lib/auth";
@@ -20,6 +22,10 @@ export default async function ClinicDetailsPage({ searchParams }: PageProps<"/ma
   const manager = await requireClinicManager();
   const { saved } = await searchParams;
   const clinic = await clinicLetterhead(manager.clinicId);
+  const [link, listing] = await Promise.all([
+    ensureSlug(manager.clinicId).then((slug) => appUrl(`/c/${slug}`)),
+    orm.Clinic.select("listed").where((c) => c.id.eq(manager.clinicId)).first(),
+  ]);
   const [shared, doctorCount] = await Promise.all([
     sharesCharts(manager.clinicId),
     orm.Doctor.where((d) => d.clinicId.eq(manager.clinicId)).aggregate((a) => ({ n: a.count() })),
@@ -40,7 +46,11 @@ export default async function ClinicDetailsPage({ searchParams }: PageProps<"/ma
       {saved ? (
         <div className="rounded-lg border border-ok/40 bg-ok-tint px-4 py-3 text-sm">
           <p className="font-medium text-ok-ink">
-            {saved === "sharing"
+            {saved === "listing"
+              ? listing?.listed
+                ? "Your clinic now appears in Find a doctor."
+                : "Your clinic is no longer listed. Its link still works."
+              : saved === "sharing"
               ? shared
                 ? "Charts are now shared between this clinic's doctors."
                 : "Charts are private again: each doctor reads only their own patients' charts."
@@ -48,6 +58,30 @@ export default async function ClinicDetailsPage({ searchParams }: PageProps<"/ma
           </p>
         </div>
       ) : null}
+
+      <Card>
+        <CardHeader title="Patients finding you" subtitle="How new patients reach your clinic in the Medfave app." />
+        <div className="space-y-4 px-5 py-4 text-sm">
+          <div>
+            <p className="font-medium">Your clinic&rsquo;s link</p>
+            <p className="mt-1 break-all rounded-md bg-surface-muted px-3 py-2 font-mono text-xs">{link}</p>
+            <p className="mt-1 text-ink-muted">Share it on Facebook or print it at the desk. It works whether or not you&rsquo;re listed.</p>
+          </div>
+          <form action={setListed} className="space-y-3">
+            <label className="flex gap-3">
+              <input type="checkbox" name="listed" defaultChecked={listing?.listed ?? false} className="mt-0.5 size-4 accent-accent" />
+              <span>
+                <span className="block font-medium">List us in &ldquo;Find a doctor&rdquo;</span>
+                <span className="block text-ink-muted">
+                  Patients can find your verified doctors by name, specialty or place, and send a request. You still
+                  confirm every visit.
+                </span>
+              </span>
+            </label>
+            <button className={buttonClass("secondary")}>Save listing</button>
+          </form>
+        </div>
+      </Card>
 
       {doctorCount.n > 1 ? (
         <Card>

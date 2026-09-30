@@ -1085,8 +1085,67 @@
                   "kind": "scalar"
                 }
               },
+              "newAddress": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "newContactNumber": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "newDateOfBirth": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/date-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "newEmail": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "newFirstName": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "newLastName": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "newMiddleName": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "newSex": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/enum@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "typeName": "Sex"
+                  }
+                }
+              },
               "patientId": {
-                "nullable": false,
+                "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -1268,6 +1327,30 @@
                 },
                 "id": {
                   "column": "id"
+                },
+                "newAddress": {
+                  "column": "newAddress"
+                },
+                "newContactNumber": {
+                  "column": "newContactNumber"
+                },
+                "newDateOfBirth": {
+                  "column": "newDateOfBirth"
+                },
+                "newEmail": {
+                  "column": "newEmail"
+                },
+                "newFirstName": {
+                  "column": "newFirstName"
+                },
+                "newLastName": {
+                  "column": "newLastName"
+                },
+                "newMiddleName": {
+                  "column": "newMiddleName"
+                },
+                "newSex": {
+                  "column": "newSex"
                 },
                 "patientId": {
                   "column": "patientId"
@@ -1451,6 +1534,13 @@
                   "kind": "scalar"
                 }
               },
+              "listed": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
               "name": {
                 "nullable": false,
                 "type": {
@@ -1462,6 +1552,13 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
+              "slug": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
                   "kind": "scalar"
                 }
               },
@@ -1672,11 +1769,17 @@
                 "id": {
                   "column": "id"
                 },
+                "listed": {
+                  "column": "listed"
+                },
                 "name": {
                   "column": "name"
                 },
                 "sharedCharts": {
                   "column": "sharedCharts"
+                },
+                "slug": {
+                  "column": "slug"
                 },
                 "updatedAt": {
                   "column": "updatedAt"
@@ -6347,10 +6450,59 @@
                   "nativeType": "text",
                   "nullable": false
                 },
+                "newAddress": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "newContactNumber": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "newDateOfBirth": {
+                  "codecId": "pg/date-string@1",
+                  "nativeType": "date",
+                  "nullable": true
+                },
+                "newEmail": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "newFirstName": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "newLastName": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "newMiddleName": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "newSex": {
+                  "codecId": "pg/enum@1",
+                  "nativeType": "Sex",
+                  "nullable": true,
+                  "typeParams": {
+                    "typeName": "Sex"
+                  },
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "Sex",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
                 "patientId": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
-                  "nullable": false
+                  "nullable": true
                 },
                 "preferredDate": {
                   "codecId": "pg/date-string@1",
@@ -6752,6 +6904,15 @@
                   "nativeType": "text",
                   "nullable": false
                 },
+                "listed": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
                 "name": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -6766,6 +6927,11 @@
                   "nativeType": "bool",
                   "nullable": false
                 },
+                "slug": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "updatedAt": {
                   "codecId": "pg/timestamp-string@1",
                   "nativeType": "timestamp",
@@ -6776,7 +6942,15 @@
                 }
               },
               "foreignKeys": [],
-              "indexes": [],
+              "indexes": [
+                {
+                  "columns": [
+                    "slug"
+                  ],
+                  "name": "Clinic_slug_key",
+                  "unique": true
+                }
+              ],
               "primaryKey": {
                 "columns": [
                   "id"
@@ -10143,7 +10317,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "a1691519be19b68ea63b9337f39f9be2e78e4c31871f55d91217d68691f34d3e"
+    "storageHash": "597e8d38eb71538e04e60a7a3338056cc9cd81221d73b9fa04dd8b60accb6162"
   },
   "capabilities": {
     "postgres": {

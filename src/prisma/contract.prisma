@@ -600,6 +600,11 @@ namespace public {
     /// notes. Off: a doctor reads only the charts of patients they care for,
     /// and only their own notes. Every chart opened is logged either way.
     sharedCharts  Boolean @default(false)
+    /// The clinic's link name: medfave…/c/<slug>, for its page and QR code.
+    slug          String?
+    /// Whether the clinic appears in the app's "Find a doctor". Opt-in; a
+    /// clinic that isn't listed is still reachable by its link.
+    listed        Boolean @default(false)
     createdAt     TimestampString(3) @default(now())
     updatedAt     TimestampString(3)
     members       ClinicMember[]
@@ -614,6 +619,8 @@ namespace public {
     appointmentRequests AppointmentRequest[]
     patients      Patient[]
     openingHours  ClinicOpeningHours[]
+
+    @@index([slug], map: "Clinic_slug_key", unique: true)
 
     @@map("Clinic")
   }
@@ -765,9 +772,20 @@ namespace public {
   model AppointmentRequest {
     id                String @id(map: "AppointmentRequest_pkey")
     clinicId          String
-    patientId         String
+    /// Their record at this clinic. Null for a **new patient**, whose details
+    /// are below; accepting links or creates the record.
+    patientId         String?
     doctorId          String
     requestedById     String
+    /// A new patient's details, as they gave them. Unused when `patientId` is set.
+    newFirstName      String?
+    newMiddleName     String?
+    newLastName       String?
+    newDateOfBirth    DateString?
+    newSex            pg.enum(Sex)?
+    newContactNumber  String?
+    newEmail          String?
+    newAddress        String?
     preferredDate     DateString
     /// "HH:MM" in clinic time, or null for "any time that day".
     preferredTime     String?
@@ -782,7 +800,7 @@ namespace public {
     createdAt         TimestampString(3) @default(now())
     updatedAt         TimestampString(3)
     clinic            Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "AppointmentRequest_clinicId_fkey", index: false)
-    patient           Patient @relation(fields: [patientId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "AppointmentRequest_patientId_fkey")
+    patient           Patient? @relation(fields: [patientId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "AppointmentRequest_patientId_fkey")
     doctor            Doctor  @relation(fields: [doctorId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "AppointmentRequest_doctorId_fkey")
     requestedBy       Account @relation(name: "AppointmentRequest_requestedById_fkey", fields: [requestedById], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "AppointmentRequest_requestedById_fkey")
     decidedBy         Account? @relation(name: "AppointmentRequest_decidedById_fkey", fields: [decidedById], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "AppointmentRequest_decidedById_fkey")

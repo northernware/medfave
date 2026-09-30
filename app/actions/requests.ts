@@ -50,10 +50,15 @@ export async function declineRequest(formData: FormData) {
 export async function acceptRequest(formData: FormData) {
   const staff = await requireStaff();
   const requestId = String(formData.get("requestId") ?? "");
-  const result = await acceptAppointmentRequest(staff, requestId, String(formData.get("time") ?? ""));
+  // A new patient: "new" creates their record, a patient id links an existing one.
+  const choice = String(formData.get("record") ?? "");
+  const record = choice === "new" ? { create: true as const } : choice ? { linkTo: choice } : undefined;
+  const result = await acceptAppointmentRequest(staff, requestId, String(formData.get("time") ?? ""), record);
   if (result.ok) redirect(`/desk/appointments/${result.appointmentId}`);
 
   switch (result.reason) {
+    case "needs-record":
+      redirect(`/desk/requests?refused=${encodeURIComponent("Choose whether this is a new record or one you already have.")}&id=${requestId}`);
     case "needs-time":
       redirect(`/desk/requests?needs=time&id=${requestId}`);
     case "refused":
