@@ -73,7 +73,25 @@ export async function acceptStaffInvite(
   // An invitation names the address it was sent to; it is not a blank pass for
   // whoever holds the code to sign up under any address they like.
   const email = invite.email;
-  const existing = await orm.Account.select("id").where((a) => a.email.eq(email)).first();
+  const existing = await orm.Account
+    .select("id", "fullName")
+    .include("doctorProfile", (d) => d.select("id"))
+    .include("memberships", (m) => m.select("id", "clinicId"))
+    .where((a) => a.email.eq(email))
+    .first();
+
+  // One clinic per doctor for now (being at several is phase 6), so a doctor
+  // invitation can't go to somebody who already works at another clinic.
+  if (
+    invite.role === "DOCTOR" &&
+    existing &&
+    (existing.doctorProfile || existing.memberships.some((m) => m.clinicId !== invite.clinicId))
+  ) {
+    return {
+      message:
+        "This email already works at a clinic on Medfave. Working at more than one clinic isn't supported yet — ask the clinic to invite a different email.",
+    };
+  }
 
   const now = instantToDb(new Date());
   const accountId = await db.transaction(async (tx) => {
@@ -109,6 +127,20 @@ export async function acceptStaffInvite(
       });
     }
 
+    // An invited doctor joins pending, like any doctor: they add their PRC
+    // license next, and a Medfave admin checks it before they see patients.
+    if (invite.role === "DOCTOR") {
+      await t.Doctor.create({
+        id: newId(),
+        clinicId: invite.clinicId,
+        accountId: id,
+        fullName: existing?.fullName ?? fullName,
+        verificationStatus: "PENDING",
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+
     await t.StaffInvite.where((i) => i.id.eq(invite.id)).update({
       acceptedAt: now,
       acceptedById: id,
@@ -119,7 +151,8 @@ export async function acceptStaffInvite(
 
   await createSession(accountId);
   // Straight to the door that belongs to the role the invitation granted.
-  redirect(invite.role === "SECRETARY" ? "/desk" : invite.role === "ADMIN" ? "/manage" : "/");
+  // An invited doctor goes to Manage, where they add their license.
+  redirect(invite.role === "SECRETARY" ? "/desk" : "/manage");
 }
 
 /** Reads an invitation for the acceptance page, without spending it. */

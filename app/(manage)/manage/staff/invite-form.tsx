@@ -33,6 +33,7 @@ export function InviteStaffForm({
       <Field label="Role" htmlFor="role" error={state.fieldErrors?.role}>
         <Select id="role" name="role" defaultValue="SECRETARY">
           <option value="SECRETARY">Secretary</option>
+          <option value="DOCTOR">Doctor</option>
           <option value="ADMIN">Administrator</option>
         </Select>
       </Field>

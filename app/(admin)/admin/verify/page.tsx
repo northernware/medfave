@@ -18,6 +18,8 @@ export default async function VerifyPage() {
       .include("account", (a) => a.select("email", "fullName", "emailVerifiedAt"))
       .include("clinic", (c) => c.select("name", "address", "contactNumber"))
       .where((d) => d.verificationStatus.eq("PENDING"))
+      // An invited doctor who hasn't sent their license yet has nothing to check.
+      .where((d) => d.verificationSubmittedAt.isNotNull())
       .orderBy((d) => d.verificationSubmittedAt.asc())
       .all(),
     orm.Doctor

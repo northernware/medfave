@@ -130,6 +130,8 @@ export function homeFor(viewer: Viewer) {
   // A clinic waiting on its license check: its doctor sets it up from Manage,
   // where the check's status is. Nobody else can be a member yet.
   if (viewer.staff && !viewer.clinicOpen) return viewer.staff.role === "SECRETARY" ? "/welcome" : "/manage";
+  // A doctor who joined an open clinic but isn't verified yet: their license step.
+  if (viewer.staff?.role === "DOCTOR" && viewer.verification?.status !== "VERIFIED") return "/manage";
   if (viewer.staff?.role === "SECRETARY") return "/desk";
   // An administrator runs the clinic without practising in it, so the clinical
   // section is not theirs. Sending them to "/dashboard" was an infinite redirect: the
@@ -218,8 +220,10 @@ export type CurrentStaff = {
  */
 export async function requireStaff(): Promise<CurrentStaff> {
   const viewer = await requireViewer();
-  // The desk's work is patients and bookings: closed until the clinic is verified.
+  // The desk's work is patients and bookings: closed until the clinic is
+  // verified, and to a doctor until they are.
   if (!viewer.staff || !viewer.clinicOpen) redirect(homeFor(viewer));
+  if (viewer.staff.role === "DOCTOR" && viewer.verification?.status !== "VERIFIED") redirect("/manage");
 
   return {
     accountId: viewer.accountId,
