@@ -29,8 +29,10 @@ export async function GET(request: Request) {
       .all(),
   ]);
   if (!clinic) return apiError(404, "No clinic.");
+  const slug = await ensureSlug(doctor.clinicId);
   return Response.json({
-    clinic: { ...clinic, link: appUrl(`/c/${await ensureSlug(doctor.clinicId)}`) },
+    // `slug` lets the app load the QR (`/c/<slug>/qr`) from the server it talks to.
+    clinic: { ...clinic, slug, link: appUrl(`/c/${slug}`) },
     staff: members.map((m) => ({ fullName: m.account.fullName, email: m.account.email, role: m.role })),
     invites: invites.filter((i) => !hasPassed(i.expiresAt)).map((i) => ({ email: i.email, role: i.role })),
   });

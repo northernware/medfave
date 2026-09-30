@@ -22,8 +22,9 @@ export default async function ClinicDetailsPage({ searchParams }: PageProps<"/ma
   const manager = await requireClinicManager();
   const { saved } = await searchParams;
   const clinic = await clinicLetterhead(manager.clinicId);
-  const [link, listing] = await Promise.all([
-    ensureSlug(manager.clinicId).then((slug) => appUrl(`/c/${slug}`)),
+  const slug = await ensureSlug(manager.clinicId);
+  const link = appUrl(`/c/${slug}`);
+  const [listing] = await Promise.all([
     orm.Clinic.select("listed").where((c) => c.id.eq(manager.clinicId)).first(),
   ]);
   const [shared, doctorCount] = await Promise.all([
@@ -60,27 +61,40 @@ export default async function ClinicDetailsPage({ searchParams }: PageProps<"/ma
       ) : null}
 
       <Card>
-        <CardHeader title="Patients finding you" subtitle="How new patients reach your clinic in the Medfave app." />
-        <div className="space-y-4 px-5 py-4 text-sm">
-          <div>
-            <p className="font-medium">Your clinic&rsquo;s link</p>
-            <p className="mt-1 break-all rounded-md bg-surface-muted px-3 py-2 font-mono text-xs">{link}</p>
-            <p className="mt-1 text-ink-muted">Share it on Facebook or print it at the desk. It works whether or not you&rsquo;re listed.</p>
+        <CardHeader title="Invite patients" subtitle="Your clinic's QR code and link. Patients scan it to ask for a visit." />
+        <div className="grid gap-5 px-5 py-4 text-sm sm:grid-cols-[auto_1fr] sm:items-center">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={`/c/${slug}/qr`} alt="Your clinic's QR code" className="size-40 rounded-lg border border-border bg-white p-2" />
+          <div className="space-y-3">
+            <p className="break-all rounded-md bg-surface-muted px-3 py-2 font-mono text-xs">{link}</p>
+            <p className="text-ink-muted">Post it on Facebook, send it in Messenger, or print it for the door and the desk.</p>
+            <div className="flex flex-wrap gap-2">
+              <a href={`/c/${slug}/poster`} target="_blank" className={buttonClass("primary")}>
+                Print poster
+              </a>
+              <a href={`/c/${slug}/qr`} download={`${slug}-qr.png`} className={buttonClass("secondary")}>
+                Download QR
+              </a>
+            </div>
           </div>
-          <form action={setListed} className="space-y-3">
-            <label className="flex gap-3">
-              <input type="checkbox" name="listed" defaultChecked={listing?.listed ?? false} className="mt-0.5 size-4 accent-accent" />
-              <span>
-                <span className="block font-medium">List us in &ldquo;Find a doctor&rdquo;</span>
-                <span className="block text-ink-muted">
-                  Patients can find your verified doctors by name, specialty or place, and send a request. You still
-                  confirm every visit.
-                </span>
-              </span>
-            </label>
-            <button className={buttonClass("secondary")}>Save listing</button>
-          </form>
         </div>
+      </Card>
+
+      <Card>
+        <CardHeader title="Find a doctor" subtitle="Whether patients can find your clinic in the Medfave app's search." />
+        <form action={setListed} className="space-y-3 px-5 py-4 text-sm">
+          <label className="flex gap-3">
+            <input type="checkbox" name="listed" defaultChecked={listing?.listed ?? false} className="mt-0.5 size-4 accent-accent" />
+            <span>
+              <span className="block font-medium">List us in &ldquo;Find a doctor&rdquo;</span>
+              <span className="block text-ink-muted">
+                Patients can find your verified doctors by name, specialty or town and send a request. You still
+                confirm every visit. Your link and QR work either way.
+              </span>
+            </span>
+          </label>
+          <button className={buttonClass("secondary")}>Save listing</button>
+        </form>
       </Card>
 
       {doctorCount.n > 1 ? (
