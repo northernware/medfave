@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { HeartMark } from "@/components/brand";
+import { Lockup } from "@/components/brand";
 import { clinicBySlug } from "@/lib/discovery";
 import { appUrl } from "@/lib/email";
 import { PrintButton } from "./print-button";
@@ -30,9 +30,8 @@ export default async function PosterPage({ params }: PageProps<"/c/[slug]/poster
       style={{ "--logo-heart": "#E91E83", "--logo-word": "#32132C" } as React.CSSProperties}
     >
       <div className="mx-auto flex max-w-md flex-col items-center gap-5 rounded-3xl border-2 border-[#E91E83] p-8 text-center print:border-0">
-        <div className="flex items-center gap-2 text-lg font-semibold">
-          <HeartMark className="size-7" /> Medfave
-        </div>
+        {/* The approved lockup, never the name retyped. */}
+        <Lockup className="h-9 w-auto" />
         <h1 className="text-3xl leading-tight font-semibold">{clinic.name}</h1>
         {clinic.address ? <p className="text-sm">{clinic.address}</p> : null}
         {/* eslint-disable-next-line @next/next/no-img-element */}
