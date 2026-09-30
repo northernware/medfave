@@ -19,9 +19,11 @@ const WEEK_ORDER = [1, 2, 3, 4, 5, 6, 0];
 export function OpeningHoursForm({
   action,
   hours,
+  submitLabel = "Save opening hours",
 }: {
   action: Action;
   hours: { weekday: number; openMinute: number; closeMinute: number }[];
+  submitLabel?: string;
 }) {
   const [state, formAction] = useActionState(action, EMPTY_FORM_STATE);
   const err = state.fieldErrors;
@@ -73,7 +75,7 @@ export function OpeningHoursForm({
       <p className="text-xs text-ink-muted">
         Untick a day to close on it every week. For a holiday or leave, add a closure instead.
       </p>
-      <SubmitButton>Save opening hours</SubmitButton>
+      <SubmitButton>{submitLabel}</SubmitButton>
     </form>
   );
 }

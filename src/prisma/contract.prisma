@@ -417,6 +417,23 @@ namespace public {
     @@map("ClinicHours")
   }
 
+  /// When the clinic itself is open, one row per open weekday. Each doctor's
+  /// own hours (`ClinicHours`) must fall inside these. A clinic with no rows
+  /// sets no limit: clinics from before this existed keep working unchanged.
+  model ClinicOpeningHours {
+    id          String @id(map: "ClinicOpeningHours_pkey")
+    clinicId    String
+    /// 0 = Sunday .. 6 = Saturday.
+    weekday     Int
+    openMinute  Int
+    closeMinute Int
+    clinic      Clinic @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "ClinicOpeningHours_clinicId_fkey")
+
+    @@index([clinicId, weekday], map: "ClinicOpeningHours_clinicId_weekday_key", unique: true)
+
+    @@map("ClinicOpeningHours")
+  }
+
   /// A recurring break — lunch, a teaching slot. Null weekday means every day.
   model ClinicBreak {
     id          String  @id(map: "ClinicBreak_pkey")
@@ -570,6 +587,7 @@ namespace public {
     patientActivations PatientActivation[]
     appointmentRequests AppointmentRequest[]
     patients      Patient[]
+    openingHours  ClinicOpeningHours[]
 
     @@map("Clinic")
   }

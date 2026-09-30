@@ -126,6 +126,8 @@ export async function createPractice(accountId: string, input: Record<string, un
       updatedAt: now,
     });
     await t.ClinicMember.create({ id: newId(), clinicId, accountId, role: "DOCTOR", createdAt: now, updatedAt: now });
+    // The clinic's own week and the doctor's start the same; both editable.
+    for (const h of DEFAULT_HOURS) await t.ClinicOpeningHours.create({ id: newId(), clinicId, ...h });
     for (const h of DEFAULT_HOURS) await t.ClinicHours.create({ id: newId(), doctorId, ...h });
     await t.ClinicBreak.create({ id: newId(), doctorId, weekday: null, ...DEFAULT_LUNCH });
   });

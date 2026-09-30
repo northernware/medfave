@@ -6,6 +6,8 @@ import { db, orm } from "@/src/prisma/db";
 import { requireClinicManager } from "@/lib/auth";
 import { pickDoctor } from "@/lib/clinic";
 import { newId } from "@/lib/ids";
+import { label } from "@/lib/availability";
+import { loadClinicHours, type DayHours } from "@/lib/queries";
 import { SERVICES } from "@/lib/domain";
 import { NOTICE_OPTIONS, SLOT_STEPS } from "@/lib/schedule-options";
 import type { FormState } from "@/lib/validation";
@@ -65,12 +67,10 @@ function minuteOf(value: FormDataEntryValue | null): number | null {
  * to the built-in week, so "closed every day" would save as its opposite — and
  * a clinic that never opens is not a setting anybody means.
  */
-export async function saveOpeningHours(forDoctor: string, _prev: FormState, formData: FormData): Promise<FormState> {
-  const { doctorId } = await scope(forDoctor);
-  if (!doctorId) return NO_CLINICIAN;
-
+/** The week form's days: the open ones, or the per-day problems. */
+function readWeek(formData: FormData): { open: DayHours[]; fieldErrors: Record<string, string[]> } {
   const fieldErrors: Record<string, string[]> = {};
-  const open: { weekday: number; openMinute: number; closeMinute: number }[] = [];
+  const open: DayHours[] = [];
 
   for (let weekday = 0; weekday < 7; weekday++) {
     if (formData.get(`open-${weekday}`) !== "on") continue;
@@ -82,6 +82,31 @@ export async function saveOpeningHours(forDoctor: string, _prev: FormState, form
       fieldErrors[`day-${weekday}`] = ["Closing has to be after opening"];
     } else {
       open.push({ weekday, openMinute: from, closeMinute: to });
+    }
+  }
+  return { open, fieldErrors };
+}
+
+const DAY_NAMES = ["Sundays", "Mondays", "Tuesdays", "Wednesdays", "Thursdays", "Fridays", "Saturdays"];
+
+export async function saveOpeningHours(forDoctor: string, _prev: FormState, formData: FormData): Promise<FormState> {
+  const { manager, doctorId } = await scope(forDoctor);
+  if (!doctorId) return NO_CLINICIAN;
+
+  const { open, fieldErrors } = readWeek(formData);
+
+  // A doctor's hours sit inside the clinic's, when the clinic has set them.
+  const clinicWeek = await loadClinicHours(manager.clinicId);
+  if (clinicWeek.length > 0) {
+    for (const day of open) {
+      const c = clinicWeek.find((x) => x.weekday === day.weekday);
+      if (!c) {
+        fieldErrors[`day-${day.weekday}`] = [`The clinic is closed on ${DAY_NAMES[day.weekday]}`];
+      } else if (day.openMinute < c.openMinute || day.closeMinute > c.closeMinute) {
+        fieldErrors[`day-${day.weekday}`] = [
+          `The clinic is open ${label(c.openMinute)}–${label(c.closeMinute)} on ${DAY_NAMES[day.weekday]}`,
+        ];
+      }
     }
   }
 
@@ -304,4 +329,33 @@ export async function saveBookingRules(forDoctor: string, _prev: FormState, form
     await orm.ScheduleSettings.create({ doctorId, slotStepMinutes, minLeadMinutes, maxLeadDays });
   }
   done("rules", doctorId);
+}
+
+// --- the clinic's own opening hours ------------------------------------------
+
+/**
+ * When the clinic itself is open, replaced whole. Doctors' hours must sit
+ * inside it; any that no longer do are trimmed where bookings are offered
+ * (`withinClinicHours`), and the schedule page says whose.
+ */
+export async function saveClinicHours(_prev: FormState, formData: FormData): Promise<FormState> {
+  const manager = await requireClinicManager();
+  const { open, fieldErrors } = readWeek(formData);
+  if (Object.keys(fieldErrors).length > 0) return { message: "Check the highlighted days.", fieldErrors };
+  if (open.length === 0) return { message: "Open on at least one day. To close for a period, add a closure." };
+
+  await db.transaction(async (tx) => {
+    const clear = tx.sql.public.ClinicOpeningHours
+      .delete()
+      .where((f, fns) => fns.eq(f.clinicId, manager.clinicId))
+      .build();
+    await tx.execute(clear as never);
+    for (const day of open) {
+      await tx.orm.public.ClinicOpeningHours.create({ id: newId(), clinicId: manager.clinicId, ...day });
+    }
+  });
+
+  revalidatePath("/manage/schedule");
+  revalidatePath("/manage");
+  redirect("/manage/schedule?saved=clinic");
 }

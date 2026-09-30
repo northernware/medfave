@@ -3,7 +3,7 @@ import Link from "next/link";
 import { requireClinicManager } from "@/lib/auth";
 import { weekLines } from "@/lib/availability";
 import { clinicDoctors } from "@/lib/clinic";
-import { loadSchedule } from "@/lib/queries";
+import { loadClinicHours, loadSchedule } from "@/lib/queries";
 import { orm } from "@/src/prisma/db";
 import { Card, CardHeader, Detail, PageHeader, buttonClass } from "@/components/ui";
 import { VerificationTracker } from "@/components/verification-tracker";
@@ -44,6 +44,7 @@ export default async function ManagePage({ searchParams }: PageProps<"/manage">)
     return acc;
   }, {});
   const outstanding = liveInvites.filter((i) => !i.acceptedAt && !i.revokedAt).length;
+  const clinicWeek = weekLines({ hours: await loadClinicHours(manager.clinicId) });
   // Each doctor keeps their own hours; show every doctor's week.
   const doctors = await clinicDoctors(manager.clinicId);
   const weeks = await Promise.all(
@@ -174,6 +175,16 @@ export default async function ManagePage({ searchParams }: PageProps<"/manage">)
             </Link>
           }
         />
+        {clinicWeek.length > 0 ? (
+          <div className="border-b border-border px-5 py-4 text-sm">
+            <p className="font-semibold">Clinic</p>
+            <ul className="space-y-1">
+              {clinicWeek.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         {weeks.length === 0 ? (
           <p className="px-5 py-4 text-sm">No clinician yet, so no diary to set hours for.</p>
         ) : (

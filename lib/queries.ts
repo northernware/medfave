@@ -239,6 +239,33 @@ export async function followUpsDue(doctorId: string, horizonDays = 14) {
   );
 }
 
+export type DayHours = { weekday: number; openMinute: number; closeMinute: number };
+
+/** The clinic's own opening hours, by weekday. Empty: the clinic sets no limit. */
+export async function loadClinicHours(clinicId: string): Promise<DayHours[]> {
+  const rows = await orm.ClinicOpeningHours
+    .select("weekday", "openMinute", "closeMinute")
+    .where((h) => h.clinicId.eq(clinicId))
+    .all();
+  return rows.sort((a, b) => a.weekday - b.weekday);
+}
+
+/**
+ * A doctor's days trimmed to the clinic's: a day the clinic is shut goes, and
+ * the rest are cut to the clinic's opening and closing. No clinic hours: the
+ * doctor's own, unchanged.
+ */
+export function withinClinicHours(doctorDays: DayHours[], clinicDays: DayHours[]): DayHours[] {
+  if (clinicDays.length === 0) return doctorDays;
+  return doctorDays.flatMap((d) => {
+    const c = clinicDays.find((x) => x.weekday === d.weekday);
+    if (!c) return [];
+    const openMinute = Math.max(d.openMinute, c.openMinute);
+    const closeMinute = Math.min(d.closeMinute, c.closeMinute);
+    return closeMinute > openMinute ? [{ weekday: d.weekday, openMinute, closeMinute }] : [];
+  });
+}
+
 /**
  * A doctor's schedule, as the availability rules need it.
  *
@@ -271,9 +298,15 @@ export async function loadSchedule(doctorId: string): Promise<Schedule> {
       .all(),
   ]);
 
+  // The doctor's week, kept inside the clinic's own opening hours (when the
+  // clinic has set them): a doctor can't be booked while the clinic is shut.
+  const doctor = await orm.Doctor.select("clinicId").where((d) => d.id.eq(doctorId)).first();
+  const clinicWeek = doctor?.clinicId ? await loadClinicHours(doctor.clinicId) : [];
+  const own = hours.length > 0 ? hours : DEFAULT_SCHEDULE.hours;
+
   return {
     // An unconfigured week means the defaults, not a clinic that never opens.
-    hours: hours.length > 0 ? hours : DEFAULT_SCHEDULE.hours,
+    hours: withinClinicHours(own, clinicWeek),
     breaks,
     closures,
     slotStepMinutes: settings?.slotStepMinutes ?? DEFAULT_SCHEDULE.slotStepMinutes,
