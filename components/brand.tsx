@@ -34,8 +34,8 @@ export function HeartMark({
 }: {
   className?: string;
   title?: string;
-  /** "logo" follows the lockup rules; "accent" is the heart used as a graphic. */
-  tone?: "logo" | "accent";
+  /** "logo" follows the lockup rules; "accent" and "white" are the heart used as a graphic. */
+  tone?: "logo" | "accent" | "white";
 }) {
   return (
     <svg
@@ -45,7 +45,7 @@ export function HeartMark({
       aria-hidden={title ? undefined : true}
       aria-label={title}
     >
-      <Capsules fill={tone === "logo" ? "var(--logo-heart)" : "var(--accent)"} />
+      <Capsules fill={tone === "logo" ? "var(--logo-heart)" : tone === "white" ? "#ffffff" : "var(--accent)"} />
     </svg>
   );
 }

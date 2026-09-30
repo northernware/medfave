@@ -1,58 +1,27 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
-import { logout } from "@/app/actions/auth";
 import { requireStaff } from "@/lib/auth";
-import { Brand } from "@/components/brand";
-import { ThemeToggle } from "@/components/theme-toggle";
-import { DeskNav } from "@/components/desk-nav";
+import { AppShell } from "@/components/app-shell";
+import { CLINICAL_VIEW, DESK_LINKS } from "@/components/nav";
 
 /**
  * The front of the clinic.
  *
  * Open to any member of staff, secretaries included — and to a doctor who
- * happens to be covering the desk. Nothing clinical is reachable from here;
- * the pages under it deal in times, names and phone numbers.
+ * happens to be covering the desk, who gets a way back to their own screens.
+ * Nothing clinical is reachable from here; the pages under it deal in times,
+ * names and phone numbers. Same frame as the doctor's side.
  */
 export default async function DeskLayout({ children }: { children: ReactNode }) {
   const staff = await requireStaff();
+  const role = staff.role === "SECRETARY" ? "Secretary" : staff.role === "ADMIN" ? "Administrator" : "Doctor";
 
   return (
-    <div className="flex min-h-dvh flex-col">
-      <header className="border-b border-border bg-surface">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-          <div className="flex items-center gap-3">
-            <Brand href="/desk" />
-            <span className="hidden text-sm text-ink-muted sm:inline">
-              {staff.clinicName} · front desk
-            </span>
-          </div>
-          <div className="flex items-center gap-3">
-            {/* A doctor covering the desk can get back to their own screens. */}
-            {staff.role !== "SECRETARY" ? (
-              <Link href="/dashboard" className="text-sm font-medium text-accent-ink hover:underline">
-                Clinical view
-              </Link>
-            ) : null}
-            <Link
-              href="/account"
-              className="text-sm text-ink-muted transition-colors hover:text-ink hover:underline"
-            >
-              {staff.fullName}
-            </Link>
-            <ThemeToggle />
-            <form action={logout}>
-              <button className="text-sm font-medium text-ink-muted hover:text-ink">
-                Sign out
-              </button>
-            </form>
-          </div>
-        </div>
-        <div className="mx-auto max-w-6xl px-4">
-          <DeskNav />
-        </div>
-      </header>
-
-      <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6">{children}</main>
-    </div>
+    <AppShell
+      home="/desk"
+      links={staff.role !== "SECRETARY" ? [...DESK_LINKS, CLINICAL_VIEW] : DESK_LINKS}
+      context={`${staff.clinicName} · Front desk`}
+      person={{ name: staff.fullName, detail: role }}>
+      {children}
+    </AppShell>
   );
 }

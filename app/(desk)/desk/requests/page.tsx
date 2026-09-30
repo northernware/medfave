@@ -176,25 +176,24 @@ export default async function DeskRequestsPage({ searchParams }: PageProps<"/des
           <CardHeader title="Recently answered" />
           <ul className="divide-y divide-border">
             {decided.map((r) => (
-              <li key={r.id} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 px-5 py-3">
+              <li key={r.id} className="flex items-center gap-3 px-5 py-3">
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium">
-                    {nameOf(r)}
-                  </span>
-                  <span className="block truncate text-xs text-ink-muted">
+                  {r.status === "ACCEPTED" && r.appointmentId ? (
+                    <Link
+                      href={`/desk/appointments/${r.appointmentId}`}
+                      className="block text-sm font-medium hover:text-accent-ink hover:underline sm:truncate"
+                    >
+                      {nameOf(r)}
+                    </Link>
+                  ) : (
+                    <span className="block text-sm font-medium sm:truncate">{nameOf(r)}</span>
+                  )}
+                  <span className="block text-xs text-ink-muted sm:truncate">
                     {SERVICE_LABELS[r.service]} ·{" "}
                     {formatCalendarDate(calendarDateFromDb(r.preferredDate))}
                     {r.decisionNote ? ` · ${r.decisionNote}` : ""}
                   </span>
                 </span>
-                {r.status === "ACCEPTED" && r.appointmentId ? (
-                  <Link
-                    href={`/desk/appointments/${r.appointmentId}`}
-                    className="text-sm font-medium text-accent-ink hover:underline"
-                  >
-                    View booking
-                  </Link>
-                ) : null}
                 <Badge
                   tone={r.status === "ACCEPTED" ? "ok" : "neutral"}
                 >

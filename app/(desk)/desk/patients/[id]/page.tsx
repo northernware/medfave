@@ -9,7 +9,7 @@ import { ageFrom, fullName, RELATIONSHIP_LABELS, REMINDER_LABELS, SEX_LABELS } f
 import { AppointmentList } from "@/components/appointment-list";
 import { ShareCode } from "@/components/share-code";
 import { activationLink, qrSvg } from "@/lib/activation-link";
-import { Badge, buttonClass, Card, CardHeader, Detail, PageHeader } from "@/components/ui";
+import { Badge, buttonClass, Card, CardHeader, Detail, SectionTitle } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Patient" };
 
@@ -156,31 +156,40 @@ export default async function DeskPatientPage({
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title={fullName(patient)}
-        subtitle={
-          <>
-            {SEX_LABELS[patient.sex]} · {ageFrom(calendarDateFromDb(patient.dateOfBirth))} ·{" "}
-            {patient.household.name} household
-            {patient.patientNumber ? ` · ${patient.patientNumber}` : ""}
-          </>
-        }
-        actions={
-          patient.archivedAt ? null : (
-            <>
-              <Link
-                href={`/desk/appointments/new?patientId=${patient.id}`}
-                className={buttonClass("primary")}
-              >
-                Book
-              </Link>
-              <Link href={`/desk/patients/${patient.id}/edit`} className={buttonClass("secondary")}>
-                Edit details
-              </Link>
-            </>
-          )
-        }
-      />
+      <header className="flex flex-wrap items-center gap-4">
+        <span
+          aria-hidden="true"
+          className="grid size-14 shrink-0 place-items-center rounded-full bg-accent-soft font-display text-lg font-semibold text-accent-ink"
+        >
+          {`${patient.firstName[0] ?? ""}${patient.lastName[0] ?? ""}`.toUpperCase()}
+        </span>
+        <div className="min-w-0 flex-1">
+          <h1 className="font-display text-[26px] leading-8 font-semibold tracking-[-0.015em] sm:text-[30px] sm:leading-9">
+            {fullName(patient)}
+          </h1>
+          <p className="mt-0.5 text-sm text-ink-muted">
+            {SEX_LABELS[patient.sex]} · {ageFrom(calendarDateFromDb(patient.dateOfBirth))} · {patient.household.name}{" "}
+            household
+            {patient.patientNumber ? <span className="tabular"> · {patient.patientNumber}</span> : null}
+          </p>
+        </div>
+        {patient.archivedAt ? null : (
+          <div className="flex w-full gap-2 sm:w-auto">
+            <Link
+              href={`/desk/appointments/new?patientId=${patient.id}`}
+              className={buttonClass("primary", "flex-1 sm:flex-none")}
+            >
+              Book a visit
+            </Link>
+            <Link
+              href={`/desk/patients/${patient.id}/edit`}
+              className={buttonClass("secondary", "flex-1 sm:flex-none")}
+            >
+              Edit details
+            </Link>
+          </div>
+        )}
+      </header>
 
       {patient.archivedAt ? (
         <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm">
@@ -203,76 +212,78 @@ export default async function DeskPatientPage({
         />
       ) : null}
 
-      <Card>
-        <CardHeader title="Contact details" />
-        <dl className="grid gap-4 px-5 py-4 sm:grid-cols-2">
-          <Detail label="Date of birth" value={formatCalendarDate(calendarDateFromDb(patient.dateOfBirth))} />
-          <Detail label="Relationship" value={RELATIONSHIP_LABELS[patient.relationship]} />
-          <Detail label="Mobile" value={patient.contactNumber} />
-          <Detail label="Email" value={patient.email} />
-          {/* The patient's own standing choice, set from their portal. New
-              bookings take it as their default. */}
-          <Detail label="Reminders" value={REMINDER_LABELS[patient.reminderPreference]} />
-          <Detail label="Household address" value={patient.household.address} />
-          <Detail label="Household number" value={patient.household.contactNumber} />
-          <Detail label="Emergency contact" value={patient.emergencyContactName} />
-          <Detail
-            label="Emergency number"
-            value={
-              patient.emergencyContactNumber
-                ? `${patient.emergencyContactNumber}${patient.emergencyContactRelationship ? ` (${patient.emergencyContactRelationship})` : ""}`
-                : null
-            }
-          />
-        </dl>
-      </Card>
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+        <section className="min-w-0">
+          <SectionTitle title="Visits" />
+          <Card className="overflow-hidden">
+            <AppointmentList
+              appointments={appointments}
+              hrefFor={(appointmentId) => `/desk/appointments/${appointmentId}`}
+              emptyTitle="No visits yet"
+              emptyDescription="Nothing booked for this patient."
+            />
+          </Card>
+        </section>
 
-      <Card>
-        <CardHeader
-          title="Portal access"
-          subtitle="Whether this person can sign in and see their own appointments."
-        />
-        <div className="flex flex-wrap items-center gap-3 px-5 py-4">
-          {patient.accountId ? (
-            <Badge dot tone="ok">
-              Account active
-            </Badge>
-          ) : live ? (
-            <>
-              <Badge dot tone="accent">
-                Code issued
+        <div className="space-y-6">
+        <Card>
+          <CardHeader title="Medfave account" subtitle="Lets them see their visits and ask for times." />
+          <div className="flex flex-wrap items-center gap-3 px-5 py-4">
+            {patient.accountId ? (
+              <Badge dot tone="ok">
+                Account active
               </Badge>
-              <span className="text-sm text-ink-muted">
-                Expires {formatDateTime(instantFromDb(activation!.expiresAt))}
-              </span>
-              <form action={revokePatientActivation}>
-                <input type="hidden" name="patientId" value={patient.id} />
-                <button className={buttonClass("secondary")}>Revoke</button>
-              </form>
-            </>
-          ) : (
-            <>
-              <Badge tone="neutral">No account</Badge>
-              <form action={issuePatientActivation}>
-                <input type="hidden" name="patientId" value={patient.id} />
-                <button className={buttonClass("secondary")}>Issue activation code</button>
-              </form>
-            </>
-          )}
-        </div>
-      </Card>
-
-      <section>
-        <CardHeader title="Appointments" />
-        <Card className="overflow-hidden">
-          <AppointmentList
-            appointments={appointments}
-            hrefFor={(appointmentId) => `/desk/appointments/${appointmentId}`}
-            emptyTitle="No appointments"
-            emptyDescription="Nothing booked for this patient."
-          />
+            ) : live ? (
+              <>
+                <Badge dot tone="accent">
+                  Code issued
+                </Badge>
+                <span className="text-sm text-ink-muted">
+                  Expires {formatDateTime(instantFromDb(activation!.expiresAt))}
+                </span>
+                <form action={revokePatientActivation}>
+                  <input type="hidden" name="patientId" value={patient.id} />
+                  <button className={buttonClass("secondary")}>Revoke</button>
+                </form>
+              </>
+            ) : (
+              <>
+                <Badge tone="neutral">No account</Badge>
+                <form action={issuePatientActivation}>
+                  <input type="hidden" name="patientId" value={patient.id} />
+                  <button className={buttonClass("primary")}>Link their account</button>
+                </form>
+              </>
+            )}
+          </div>
         </Card>
-      </section>
+
+        <Card>
+          <CardHeader title="Contact details" />
+          <dl className="grid gap-4 px-5 py-4 sm:grid-cols-2 lg:grid-cols-1">
+            <Detail label="Date of birth" value={formatCalendarDate(calendarDateFromDb(patient.dateOfBirth))} />
+            <Detail label="Relationship" value={RELATIONSHIP_LABELS[patient.relationship]} />
+            <Detail label="Mobile" value={patient.contactNumber} />
+            <Detail label="Email" value={patient.email} />
+            {/* The patient's own standing choice, set from their portal. New
+                bookings take it as their default. */}
+            <Detail label="Reminders" value={REMINDER_LABELS[patient.reminderPreference]} />
+            <Detail label="Household address" value={patient.household.address} />
+            <Detail label="Household number" value={patient.household.contactNumber} />
+            <Detail label="Emergency contact" value={patient.emergencyContactName} />
+            <Detail
+              label="Emergency number"
+              value={
+                patient.emergencyContactNumber
+                  ? `${patient.emergencyContactNumber}${patient.emergencyContactRelationship ? ` (${patient.emergencyContactRelationship})` : ""}`
+                  : null
+              }
+            />
+          </dl>
+        </Card>
+
+        </div>
+      </div>
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { sweepNoShows } from "@/lib/no-show";
 import { sendDueReminders } from "@/lib/reminders";
 import { clinicDoctors } from "@/lib/clinic";
 import {
+  CLINIC_TIME_ZONE,
   clinicDayRange,
   formatDayHeading,
   formatTime,
@@ -21,7 +22,8 @@ import {
   QUEUE_STATUSES,
   SERVICE_LABELS,
 } from "@/lib/domain";
-import { Badge, buttonClass, Card, EmptyState, PageHeader, SectionTitle, Stat, StatStrip } from "@/components/ui";
+import { Badge, buttonClass, Card, EmptyState, SectionTitle } from "@/components/ui";
+import { HeartMark } from "@/components/brand";
 
 export const metadata: Metadata = { title: "Front desk" };
 
@@ -84,39 +86,40 @@ export default async function DeskPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Front desk"
-        subtitle={formatDayHeading(now)}
-        actions={
-          <>
-            <Link href="/desk/appointments/new?source=WALK_IN" className={buttonClass("primary")}>
-              Register walk-in
-            </Link>
-            <Link href="/desk/appointments/new" className={buttonClass("secondary")}>
-              Book appointment
-            </Link>
-            <Link href="/desk/patients/new" className={buttonClass("secondary")}>
-              Add patient
-            </Link>
-          </>
-        }
-      />
+      {/* The day at a glance, in the brand's colours — the same greeting the app opens with. */}
+      <section className="relative overflow-hidden rounded-xl bg-brand px-5 py-6 text-white sm:px-8 sm:py-8">
+        <HeartMark tone="white" className="pointer-events-none absolute -top-6 -right-2 size-20 opacity-15 sm:-top-4 sm:right-6 sm:size-28" />
+        <HeartMark tone="white" className="pointer-events-none absolute right-40 bottom-3 hidden size-12 opacity-15 sm:block" />
+        <p className="text-sm font-medium text-white/85">{formatDayHeading(now)}</p>
+        <h1 className="mt-1 font-display text-[28px] leading-9 font-semibold tracking-[-0.015em] sm:text-[34px] sm:leading-10">
+          {greeting(now)}, {staff.fullName.split(/\s+/)[0]}
+        </h1>
+        <dl className="mt-5 grid grid-cols-3 gap-2 sm:max-w-xl sm:gap-3">
+          <HeroStat label="Today" value={todays.length} hint={remaining > 0 ? `${remaining} to come` : "All done"} />
+          <HeroStat
+            label="Waiting"
+            value={waiting.length}
+            hint={seeing.length > 0 ? `${seeing.length} with doctor` : "Nobody yet"}
+          />
+          <HeroStat
+            label="Requests"
+            value={pendingRequests.n}
+            hint={pendingRequests.n > 0 ? "To answer" : "None"}
+            href={pendingRequests.n > 0 ? "/desk/requests" : undefined}
+          />
+        </dl>
+      </section>
 
-      <StatStrip>
-        <Stat label="Today" value={todays.length} hint={remaining > 0 ? `${remaining} still to come` : "Nothing left today"} />
-        <Stat
-          label="Waiting"
-          value={waiting.length}
-          tone={waiting.length > 0 ? "warn" : undefined}
-          hint={seeing.length > 0 ? `${seeing.length} with the doctor` : "Nobody checked in"}
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
+        <ActionTile
+          href="/desk/appointments/new?source=WALK_IN"
+          label="Walk-in"
+          icon="M13 4a2 2 0 11-4 0 2 2 0 014 0zM9 21l2-6 3 2v4M8 12l3-4 3 2 3 1M11 8l-2 5"
+          primary
         />
-        <Stat
-          label="Requests"
-          value={pendingRequests.n}
-          tone={pendingRequests.n > 0 ? "warn" : undefined}
-          hint={pendingRequests.n > 0 ? "Waiting on an answer" : "None outstanding"}
-        />
-      </StatStrip>
+        <ActionTile href="/desk/appointments/new" label="Book" icon="M8 3v4M16 3v4M4 9h16M5 5h14v16H5zM12 13v4M10 15h4" />
+        <ActionTile href="/desk/patients/new" label="Add patient" icon="M10 11a4 4 0 100-8 4 4 0 000 8zM3 21v-1a7 7 0 0111.5-5.4M19 14v6M16 17h6" />
+      </div>
 
       {queue.length > 0 ? (
         <section>
@@ -212,5 +215,49 @@ export default async function DeskPage() {
         </Card>
       </section>
     </div>
+  );
+}
+
+/** Good morning / afternoon / evening, by the clinic's clock. */
+function greeting(now: Date) {
+  const hour = Number(new Intl.DateTimeFormat("en-US", { hour: "numeric", hour12: false, timeZone: CLINIC_TIME_ZONE }).format(now));
+  return hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+}
+
+function HeroStat({ label, value, hint, href }: { label: string; value: number; hint: string; href?: string }) {
+  const body = (
+    <>
+      <dt className="text-xs font-medium text-white/80">{label}</dt>
+      <dd className="nums mt-1 font-display text-[28px] leading-none font-semibold">{value}</dd>
+      <dd className="mt-1 truncate text-xs text-white/80">{hint}</dd>
+    </>
+  );
+  const box = "block rounded-lg bg-white/15 px-3 py-3 sm:px-4";
+  return href ? (
+    <Link href={href} className={`${box} transition-colors hover:bg-white/25`}>
+      {body}
+    </Link>
+  ) : (
+    <div className={box}>{body}</div>
+  );
+}
+
+/** One of the desk's three everyday moves, as a big target that works on a phone. */
+function ActionTile({ href, label, icon, primary = false }: { href: string; label: string; icon: string; primary?: boolean }) {
+  return (
+    <Link
+      href={href}
+      className={[
+        "flex flex-col items-center gap-2 rounded-lg border px-2 py-4 text-center text-sm font-semibold transition-colors sm:flex-row sm:justify-center sm:gap-3 sm:py-5",
+        primary
+          ? "border-transparent bg-accent text-on-accent hover:bg-accent-hover"
+          : "border-border bg-surface text-ink hover:border-accent/40 hover:bg-accent-tint",
+      ].join(" ")}
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="size-6 shrink-0">
+        <path d={icon} />
+      </svg>
+      {label}
+    </Link>
   );
 }
