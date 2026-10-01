@@ -46,9 +46,11 @@ export async function issuePatientActivation(formData: FormData) {
 
   const now = instantToDb(new Date());
 
-  // Any code of the same kind already out for this person stops working: one
-  // live code at a time means a reissue is a replacement, not an addition.
+  // Any code of the patient's own already out stops working: one live code
+  // at a time means a reissue is a replacement, not an addition. Caregiver
+  // codes are each for a different person (mom, dad), so they sit side by side.
   for (;;) {
+    if (forCaregiver) break;
     const live = await orm.PatientActivation
       .select("id")
       .where((a) => a.patientId.eq(patientId))
@@ -133,11 +135,13 @@ export async function revokePatientActivation(formData: FormData) {
 
   const now = instantToDb(new Date());
   const forCaregiver = formData.get("for") === "caregiver";
+  // One caregiver's code, when named; otherwise every live code of the kind.
+  const activationId = String(formData.get("activationId") ?? "");
   for (;;) {
     const live = await orm.PatientActivation
       .select("id")
       .where((a) => a.patientId.eq(patientId))
-      .where((a) => a.forCaregiver.eq(forCaregiver))
+      .where((a) => (activationId ? a.id.eq(activationId) : a.forCaregiver.eq(forCaregiver)))
       .where((a) => a.usedAt.isNull())
       .where((a) => a.revokedAt.isNull())
       .first();
