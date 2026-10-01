@@ -326,6 +326,35 @@ export function ScheduleRail({
   const hours = Array.from({ length: lastHour - firstHour + 1 }, (_, i) => firstHour + i);
   const nowMinute = minuteOfDay(now);
   const top = (minute: number) => ((minute - firstHour * 60) / 60) * HOUR;
+
+  // Side-by-side lanes for visits whose cards overlap (a card is at least its
+  // minimum height, so two short visits back to back can overlap too).
+  const cardMinutes = (104 / HOUR) * 60;
+  const spans = todays.map((a, i) => {
+    const start = minuteOfDay(a.scheduledAt);
+    return { i, start, end: start + Math.max(a.durationMinutes, cardMinutes) };
+  });
+  const lanes: { lane: number; of: number }[] = todays.map(() => ({ lane: 0, of: 1 }));
+  let group: typeof spans = [];
+  let groupEnd = -1;
+  let laneEnds: number[] = [];
+  const close = () => group.forEach((g) => (lanes[g.i].of = laneEnds.length));
+  for (const sp of [...spans].sort((x, y) => x.start - y.start || x.end - y.end)) {
+    if (sp.start >= groupEnd && group.length > 0) {
+      close();
+      group = [];
+      laneEnds = [];
+    }
+    let lane = laneEnds.findIndex((end) => end <= sp.start);
+    if (lane === -1) {
+      lane = laneEnds.length;
+      laneEnds.push(sp.end);
+    } else laneEnds[lane] = sp.end;
+    lanes[sp.i].lane = lane;
+    group.push(sp);
+    groupEnd = Math.max(groupEnd, sp.end);
+  }
+  close();
   const label = (h: number) => `${((h + 11) % 12) + 1}:00 ${h < 12 ? "AM" : "PM"}`;
 
   return (
@@ -401,7 +430,7 @@ export function ScheduleRail({
               <span className="ml-2 h-px flex-1 bg-border/70" />
             </div>
           ))}
-          {todays.map((a) => {
+          {todays.map((a, idx) => {
             const start = minuteOfDay(a.scheduledAt);
             // Tall enough for its details even when short; a long visit grows with its length.
             const height = Math.max(104, (a.durationMinutes / 60) * HOUR - 4);
@@ -430,8 +459,14 @@ export function ScheduleRail({
             return (
               <div
                 key={a.id}
-                className={`absolute right-0 left-[76px] flex flex-col gap-1.5 overflow-hidden rounded-xl border px-4 py-3 ${done ? "border-border bg-surface-muted/50 opacity-70" : "border-border-strong bg-surface-muted"}`}
-                style={{ top: top(start) + 2, height }}
+                className={`absolute flex flex-col gap-1.5 overflow-hidden rounded-xl border px-4 py-3 ${lanes[idx].of > 1 ? "px-3" : ""} ${done ? "border-border bg-surface-muted/50 opacity-70" : "border-border-strong bg-surface-muted"}`}
+                style={{
+                  top: top(start) + 2,
+                  height,
+                  // Visits that overlap on screen sit side by side.
+                  left: `calc(76px + (100% - 76px) * ${lanes[idx].lane} / ${lanes[idx].of})`,
+                  width: `calc((100% - 76px) / ${lanes[idx].of} - ${lanes[idx].of > 1 ? 4 : 0}px)`,
+                }}
               >
                 {/* Status, name, what for, time — nothing else. */}
                 <div className="flex items-center justify-between gap-2">
