@@ -136,7 +136,27 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
       return !seen;
     })
     .slice(0, 7);
-  const selected = upcoming.find((a) => a.id === visit) ?? upcoming[0] ?? null;
+  // Room left: patients seen lately, each once, at their last visit.
+  const recent: typeof upcoming = [];
+  if (upcoming.length < 7) {
+    const shown = new Set(upcoming.map((a) => a.patient.id));
+    const past = (
+      await appointmentListQuery()
+        .where((a) => a.doctorId.eq(doctor.id))
+        .where((a) => a.scheduledAt.lt(instantToDb(today.start)))
+        .where((a) => a.status.in(["COMPLETED", "IN_CONSULTATION", "CHECKED_IN"]))
+        .orderBy((a) => a.scheduledAt.desc())
+        .limit(60)
+        .all()
+    ).map(toAppointmentListItem);
+    for (const a of past) {
+      if (recent.length + upcoming.length >= 7) break;
+      if (shown.has(a.patient.id)) continue;
+      shown.add(a.patient.id);
+      recent.push(a);
+    }
+  }
+  const selected = [...upcoming, ...recent].find((a) => a.id === visit) ?? upcoming[0] ?? recent[0] ?? null;
   const lastVisit = selected ? await loadLastVisit(selected.patient.id, doctor.id) : null;
   const todayKey = dayKey(now);
 
@@ -328,6 +348,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
             <PatientsList
               upcoming={upcoming}
               moreFor={Object.fromEntries(moreFor)}
+              recent={recent}
               selectedId={selected?.id ?? null}
               todayKey={todayKey}
               day={railDay === todayKey ? undefined : railDay}
