@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Brand } from "@/components/brand";
 import { Nav } from "@/components/nav";
 import type { NavLink, ViewKey } from "@/components/nav-links";
-import { ClinicSwitcher, ProfileMenu, ViewSwitch } from "@/components/shell-menus";
+import { BackLink, ClinicSwitcher, ProfileMenu, ViewSwitch } from "@/components/shell-menus";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 /**
@@ -23,6 +23,8 @@ export function AppShell({
   person,
   narrow = false,
   wide = false,
+  settingsHref,
+  back,
   children,
 }: {
   home: string;
@@ -33,8 +35,12 @@ export function AppShell({
   clinics?: { id: string; name: string }[];
   /** The views this person may switch between, and the one this is. */
   views: ViewKey[];
-  view: ViewKey;
+  view?: ViewKey;
   person: { name: string; detail: string };
+  /** Where this clinic's settings are, for those who may change them (shown in the clinic menu). */
+  settingsHref?: string;
+  /** A way back to the day's work, shown above the sections (clinic settings has no view switch). */
+  back?: { href: string; label: string };
   /** Settings-style pages read better at a form's width. */
   narrow?: boolean;
   /** Dashboards use the whole width of the window. */
@@ -52,8 +58,8 @@ export function AppShell({
         <div className="px-2">
           <Brand href={home} />
         </div>
-        <ClinicSwitcher clinic={clinic} clinics={all} />
-        <ViewSwitch views={views} current={view} />
+        <ClinicSwitcher clinic={clinic} clinics={all} settingsHref={settingsHref} />
+        {back ? <BackLink {...back} /> : <ViewSwitch views={views} current={view} />}
         <div className="-mx-1 flex-1 overflow-y-auto px-1 pt-1">
           <Nav orientation="sidebar" links={links} home={home} />
         </div>
@@ -66,11 +72,15 @@ export function AppShell({
       <header className="sticky top-0 z-20 border-b border-border bg-surface/95 backdrop-blur lg:hidden">
         <div className="flex items-center justify-between gap-3 px-4 py-2.5">
           <div className="min-w-0 flex-1">
-            <ClinicSwitcher clinic={clinic} clinics={all} compact />
+            <ClinicSwitcher clinic={clinic} clinics={all} settingsHref={settingsHref} compact />
           </div>
           <ProfileMenu person={person} theme={theme} compact />
         </div>
-        {views.length > 1 ? (
+        {back ? (
+          <div className="px-4 pb-2">
+            <BackLink {...back} />
+          </div>
+        ) : views.length > 1 ? (
           <div className="px-4 pb-2">
             <ViewSwitch views={views} current={view} />
           </div>
