@@ -221,6 +221,11 @@ export function LastVisitDetails({ visit, doctorName }: { visit: LastVisit | nul
   );
 }
 
+/** What the schedule panel needs of a visit. */
+type RailItem = Pick<AppointmentListItem, "id" | "scheduledAt" | "durationMinutes" | "service" | "status"> & {
+  patient: { firstName: string; middleName: string | null; lastName: string };
+};
+
 const HOUR = 72; // px per hour on the timeline
 
 /** The week as a strip, then today as a timeline with a line at the current time. */
@@ -231,19 +236,22 @@ export function ScheduleRail({
   todayKey,
   now,
   keep,
+  hrefFor,
 }: {
   /** Days this week with visits booked: a dot under each. */
   busyDays?: string[];
   /** The chosen day's visits. */
-  items: AppointmentListItem[];
+  items: RailItem[];
   /** The chosen day (YYYY-MM-DD); today unless picked from the strip. */
   dayKey: string;
   todayKey: string;
   now: Date;
   /** Other dashboard state to keep in links (the selected patient). */
   keep: string;
+  /** Where a day in the strip leads; the dashboard by default. */
+  hrefFor?: (key: string) => string;
 }) {
-  const href = (key: string) => `/dashboard?${[keep, key === todayKey ? "" : `day=${key}`].filter(Boolean).join("&")}`;
+  const href = hrefFor ?? ((key: string) => `/dashboard?${[keep, key === todayKey ? "" : `day=${key}`].filter(Boolean).join("&")}`);
   const monday = addDays(selected, -((weekdayOf(selected) + 6) % 7));
   const week = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
   const [y, m] = selected.split("-").map(Number);
@@ -349,12 +357,12 @@ export function ScheduleRail({
                     <form action={setAppointmentStatus}>
                       <input type="hidden" name="appointmentId" value={a.id} />
                       <input type="hidden" name="status" value="CHECKED_IN" />
-                      <button className="rounded-full bg-surface px-2.5 py-1 text-xs font-semibold hover:bg-accent-soft">Check in</button>
+                      <button className="rounded-full bg-surface px-2.5 py-1 text-xs font-semibold whitespace-nowrap hover:bg-accent-soft">Check in</button>
                     </form>
                   ) : a.status === "CHECKED_IN" ? (
                     <form action={startConsultation}>
                       <input type="hidden" name="appointmentId" value={a.id} />
-                      <button className="rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-on-accent">Start</button>
+                      <button className="rounded-full bg-accent px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-on-accent">Start</button>
                     </form>
                   ) : (
                     <Badge tone={APPOINTMENT_STATUS_TONE[a.status]}>{APPOINTMENT_STATUS_LABELS[a.status]}</Badge>
