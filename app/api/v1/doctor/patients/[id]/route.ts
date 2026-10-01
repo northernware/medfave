@@ -4,6 +4,7 @@ import { caresFor, logChartAccess, sharesCharts } from "@/lib/care";
 import { calendarDateFromDb, instantFromDb, instantToDb, toDateInputValue } from "@/lib/datetime";
 import { fullName, SEX_LABELS } from "@/lib/domain";
 import { orm } from "@/src/prisma/db";
+import { isAdult } from "@/lib/households";
 
 /**
  * One of the clinic's patients, in the three layers (lib/care.ts):
@@ -74,6 +75,15 @@ export async function GET(request: Request, ctx: RouteContext<"/api/v1/doctor/pa
       : null,
   ]);
 
+  // The rest of their household, for "Start their own household" (adults only).
+  const housemates = await orm.Patient
+    .select("id", "firstName", "middleName", "lastName", "relationship")
+    .where((p) => p.householdId.eq(patient.household.id))
+    .where((p) => p.clinicId.eq(doctor.clinicId))
+    .where((p) => p.id.neq(patient.id))
+    .where((p) => p.archivedAt.isNull())
+    .all();
+
   let authors: Map<string, string> = new Map();
   if (cares) {
     await logChartAccess({ clinicId: doctor.clinicId, patientId: id, accountId: doctor.accountId });
@@ -91,7 +101,14 @@ export async function GET(request: Request, ctx: RouteContext<"/api/v1/doctor/pa
       sexLabel: patient.sex ? SEX_LABELS[patient.sex] : null,
       contactNumber: patient.contactNumber,
       email: patient.email,
-      household: { id: patient.household.id, name: patient.household.name },
+      household: {
+        id: patient.household.id,
+        name: patient.household.name,
+        /** Who else lives there: those who can move with them to a household of their own. */
+        housemates: housemates.map((h) => ({ id: h.id, fullName: fullName(h), relationship: h.relationship })),
+        /** An adult, not archived, with somebody to leave: `POST …/household` may start one. */
+        canStartOwn: !patient.archivedAt && housemates.length > 0 && isAdult(String(patient.dateOfBirth)),
+      },
       archived: patient.archivedAt !== null,
     },
     /** Whether this doctor cares for them: may read the chart and visits. */
