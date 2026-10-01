@@ -150,27 +150,29 @@ export default async function DeskRequestsPage({ searchParams }: PageProps<"/des
                   </p>
                 </div>
 
+                {/* Part of the Accept form (form=…), kept outside it so every row's
+                    buttons line up the same. */}
+                {r.patient ? null : (
+                  <fieldset className="mt-3 space-y-1 text-sm">
+                    <legend className="mb-1 font-medium">Their record</legend>
+                    <label className="flex gap-2">
+                      <input type="radio" name="record" form={`accept-${r.id}`} value="new" defaultChecked className="accent-[var(--accent)]" />
+                      Create a new record from their details
+                    </label>
+                    {(lookalikes.get(r.id) ?? []).map((m) => (
+                      <label key={m.id} className="flex gap-2">
+                        <input type="radio" name="record" form={`accept-${r.id}`} value={m.id} className="accent-[var(--accent)]" />
+                        <span>
+                          Same person as <strong>{m.name}</strong> · born {m.dateOfBirth} · {m.householdName} household
+                          <span className="text-ink-faint"> (matched on {m.matchedOn.join(", ")})</span>
+                        </span>
+                      </label>
+                    ))}
+                  </fieldset>
+                )}
                 <div className="mt-3 flex flex-wrap items-end gap-2">
-                  <form action={acceptRequest} className="flex flex-wrap items-end gap-2">
+                  <form id={`accept-${r.id}`} action={acceptRequest} className="flex flex-wrap items-end gap-2">
                     <input type="hidden" name="requestId" value={r.id} />
-                    {r.patient ? null : (
-                      <fieldset className="w-full space-y-1 text-sm">
-                        <legend className="mb-1 font-medium">Their record</legend>
-                        <label className="flex gap-2">
-                          <input type="radio" name="record" value="new" defaultChecked className="accent-[var(--accent)]" />
-                          Create a new record from their details
-                        </label>
-                        {(lookalikes.get(r.id) ?? []).map((m) => (
-                          <label key={m.id} className="flex gap-2">
-                            <input type="radio" name="record" value={m.id} className="accent-[var(--accent)]" />
-                            <span>
-                              Same person as <strong>{m.name}</strong> · born {m.dateOfBirth} · {m.householdName} household
-                              <span className="text-ink-faint"> (matched on {m.matchedOn.join(", ")})</span>
-                            </span>
-                          </label>
-                        ))}
-                      </fieldset>
-                    )}
                     <label className="text-sm">
                       <span className="mb-1 block font-medium">Time</span>
                       <input
