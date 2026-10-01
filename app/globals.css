@@ -152,6 +152,26 @@
   --radius-xl: 20px;
 }
 
+/* iOS-like continuous corners: where the browser can draw them, every rounded
+   box becomes a squircle, with radii a little larger so the curve reads. Pills
+   (rounded-full) stay round. Elsewhere the plain rounded corners remain. */
+@supports (corner-shape: squircle) {
+  :root {
+    --radius-sm: 11px;
+    --radius-md: 16px;
+    --radius-lg: 22px;
+    --radius-xl: 28px;
+  }
+  *,
+  ::before,
+  ::after {
+    corner-shape: squircle;
+  }
+  .rounded-full {
+    corner-shape: round;
+  }
+}
+
 body {
   background: var(--canvas);
   color: var(--ink);
