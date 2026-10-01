@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
-import { Brand } from "@/components/brand";
+import Link from "next/link";
+import { Brand, HeartMark } from "@/components/brand";
 import { Nav } from "@/components/nav";
 import type { NavLink, ViewKey } from "@/components/nav-links";
-import { BackLink, ClinicSwitcher, ProfileMenu, ViewSwitch } from "@/components/shell-menus";
+import { BackLink, ClinicSection, ClinicSwitcher, MobileDrawer, ProfileMenu, ViewSwitch } from "@/components/shell-menus";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 /**
@@ -69,23 +70,38 @@ export function AppShell({
       </aside>
       </div>
 
+      {/* Phones: menu (sections) on the left, the heart in the middle, the person on the right
+          with the clinic, the view switch, account, theme and sign-out in one menu. */}
       <header className="sticky top-0 z-20 border-b border-border bg-surface/95 backdrop-blur lg:hidden">
-        <div className="flex items-center justify-between gap-3 px-4 py-2.5">
-          <div className="min-w-0 flex-1">
-            <ClinicSwitcher clinic={clinic} clinics={all} settingsHref={settingsHref} compact />
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center px-3 py-2">
+          <div>
+            <MobileDrawer>
+              {back ? (
+                <div className="mb-4">
+                  <BackLink {...back} />
+                </div>
+              ) : null}
+              <Nav orientation="sidebar" links={links} home={home} />
+            </MobileDrawer>
           </div>
-          <ProfileMenu person={person} theme={theme} compact />
+          <Link href={home} aria-label="Medfave — home">
+            <HeartMark className="h-7 w-auto" title="Medfave" />
+          </Link>
+          <div className="flex justify-end">
+            <ProfileMenu
+              person={person}
+              theme={theme}
+              compact
+              top={
+                <>
+                  <ClinicSection clinic={clinic} clinics={all} settingsHref={settingsHref} />
+                  {!back && views.length > 1 ? <ViewSwitch views={views} current={view} /> : null}
+                  {back ? <BackLink {...back} /> : null}
+                </>
+              }
+            />
+          </div>
         </div>
-        {back ? (
-          <div className="px-4 pb-2">
-            <BackLink {...back} />
-          </div>
-        ) : views.length > 1 ? (
-          <div className="px-4 pb-2">
-            <ViewSwitch views={views} current={view} />
-          </div>
-        ) : null}
-        <Nav orientation="bar" links={links} home={home} />
       </header>
 
       <main className="min-w-0 flex-1">
