@@ -13,12 +13,13 @@ export function StartHousehold({
   others,
   back,
 }: {
-  patient: { id: string; firstName: string; lastName: string };
+  patient: { id: string; firstName: string; lastName: string; dateOfBirth: string };
   others: { id: string; firstName: string; middleName: string | null; lastName: string; relationship: Relationship }[];
   /** Where to land afterwards: this chart. */
   back: string;
 }) {
-  if (others.length === 0) return null;
+  // Heading a household is for adults; a child stays in their family's.
+  if (others.length === 0 || !adult(patient.dateOfBirth)) return null;
   return (
     <details className="group">
       <summary className="cursor-pointer list-none text-sm font-medium text-ink-muted hover:text-ink">
@@ -28,7 +29,7 @@ export function StartHousehold({
         <input type="hidden" name="patientId" value={patient.id} />
         <input type="hidden" name="back" value={back} />
         <p className="text-sm text-ink-muted">
-          {patient.firstName} becomes head of a new {patient.lastName} household. Tick who moves with them.
+          {patient.firstName} becomes head of a new household of their own. Tick who moves with them.
         </p>
         <div className="space-y-1.5">
           {others.map((h) => (
@@ -43,4 +44,11 @@ export function StartHousehold({
       </form>
     </details>
   );
+}
+
+function adult(dateOfBirth: string) {
+  const [y, m, d] = String(dateOfBirth).slice(0, 10).split("-").map(Number);
+  const now = new Date();
+  const had = now.getMonth() + 1 > m || (now.getMonth() + 1 === m && now.getDate() >= d);
+  return now.getFullYear() - y - (had ? 0 : 1) >= 18;
 }

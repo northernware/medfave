@@ -728,12 +728,25 @@ export async function startOwnHousehold(formData: FormData) {
   const going = formData.getAll("memberId").map(String).filter((id) => id && id !== patientId);
 
   const patient = await orm.Patient
-    .select("id", "lastName", "contactNumber", "householdId", "archivedAt")
+    .select("id", "firstName", "lastName", "contactNumber", "householdId", "archivedAt", "dateOfBirth")
     .include("household", (h) => h.select("id", "name", "doctorId", "address"))
     .where((p) => p.id.eq(patientId))
     .where((p) => p.clinicId.eq(staff.clinicId))
     .first();
   if (!patient || patient.archivedAt) return;
+  // Heading a household is for adults: a child stays in their family's.
+  if (!isAdult(String(patient.dateOfBirth))) return;
+
+  // Household names are unique per doctor, and the family's own usually has
+  // the same surname: "Dela Cruz" is taken, so "Dela Cruz (Lia)", then numbered.
+  const taken = new Set(
+    (await orm.Household.select("name").where((h) => h.doctorId.eq(patient.household.doctorId)).all()).map((h) =>
+      h.name.toLowerCase(),
+    ),
+  );
+  let name = patient.lastName;
+  if (taken.has(name.toLowerCase())) name = `${patient.lastName} (${patient.firstName})`;
+  for (let n = 2; taken.has(name.toLowerCase()); n++) name = `${patient.lastName} (${patient.firstName}) ${n}`;
 
   // Only people from the same household may come along.
   const members = going.length
@@ -753,7 +766,7 @@ export async function startOwnHousehold(formData: FormData) {
       id: newId(),
       clinicId: staff.clinicId,
       doctorId: patient.household.doctorId,
-      name: patient.lastName,
+      name,
       contactNumber: patient.contactNumber,
       notes: `Started from the ${patient.household.name} household (${today}).`,
       createdAt: now,
@@ -784,4 +797,12 @@ export async function startOwnHousehold(formData: FormData) {
   // Back to the chart it was started from: the desk's or the doctor's.
   const back = String(formData.get("back") ?? "");
   redirect(`${back === `/patients/${patientId}` ? back : `/desk/patients/${patientId}`}?household=new`);
+}
+
+/** Whether somebody born on this YYYY-MM-DD date is 18 or over today. */
+function isAdult(dateOfBirth: string) {
+  const [y, m, d] = dateOfBirth.slice(0, 10).split("-").map(Number);
+  const now = new Date();
+  const had = now.getMonth() + 1 > m || (now.getMonth() + 1 === m && now.getDate() >= d);
+  return now.getFullYear() - y - (had ? 0 : 1) >= 18;
 }
