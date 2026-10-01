@@ -135,7 +135,12 @@ export default async function AppointmentPage({
 
       {/* Set when a status change was refused because it does not exist from
           where the visit currently is — a stale page, or a hand-made request. */}
-      {typeof blocked === "string" && blocked ? (
+      {blocked === "not-today" ? (
+        <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm">
+          <p className="font-medium">Not today&rsquo;s visit.</p>
+          <p className="mt-0.5 text-ink-muted">Check in and start a visit on its day. Nothing was changed.</p>
+        </div>
+      ) : typeof blocked === "string" && blocked ? (
         <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm">
           <p className="font-medium">That change is not available from here.</p>
           <p className="mt-0.5 text-ink-muted">

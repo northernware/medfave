@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { requireDoctor, requireStaff } from "@/lib/auth";
 import { db, orm } from "@/src/prisma/db";
 import { instantToDb } from "@/lib/datetime";
-import {
+import { isClinicToday,
   bookAppointment,
   changeAppointmentStatus,
   clashMessage,
@@ -100,12 +100,14 @@ export async function startConsultation(formData: FormData) {
   if (!appointmentId) return;
 
   const appointment = await orm.Appointment
-    .select("id", "patientId", "arrivedAt", "consultationStartedAt")
+    .select("id", "patientId", "arrivedAt", "consultationStartedAt", "scheduledAt")
     .include("medicalRecord", (r) => r.select("id"))
     .where((a) => a.id.eq(appointmentId))
     .where((a) => a.doctorId.eq(doctor.id))
     .first();
   if (!appointment) return;
+  // A consultation happens on the day of the visit.
+  if (!isClinicToday(appointment.scheduledAt)) redirect(`/appointments/${appointmentId}?blocked=not-today`);
 
   const now = instantToDb(new Date());
   await orm.Appointment
@@ -146,6 +148,8 @@ export async function setAppointmentStatus(formData: FormData) {
       redirect(`/appointments/${appointmentId}?blocked=${result.current}`);
     case "clash":
       redirect(`/appointments/${appointmentId}?clash=${result.clashId}`);
+    case "not-today":
+      redirect(`${staff.role === "SECRETARY" ? "/desk" : ""}/appointments/${appointmentId}?blocked=not-today`);
   }
 }
 
