@@ -2,13 +2,12 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import type { AppointmentStatus } from "@/lib/enums";
 import { requireDoctor } from "@/lib/auth";
+import { ScheduleRail } from "@/app/(app)/dashboard/panels";
 import { orm } from "@/src/prisma/db";
 import {
   clinicMonthRange,
   dayKey,
-  formatDayKeyHeading,
   formatMonthHeading,
-  formatTime,
   formatTimeCompact,
   monthGrid,
   parseMonthKey,
@@ -18,13 +17,9 @@ import {
   instantToDb,
 } from "@/lib/datetime";
 import {
-  APPOINTMENT_STATUS_LABELS,
-  APPOINTMENT_STATUS_TONE,
-  fullName,
-  SERVICE_LABELS,
 } from "@/lib/domain";
 import { occupiesSlot } from "@/lib/scheduling";
-import { Badge, buttonClass, Card, CardHeader, EmptyState, PageHeader } from "@/components/ui";
+import { buttonClass, Card, PageHeader } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Calendar" };
 
@@ -89,9 +84,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
   ).length;
 
   return (
-    // The month grid earns more width than the rest of the app, so on wide
-    // screens this page reaches past the shell’s max-width.
-    <div className="space-y-6">
+    <div className="space-y-3 xl:pr-[352px]">
       <PageHeader
         title="Calendar"
         subtitle={`${appointments.length} booked across ${bookedDays} ${bookedDays === 1 ? "day" : "days"} this month`}
@@ -105,7 +98,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
         }
       />
 
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-start">
+      <div className="grid grid-cols-1 gap-3">
         <Card>
           <div className="flex items-center justify-between gap-4 border-b border-border px-4 py-3">
             <Link
@@ -212,67 +205,18 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
 
         {/* Beside the grid on large screens, stacked underneath on small ones.
             Sticky so it stays put while a long month scrolls past. */}
-        <Card className="lg:sticky lg:top-6 lg:flex lg:max-h-[calc(100dvh-3rem)] lg:flex-col">
-          <div className="lg:shrink-0">
-            <CardHeader
-              title={selectedDay ? formatDayKeyHeading(selectedDay) : "Nothing this month"}
-              subtitle={
-                selected.length > 0
-                  ? `${selected.length} ${selected.length === 1 ? "appointment" : "appointments"}`
-                  : undefined
-              }
-            />
-          </div>
-
-          {selected.length === 0 ? (
-            <EmptyState
-              title="Nothing booked"
-              description={
-                selectedDay
-                  ? "Pick another day in the grid, or book this one."
-                  : "No appointments fall in this month."
-              }
-              action={
-                <Link
-                  href={
-                    selectedDay
-                      ? `/appointments/new?date=${selectedDay}`
-                      : "/appointments/new"
-                  }
-                  className={buttonClass("primary")}
-                >
-                  Book appointment
-                </Link>
-              }
-            />
-          ) : (
-            <ul className="divide-y divide-border lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
-              {selected.map((a) => (
-                <li key={a.id} className="transition-colors hover:bg-surface-muted">
-                  <Link href={`/appointments/${a.id}`} className="block px-4 py-3">
-                    <span className="flex items-baseline justify-between gap-2">
-                      <span className="tabular text-sm font-semibold">
-                        {formatTime(a.scheduledAt)}
-                      </span>
-                      <Badge tone={APPOINTMENT_STATUS_TONE[a.status]}>
-                        {APPOINTMENT_STATUS_LABELS[a.status]}
-                      </Badge>
-                    </span>
-                    <span className="mt-1 block truncate text-sm font-medium">
-                      {fullName(a.patient)}
-                    </span>
-                    <span className="block truncate text-xs text-ink-muted">
-                      {SERVICE_LABELS[a.service]} · {a.durationMinutes} min
-                    </span>
-                    <span className="block truncate text-xs text-ink-faint">
-                      {a.patient.household.name} · {a.reason}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
+        {/* The same schedule panel as Today, pinned right, showing the chosen day. */}
+        <div className="xl:fixed xl:top-3 xl:right-3 xl:bottom-3 xl:z-10 xl:w-[340px]">
+          <ScheduleRail
+            items={selected}
+            dayKey={selectedDay ?? todayKey}
+            busyDays={[...byDay.entries()].filter(([, list]) => list.some((x) => occupiesSlot(x.status))).map(([k]) => k)}
+            todayKey={todayKey}
+            now={now}
+            keep=""
+            hrefFor={(key) => `/calendar?month=${key.slice(0, 7)}&day=${key}`}
+          />
+        </div>
       </div>
     </div>
   );
