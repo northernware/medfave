@@ -2,12 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { db, orm } from "@/src/prisma/db";
+import { orm } from "@/src/prisma/db";
 import { requireClinicManager } from "@/lib/auth";
 import { pickDoctor } from "@/lib/clinic";
-import { newId } from "@/lib/ids";
 import { writeClinicWeek, writeDoctorWeek } from "@/lib/hours";
-import { SERVICES } from "@/lib/domain";
+import { addBreakFor, addClosureFor, removeBreakFor, removeClosureFor, saveServiceLengthsFor } from "@/lib/schedule";
 import { NOTICE_OPTIONS, SLOT_STEPS } from "@/lib/schedule-options";
 import type { FormState } from "@/lib/validation";
 
@@ -49,14 +48,6 @@ function done(section: string, doctorId: string): never {
   redirect(`/manage/schedule?doctor=${encodeURIComponent(doctorId)}&saved=${section}`);
 }
 
-/** "08:30" as minutes since midnight, on a five-minute boundary; null otherwise. */
-function minuteOf(value: FormDataEntryValue | null): number | null {
-  const m = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(String(value ?? "").trim());
-  if (!m) return null;
-  const minute = Number(m[1]) * 60 + Number(m[2]);
-  return minute % 5 === 0 ? minute : null;
-}
-
 // --- opening hours -------------------------------------------------------------
 
 /**
@@ -80,32 +71,8 @@ export async function saveOpeningHours(forDoctor: string, _prev: FormState, form
 export async function addBreak(forDoctor: string, _prev: FormState, formData: FormData): Promise<FormState> {
   const { doctorId } = await scope(forDoctor);
   if (!doctorId) return NO_CLINICIAN;
-
-  const label = String(formData.get("label") ?? "").trim();
-  const rawDay = String(formData.get("weekday") ?? "");
-  const weekday = rawDay === "" ? null : Number(rawDay);
-  const from = minuteOf(formData.get("from"));
-  const to = minuteOf(formData.get("to"));
-
-  const fieldErrors: Record<string, string[]> = {};
-  if (!label) fieldErrors.label = ["Name it — lunch, rounds, a meeting"];
-  if (label.length > 60) fieldErrors.label = ["Keep it under 60 characters"];
-  if (weekday !== null && !(Number.isInteger(weekday) && weekday >= 0 && weekday <= 6)) {
-    fieldErrors.weekday = ["Choose a day"];
-  }
-  if (from === null) fieldErrors.from = ["A time in steps of five minutes"];
-  if (to === null) fieldErrors.to = ["A time in steps of five minutes"];
-  if (from !== null && to !== null && to <= from) fieldErrors.to = ["Has to end after it starts"];
-  if (Object.keys(fieldErrors).length > 0) return { message: "Check the break.", fieldErrors };
-
-  await orm.ClinicBreak.create({
-    id: newId(),
-    doctorId,
-    weekday,
-    startMinute: from!,
-    endMinute: to!,
-    label,
-  });
+  const problem = await addBreakFor(doctorId, formData);
+  if (problem) return problem;
   done("breaks", doctorId);
 }
 
@@ -113,14 +80,7 @@ export async function removeBreak(forDoctor: string, formData: FormData) {
   const { doctorId } = await scope(forDoctor);
   const id = String(formData.get("breakId") ?? "");
   if (!doctorId || !id) return;
-  const row = await orm.ClinicBreak
-    .select("id")
-    .where((b) => b.id.eq(id))
-    .where((b) => b.doctorId.eq(doctorId))
-    .first();
-  if (!row) return;
-  await orm.ClinicBreak.where((b) => b.id.eq(id)).delete();
-  done("breaks", doctorId);
+  if (await removeBreakFor(doctorId, id)) done("breaks", doctorId);
 }
 
 // --- one-off closures --------------------------------------------------------
@@ -134,42 +94,8 @@ export async function removeBreak(forDoctor: string, formData: FormData) {
 export async function addClosure(forDoctor: string, _prev: FormState, formData: FormData): Promise<FormState> {
   const { doctorId } = await scope(forDoctor);
   if (!doctorId) return NO_CLINICIAN;
-
-  const reason = String(formData.get("reason") ?? "").trim();
-  const startsOn = String(formData.get("startsOn") ?? "").trim();
-  const endsOn = String(formData.get("endsOn") ?? "").trim() || startsOn;
-  const rawFrom = String(formData.get("from") ?? "").trim();
-  const rawTo = String(formData.get("to") ?? "").trim();
-  const from = rawFrom ? minuteOf(rawFrom) : null;
-  const to = rawTo ? minuteOf(rawTo) : null;
-  const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
-
-  const fieldErrors: Record<string, string[]> = {};
-  if (!reason) fieldErrors.reason = ["Say why — it is shown to anybody who tries to book"];
-  if (reason.length > 120) fieldErrors.reason = ["Keep it under 120 characters"];
-  if (!isDate(startsOn)) fieldErrors.startsOn = ["Choose the first day"];
-  if (!isDate(endsOn)) fieldErrors.endsOn = ["Choose the last day"];
-  if (isDate(startsOn) && isDate(endsOn) && endsOn < startsOn) {
-    fieldErrors.endsOn = ["Cannot end before it starts"];
-  }
-  if (Boolean(rawFrom) !== Boolean(rawTo)) {
-    fieldErrors[rawFrom ? "to" : "from"] = ["Give both times, or neither for the whole day"];
-  } else if (rawFrom) {
-    if (from === null) fieldErrors.from = ["A time in steps of five minutes"];
-    if (to === null) fieldErrors.to = ["A time in steps of five minutes"];
-    if (from !== null && to !== null && to <= from) fieldErrors.to = ["Has to end after it starts"];
-  }
-  if (Object.keys(fieldErrors).length > 0) return { message: "Check the closure.", fieldErrors };
-
-  await orm.ClinicClosure.create({
-    id: newId(),
-    doctorId,
-    startsOn,
-    endsOn,
-    startMinute: from,
-    endMinute: to,
-    reason,
-  });
+  const problem = await addClosureFor(doctorId, formData);
+  if (problem) return problem;
   done("closures", doctorId);
 }
 
@@ -177,14 +103,7 @@ export async function removeClosure(forDoctor: string, formData: FormData) {
   const { doctorId } = await scope(forDoctor);
   const id = String(formData.get("closureId") ?? "");
   if (!doctorId || !id) return;
-  const row = await orm.ClinicClosure
-    .select("id")
-    .where((c) => c.id.eq(id))
-    .where((c) => c.doctorId.eq(doctorId))
-    .first();
-  if (!row) return;
-  await orm.ClinicClosure.where((c) => c.id.eq(id)).delete();
-  done("closures", doctorId);
+  if (await removeClosureFor(doctorId, id)) done("closures", doctorId);
 }
 
 // --- service lengths --------------------------------------------------------------
@@ -199,43 +118,8 @@ export async function removeClosure(forDoctor: string, formData: FormData) {
 export async function saveServiceLengths(forDoctor: string, _prev: FormState, formData: FormData): Promise<FormState> {
   const { doctorId } = await scope(forDoctor);
   if (!doctorId) return NO_CLINICIAN;
-
-  const fieldErrors: Record<string, string[]> = {};
-  const wanted = new Map<string, number | null>();
-  for (const service of SERVICES) {
-    const raw = String(formData.get(`minutes-${service.value}`) ?? "").trim();
-    if (!raw) {
-      wanted.set(service.value, null);
-      continue;
-    }
-    const minutes = Number(raw);
-    if (!Number.isInteger(minutes) || minutes < 5 || minutes > 240 || minutes % 5 !== 0) {
-      fieldErrors[`minutes-${service.value}`] = ["5 to 240, in fives"];
-      continue;
-    }
-    wanted.set(service.value, minutes === service.minutes ? null : minutes);
-  }
-  if (Object.keys(fieldErrors).length > 0) return { message: "Check the highlighted lengths.", fieldErrors };
-
-  const existing = await orm.ServiceDuration
-    .select("id", "service", "minutes")
-    .where((d) => d.doctorId.eq(doctorId))
-    .all();
-
-  await db.transaction(async (tx) => {
-    const t = tx.orm.public;
-    for (const service of SERVICES) {
-      const want = wanted.get(service.value) ?? null;
-      const row = existing.find((e) => e.service === service.value);
-      if (want === null && row) {
-        await t.ServiceDuration.where((d) => d.id.eq(row.id)).delete();
-      } else if (want !== null && row && row.minutes !== want) {
-        await t.ServiceDuration.where((d) => d.id.eq(row.id)).update({ minutes: want });
-      } else if (want !== null && !row) {
-        await t.ServiceDuration.create({ id: newId(), doctorId, service: service.value, minutes: want });
-      }
-    }
-  });
+  const problem = await saveServiceLengthsFor(doctorId, formData);
+  if (problem) return problem;
   done("lengths", doctorId);
 }
 
