@@ -223,6 +223,8 @@ namespace public {
     previousAppointment        Appointment?                @relation(name: "Appointment_previousAppointmentId_fkey", fields: [previousAppointmentId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "Appointment_previousAppointmentId_fkey")
     followUps                  Appointment[]               @relation(name: "Appointment_previousAppointmentId_fkey")
     medicalRecord              MedicalRecord?              @relation(name: "MedicalRecord_appointmentId_fkey")
+    /// What happened to it after booking, and who did it.
+    events                     AppointmentEvent[]
     followUpForRecord          MedicalRecord?              @relation(name: "MedicalRecord_followUpAppointmentId_fkey")
 
     @@index([doctorId, scheduledAt], map: "Appointment_doctorId_scheduledAt_idx")
@@ -623,6 +625,7 @@ namespace public {
     doctors       Doctor[]
     households    Household[]
     appointments  Appointment[]
+    appointmentEvents AppointmentEvent[]
     medicalRecords MedicalRecord[]
     documentRequests DocumentRequest[]
     staffInvites  StaffInvite[]
@@ -691,6 +694,7 @@ namespace public {
     /// The people they book for — kept on the account, not at any clinic.
     family       FamilyMember[]
     bookingsMade Appointment[]       @relation(name: "Appointment_bookedById_fkey")
+    appointmentEvents AppointmentEvent[]
     requestsMade AppointmentRequest[] @relation(name: "AppointmentRequest_requestedById_fkey")
     requestsDecided AppointmentRequest[] @relation(name: "AppointmentRequest_decidedById_fkey")
     passwordResets PasswordReset[]
@@ -853,6 +857,31 @@ namespace public {
     @@index([accountId], map: "FamilyMember_accountId_idx")
 
     @@map("FamilyMember")
+  }
+
+  /// A visit's history after it was booked: each status change and move, when,
+  /// and by whom. Booking itself is on the Appointment (`createdAt`,
+  /// `bookedById`); the request before it, on the AppointmentRequest. Written
+  /// alongside each change, never edited.
+  model AppointmentEvent {
+    id            String @id(map: "AppointmentEvent_pkey")
+    appointmentId String
+    clinicId      String
+    /// The status it moved to, or null for a move with no status change.
+    status        pg.enum(AppointmentStatus)?
+    /// Set when the visit's time changed: the time it had before. Undoing an
+    /// early check-in puts it back to this.
+    previousScheduledAt TimestampString(3)?
+    byId          String?
+    at            TimestampString(3)
+    appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "AppointmentEvent_appointmentId_fkey")
+    clinic        Clinic      @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "AppointmentEvent_clinicId_fkey", index: false)
+    by            Account?    @relation(fields: [byId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "AppointmentEvent_byId_fkey")
+
+    @@index([appointmentId], map: "AppointmentEvent_appointmentId_idx")
+    @@index([byId], map: "AppointmentEvent_byId_idx")
+
+    @@map("AppointmentEvent")
   }
 
   /// A patient asking for a time, which staff then accept or decline.

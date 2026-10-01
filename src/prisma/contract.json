@@ -16,6 +16,10 @@
       "model": "Appointment",
       "namespace": "public"
     },
+    "AppointmentEvent": {
+      "model": "AppointmentEvent",
+      "namespace": "public"
+    },
     "AppointmentRequest": {
       "model": "AppointmentRequest",
       "namespace": "public"
@@ -276,6 +280,21 @@
                 },
                 "to": {
                   "model": "PatientActivation",
+                  "namespace": "public"
+                }
+              },
+              "appointmentEvents": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "byId"
+                  ]
+                },
+                "to": {
+                  "model": "AppointmentEvent",
                   "namespace": "public"
                 }
               },
@@ -946,6 +965,21 @@
                   "namespace": "public"
                 }
               },
+              "events": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "appointmentId"
+                  ]
+                },
+                "to": {
+                  "model": "AppointmentEvent",
+                  "namespace": "public"
+                }
+              },
               "followUpForRecord": {
                 "cardinality": "1:1",
                 "on": {
@@ -1102,6 +1136,142 @@
               },
               "namespaceId": "public",
               "table": "Appointment"
+            }
+          },
+          "AppointmentEvent": {
+            "fields": {
+              "appointmentId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "at": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "byId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "clinicId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "previousScheduledAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "status": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/enum@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "typeName": "AppointmentStatus"
+                  }
+                }
+              }
+            },
+            "relations": {
+              "appointment": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "appointmentId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Appointment",
+                  "namespace": "public"
+                }
+              },
+              "by": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "byId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Account",
+                  "namespace": "public"
+                }
+              },
+              "clinic": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "clinicId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Clinic",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "appointmentId": {
+                  "column": "appointmentId"
+                },
+                "at": {
+                  "column": "at"
+                },
+                "byId": {
+                  "column": "byId"
+                },
+                "clinicId": {
+                  "column": "clinicId"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "previousScheduledAt": {
+                  "column": "previousScheduledAt"
+                },
+                "status": {
+                  "column": "status"
+                }
+              },
+              "namespaceId": "public",
+              "table": "AppointmentEvent"
             }
           },
           "AppointmentRequest": {
@@ -1890,6 +2060,21 @@
               }
             },
             "relations": {
+              "appointmentEvents": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "clinicId"
+                  ]
+                },
+                "to": {
+                  "model": "AppointmentEvent",
+                  "namespace": "public"
+                }
+              },
               "appointmentRequests": {
                 "cardinality": "1:N",
                 "on": {
@@ -6979,6 +7164,142 @@
               },
               "uniques": []
             },
+            "AppointmentEvent": {
+              "columns": {
+                "appointmentId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "at": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "byId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "clinicId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "previousScheduledAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "status": {
+                  "codecId": "pg/enum@1",
+                  "nativeType": "AppointmentStatus",
+                  "nullable": true,
+                  "typeParams": {
+                    "typeName": "AppointmentStatus"
+                  },
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "AppointmentStatus",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                }
+              },
+              "foreignKeys": [
+                {
+                  "name": "AppointmentEvent_appointmentId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "appointmentId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "AppointmentEvent"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Appointment"
+                  }
+                },
+                {
+                  "name": "AppointmentEvent_clinicId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "clinicId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "AppointmentEvent"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Clinic"
+                  }
+                },
+                {
+                  "name": "AppointmentEvent_byId_fkey",
+                  "onDelete": "setNull",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "byId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "AppointmentEvent"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Account"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "appointmentId"
+                  ],
+                  "name": "AppointmentEvent_appointmentId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "byId"
+                  ],
+                  "name": "AppointmentEvent_byId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ],
+                "name": "AppointmentEvent_pkey"
+              },
+              "uniques": []
+            },
             "AppointmentRequest": {
               "columns": {
                 "appointmentId": {
@@ -11312,7 +11633,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "ff654226d50412675f6e62a29593a1bfae82b2f6154ed1986f701425290c22cd"
+    "storageHash": "96ffb42c7bc4dfaa3789264493231f88ba00a952c3f40d439adfe1a31fbe55b5"
   },
   "capabilities": {
     "postgres": {

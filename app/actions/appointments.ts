@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { requireDoctor, requireStaff } from "@/lib/auth";
 import { db, orm } from "@/src/prisma/db";
 import { instantToDb } from "@/lib/datetime";
+import { newId } from "@/lib/ids";
 import { isClinicToday,
   bookAppointment,
   changeAppointmentStatus,
@@ -106,18 +107,29 @@ export async function startConsultation(formData: FormData) {
     .where((a) => a.doctorId.eq(doctor.id))
     .first();
   if (!appointment) return;
-  // A consultation happens on the day of the visit.
-  if (!isClinicToday(appointment.scheduledAt)) redirect(`/appointments/${appointmentId}?blocked=not-today`);
-
+  // Seen on another day than booked: the visit moves to now, and its history says so.
   const now = instantToDb(new Date());
-  await orm.Appointment
-    .where((a) => a.id.eq(appointmentId))
-    .where((a) => a.doctorId.eq(doctor.id))
-    .update({
+  const movedFrom = isClinicToday(appointment.scheduledAt) ? null : appointment.scheduledAt;
+  await db.transaction(async (tx) => {
+    await tx.orm.public.Appointment
+      .where((a) => a.id.eq(appointmentId))
+      .where((a) => a.doctorId.eq(doctor.id))
+      .update({
+        status: "IN_CONSULTATION",
+        ...queueStamps("IN_CONSULTATION", appointment, now),
+        ...(movedFrom ? { scheduledAt: now } : {}),
+        updatedAt: now,
+      });
+    await tx.orm.public.AppointmentEvent.create({
+      id: newId(),
+      appointmentId,
+      clinicId: doctor.clinicId,
       status: "IN_CONSULTATION",
-      ...queueStamps("IN_CONSULTATION", appointment, now),
-      updatedAt: now,
+      previousScheduledAt: movedFrom,
+      byId: doctor.accountId,
+      at: now,
     });
+  });
 
   revalidatePath("/appointments");
   revalidatePath("/calendar");

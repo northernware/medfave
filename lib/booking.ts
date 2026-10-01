@@ -69,6 +69,7 @@ type AppointmentScalars = Omit<
   | "clinic"
   | "bookedBy"
   | "appointmentRequests"
+  | "events"
 >;
 
 /**
@@ -487,19 +488,43 @@ export async function changeAppointmentStatus(
     return { ok: false, reason: "transition", current: existing.status };
   }
 
-  // Arriving and being seen happen on the day of the visit: a person can't be
-  // checked in for tomorrow (or last week) by a stray click on another day.
-  if ((status === "CHECKED_IN" || status === "IN_CONSULTATION") && !isClinicToday(existing.scheduledAt)) {
-    return { ok: false, reason: "not-today" };
+  // Somebody who turns up on another day than booked is here now: checking
+  // them in (or starting their visit) moves it to now, so it is in today's
+  // queue. Undoing the check-in puts it back where it was (below); the move is
+  // in the visit's history either way.
+  const arriving = status === "CHECKED_IN" || status === "IN_CONSULTATION";
+  const movedFrom = arriving && !isClinicToday(existing.scheduledAt) ? existing.scheduledAt : null;
+
+  // Undoing a check-in that moved the visit: back to the time it had.
+  let restoreTo: typeof existing.scheduledAt | null = null;
+  if (existing.status === "CHECKED_IN" && status === "CONFIRMED") {
+    const moved = await orm.AppointmentEvent
+      .select("previousScheduledAt")
+      .where((e) => e.appointmentId.eq(appointmentId))
+      .where((e) => e.status.eq("CHECKED_IN"))
+      .orderBy((e) => e.at.desc())
+      .first();
+    restoreTo = moved?.previousScheduledAt ?? null;
   }
 
   const changes = {
     status,
     ...queueStamps(status, existing, now),
+    ...(movedFrom ? { scheduledAt: now } : {}),
+    ...(restoreTo ? { scheduledAt: restoreTo } : {}),
     // A person deciding this is not the clinic assuming it, so an earlier
     // assumption stops applying the moment anybody says otherwise.
     autoNoShowAt: null,
     updatedAt: now,
+  };
+  const event = {
+    id: newId(),
+    appointmentId,
+    clinicId: actor.clinicId,
+    status,
+    previousScheduledAt: movedFrom ?? (restoreTo ? existing.scheduledAt : null),
+    byId: actor.accountId,
+    at: now,
   };
 
   /**
@@ -513,11 +538,16 @@ export async function changeAppointmentStatus(
    * no-show give a slot up, and the rest are between statuses that all hold
    * the slot this appointment already had.
    */
-  if (occupiesSlot(existing.status) || !occupiesSlot(status)) {
-    await orm.Appointment
-      .where((a) => a.id.eq(appointmentId))
-      .where((a) => a.clinicId.eq(actor.clinicId))
-      .update(changes);
+  // Putting an early check-in back re-claims its old slot, which may have gone
+  // since: that is a booking, so it takes the lock and the overlap check too.
+  if ((occupiesSlot(existing.status) || !occupiesSlot(status)) && !restoreTo) {
+    await db.transaction(async (tx) => {
+      await tx.orm.public.Appointment
+        .where((a) => a.id.eq(appointmentId))
+        .where((a) => a.clinicId.eq(actor.clinicId))
+        .update(changes);
+      await tx.orm.public.AppointmentEvent.create(event);
+    });
   } else {
     const clash = await db.transaction(async (tx) => {
       await lockDoctorSchedule(tx, existing.doctorId);
@@ -525,7 +555,7 @@ export async function changeAppointmentStatus(
       const found = await findClash(
         tx,
         existing.doctorId,
-        instantFromDb(existing.scheduledAt),
+        instantFromDb(restoreTo ?? existing.scheduledAt),
         existing.durationMinutes,
         appointmentId,
       );
@@ -535,6 +565,7 @@ export async function changeAppointmentStatus(
         .where((a) => a.id.eq(appointmentId))
         .where((a) => a.clinicId.eq(actor.clinicId))
         .update(changes);
+      await tx.orm.public.AppointmentEvent.create(event);
       return null;
     });
     if (clash) return { ok: false, reason: "clash", clashId: clash.id };
