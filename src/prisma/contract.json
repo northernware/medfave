@@ -64,6 +64,10 @@
       "model": "EmailVerification",
       "namespace": "public"
     },
+    "FamilyMember": {
+      "model": "FamilyMember",
+      "namespace": "public"
+    },
     "Household": {
       "model": "Household",
       "namespace": "public"
@@ -377,6 +381,21 @@
                 },
                 "to": {
                   "model": "EmailVerification",
+                  "namespace": "public"
+                }
+              },
+              "family": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "accountId"
+                  ]
+                },
+                "to": {
+                  "model": "FamilyMember",
                   "namespace": "public"
                 }
               },
@@ -1142,6 +1161,20 @@
                   "kind": "scalar"
                 }
               },
+              "familyMemberId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "forOther": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
               "id": {
                 "nullable": false,
                 "type": {
@@ -1196,6 +1229,16 @@
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
+                }
+              },
+              "newRelationship": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/enum@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "typeName": "Relationship"
+                  }
                 }
               },
               "newSex": {
@@ -1342,6 +1385,21 @@
                   "namespace": "public"
                 }
               },
+              "familyMember": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "familyMemberId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "FamilyMember",
+                  "namespace": "public"
+                }
+              },
               "patient": {
                 "cardinality": "N:1",
                 "on": {
@@ -1396,6 +1454,12 @@
                 "doctorId": {
                   "column": "doctorId"
                 },
+                "familyMemberId": {
+                  "column": "familyMemberId"
+                },
+                "forOther": {
+                  "column": "forOther"
+                },
                 "id": {
                   "column": "id"
                 },
@@ -1419,6 +1483,9 @@
                 },
                 "newMiddleName": {
                   "column": "newMiddleName"
+                },
+                "newRelationship": {
+                  "column": "newRelationship"
                 },
                 "newSex": {
                   "column": "newSex"
@@ -3354,6 +3421,160 @@
               },
               "namespaceId": "public",
               "table": "EmailVerification"
+            }
+          },
+          "FamilyMember": {
+            "fields": {
+              "accountId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "dateOfBirth": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/date-string@1",
+                  "kind": "scalar"
+                }
+              },
+              "firstName": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "lastName": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "middleName": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "relationship": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/enum@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "typeName": "Relationship"
+                  }
+                }
+              },
+              "sex": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/enum@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "typeName": "Sex"
+                  }
+                }
+              },
+              "updatedAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              }
+            },
+            "relations": {
+              "account": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "accountId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Account",
+                  "namespace": "public"
+                }
+              },
+              "requests": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "familyMemberId"
+                  ]
+                },
+                "to": {
+                  "model": "AppointmentRequest",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "accountId": {
+                  "column": "accountId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "dateOfBirth": {
+                  "column": "dateOfBirth"
+                },
+                "firstName": {
+                  "column": "firstName"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "lastName": {
+                  "column": "lastName"
+                },
+                "middleName": {
+                  "column": "middleName"
+                },
+                "relationship": {
+                  "column": "relationship"
+                },
+                "sex": {
+                  "column": "sex"
+                },
+                "updatedAt": {
+                  "column": "updatedAt"
+                }
+              },
+              "namespaceId": "public",
+              "table": "FamilyMember"
             }
           },
           "Household": {
@@ -6805,6 +7026,20 @@
                   "nativeType": "text",
                   "nullable": false
                 },
+                "familyMemberId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "forOther": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
                 "id": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -6844,6 +7079,20 @@
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": true
+                },
+                "newRelationship": {
+                  "codecId": "pg/enum@1",
+                  "nativeType": "Relationship",
+                  "nullable": true,
+                  "typeParams": {
+                    "typeName": "Relationship"
+                  },
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "Relationship",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
                 },
                 "newSex": {
                   "codecId": "pg/enum@1",
@@ -6989,6 +7238,25 @@
                   }
                 },
                 {
+                  "name": "AppointmentRequest_familyMemberId_fkey",
+                  "onDelete": "setNull",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "familyMemberId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "AppointmentRequest"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "FamilyMember"
+                  }
+                },
+                {
                   "name": "AppointmentRequest_requestedById_fkey",
                   "onDelete": "cascade",
                   "onUpdate": "cascade",
@@ -7074,6 +7342,14 @@
                     "doctorId"
                   ],
                   "name": "AppointmentRequest_doctorId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "familyMemberId"
+                  ],
+                  "name": "AppointmentRequest_familyMemberId_idx_ddb6e46b",
+                  "prefix": "AppointmentRequest_familyMemberId_idx",
                   "unique": false
                 },
                 {
@@ -8524,6 +8800,125 @@
                   "id"
                 ],
                 "name": "EmailVerification_pkey"
+              },
+              "uniques": []
+            },
+            "FamilyMember": {
+              "columns": {
+                "accountId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamp",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "dateOfBirth": {
+                  "codecId": "pg/date-string@1",
+                  "nativeType": "date",
+                  "nullable": false
+                },
+                "firstName": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "lastName": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "middleName": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "relationship": {
+                  "codecId": "pg/enum@1",
+                  "nativeType": "Relationship",
+                  "nullable": false,
+                  "typeParams": {
+                    "typeName": "Relationship"
+                  },
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "Relationship",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "sex": {
+                  "codecId": "pg/enum@1",
+                  "nativeType": "Sex",
+                  "nullable": false,
+                  "typeParams": {
+                    "typeName": "Sex"
+                  },
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "Sex",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                },
+                "updatedAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "foreignKeys": [
+                {
+                  "name": "FamilyMember_accountId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "accountId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "FamilyMember"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Account"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "accountId"
+                  ],
+                  "name": "FamilyMember_accountId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ],
+                "name": "FamilyMember_pkey"
               },
               "uniques": []
             },
@@ -10917,7 +11312,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "66cf85b74216c519d2a40d235978a83d10d2837f78589e79296b897a2ff93483"
+    "storageHash": "ff654226d50412675f6e62a29593a1bfae82b2f6154ed1986f701425290c22cd"
   },
   "capabilities": {
     "postgres": {

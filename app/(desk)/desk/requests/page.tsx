@@ -7,6 +7,18 @@ import { orm } from "@/src/prisma/db";
 import { visitTimes } from "@/lib/patient-visits";
 import { calendarDateFromDb, formatCalendarDate, formatDateTime, instantFromDb } from "@/lib/datetime";
 import { fullName, SERVICE_LABELS } from "@/lib/domain";
+import type { Relationship } from "@/lib/enums";
+
+// "Ana Santos, their child": who the person is to whoever asked.
+const RELATIONSHIP_WORD: Record<Relationship, string> = {
+  HEAD: "family",
+  SPOUSE: "spouse",
+  CHILD: "child",
+  PARENT: "parent",
+  SIBLING: "sibling",
+  GRANDPARENT: "grandparent",
+  OTHER: "family",
+};
 import { Badge, buttonClass, Card, CardHeader, EmptyState, PageHeader } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Booking requests" };
@@ -20,8 +32,10 @@ export default async function DeskRequestsPage({ searchParams }: PageProps<"/des
       .select(
         "id", "preferredDate", "preferredTime", "service", "reason", "createdAt", "rescheduleOfId",
         "newFirstName", "newMiddleName", "newLastName", "newDateOfBirth", "newContactNumber", "newEmail",
+        "forOther", "newRelationship",
       )
       .include("doctor", (d) => d.select("fullName"))
+      .include("requestedBy", (a) => a.select("fullName"))
       .include("patient", (p) =>
         p.select("id", "firstName", "middleName", "lastName", "contactNumber", "patientNumber"),
       )
@@ -105,6 +119,15 @@ export default async function DeskRequestsPage({ searchParams }: PageProps<"/des
                         {nameOf(r)} <Badge tone="accent">New patient</Badge>
                       </span>
                     )}
+                    {/* Asked by a parent or carer: accepting lets them look after this
+                        chart; it doesn't become their own. */}
+                    {r.forOther ? (
+                      <p className="text-sm text-ink-muted">
+                        Asked by {r.requestedBy.fullName}
+                        {r.newRelationship ? `, their ${RELATIONSHIP_WORD[r.newRelationship]}` : ""}. They&rsquo;ll be
+                        able to see this chart and book for them.
+                      </p>
+                    ) : null}
                     {r.rescheduleOfId && moving.get(r.rescheduleOfId) ? (
                       <p className="text-sm">
                         <Badge tone="warn">Move</Badge>{" "}

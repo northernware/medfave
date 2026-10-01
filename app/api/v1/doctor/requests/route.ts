@@ -14,8 +14,10 @@ export async function GET(request: Request) {
     .select(
       "id", "preferredDate", "preferredTime", "service", "reason", "createdAt", "rescheduleOfId",
       "newFirstName", "newMiddleName", "newLastName", "newDateOfBirth", "newContactNumber", "newEmail",
+      "forOther", "newRelationship",
     )
     .include("patient", (p) => p.select("id", "firstName", "middleName", "lastName"))
+    .include("requestedBy", (a) => a.select("fullName"))
     .where((r) => r.clinicId.eq(doctor.clinicId))
     .where((r) => r.doctorId.eq(doctor.doctorId))
     .where((r) => r.status.eq("PENDING"))
@@ -56,6 +58,8 @@ export async function GET(request: Request) {
       patient: r.patient
         ? { id: r.patient.id, fullName: fullName(r.patient) }
         : { id: null, fullName: fullName({ firstName: r.newFirstName ?? "", middleName: r.newMiddleName, lastName: r.newLastName ?? "" }) },
+      /** Asked by somebody else (a parent, a carer): accepting lets them look after this chart, not own it. */
+      askedBy: r.forOther ? { fullName: r.requestedBy.fullName, relationship: r.newRelationship } : null,
       /** No record at this clinic yet: accepting links (`record: <patientId>`) or creates (`record: "new"`) one. */
       newPatient: r.patient
         ? null
