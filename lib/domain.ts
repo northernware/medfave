@@ -104,7 +104,8 @@ export const QUEUE_STATUSES: AppointmentStatus[] = ["CHECKED_IN", "IN_CONSULTATI
 export const STATUS_TRANSITIONS: Record<AppointmentStatus, AppointmentStatus[]> = {
   PENDING: ["CONFIRMED", "CHECKED_IN", "CANCELLED", "NO_SHOW"],
   CONFIRMED: ["CHECKED_IN", "CANCELLED", "NO_SHOW"],
-  CHECKED_IN: ["IN_CONSULTATION", "CANCELLED", "NO_SHOW"],
+  // Back to CONFIRMED undoes a check-in made by mistake, until the consultation starts.
+  CHECKED_IN: ["IN_CONSULTATION", "CONFIRMED", "CANCELLED", "NO_SHOW"],
   IN_CONSULTATION: ["COMPLETED", "CANCELLED"],
   COMPLETED: [],
   CANCELLED: ["CONFIRMED"],
@@ -124,6 +125,7 @@ export function statusActionLabel(from: AppointmentStatus, to: AppointmentStatus
   if (to === "CONFIRMED" && (from === "CANCELLED" || from === "NO_SHOW")) {
     return "Restore booking";
   }
+  if (to === "CONFIRMED" && from === "CHECKED_IN") return "Undo check-in";
   return {
     PENDING: "Back to pending",
     CONFIRMED: "Confirm",

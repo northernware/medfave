@@ -419,6 +419,13 @@ export function ScheduleRail({
                   <input type="hidden" name="appointmentId" value={a.id} />
                   <button className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap text-on-accent">Start</button>
                 </form>
+              ) : selected === todayKey && a.status === "CHECKED_IN" ? (
+                // The desk can take back a check-in made by mistake.
+                <form action={setAppointmentStatus}>
+                  <input type="hidden" name="appointmentId" value={a.id} />
+                  <input type="hidden" name="status" value="CONFIRMED" />
+                  <button className="rounded-full px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap text-ink-muted hover:bg-surface hover:text-ink">Undo check-in</button>
+                </form>
               ) : null;
             return (
               <div
