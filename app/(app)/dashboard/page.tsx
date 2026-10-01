@@ -31,7 +31,7 @@ import {
   ageFrom,
 } from "@/lib/domain";
 import { appointmentListQuery, loadClinicHours, loadSchedule, toAppointmentListItem } from "@/lib/queries";
-import { Badge, Card, EmptyState, PageHeader, SectionTitle, buttonClass } from "@/components/ui";
+import { Badge, Card, EmptyState, PageHeader, buttonClass } from "@/components/ui";
 import { LastVisitDetails, PatientsList, ScheduleRail, StatCard, type LastVisit } from "./panels";
 
 /** Whole minutes between two moments, floored — the number a receptionist reads. */
@@ -238,13 +238,16 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
             <StatCard value={upcomingCount.n} label="Upcoming" hint="Booked after today" href="/appointments" />
           </div>
           {queue.length > 0 ? (
-            <section>
-              <SectionTitle title="Waiting room" hint="Here now — waiting or with the doctor" />
-              <Card raised className="border-warn/40 divide-y divide-border">
+            <Card as="section" raised className="border-warn/40 divide-y divide-border">
+              {/* Title inside the card, like the other panels. */}
+              <div className="flex items-baseline gap-2 px-5 pt-5 pb-3">
+                <h2 className="font-display text-lg font-semibold">Waiting room</h2>
+                <span className="truncate text-xs text-ink-faint">Here now — waiting or with the doctor</span>
+              </div>
                 {queue.map((a) => {
                   const seeing = a.status === "IN_CONSULTATION";
                   return (
-                    <div key={a.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5">
+                    <div key={a.id} className="flex flex-wrap items-center gap-3 px-5 py-2.5">
                       {/* Arrival, and how long it has been — the two numbers the
                           desk is asked about. The wait stops at the moment the
                           doctor took them in, rather than climbing all visit. */}
@@ -310,7 +313,6 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
                   );
                 })}
               </Card>
-            </section>
           ) : null}
 
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
@@ -324,11 +326,14 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           </div>
 
           {drafts.length > 0 ? (
-            <section>
-              <SectionTitle title="Unfinished notes" hint="Saved, not yet signed" />
-              <Card className="divide-y divide-border">
+            <Card as="section" className="divide-y divide-border">
+              {/* Title inside the card, like the other panels. */}
+              <div className="flex items-baseline gap-2 px-5 pt-5 pb-3">
+                <h2 className="font-display text-lg font-semibold">Unfinished notes</h2>
+                <span className="truncate text-xs text-ink-faint">Saved, not yet signed</span>
+              </div>
                 {drafts.map((r) => (
-                  <div key={r.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5">
+                  <div key={r.id} className="flex flex-wrap items-center gap-3 px-5 py-2.5">
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium">
                         {r.chiefComplaint || "Untitled draft"}
@@ -344,12 +349,14 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
                   </div>
                 ))}
               </Card>
-            </section>
           ) : null}
 
-          <section>
-            <SectionTitle title="Follow-ups due" hint="Asked for by a visit, never booked" />
-            <Card>
+          <Card as="section" className="">
+            {/* Title inside the card, like the other panels. */}
+            <div className="flex items-baseline gap-2 px-5 pt-5 pb-3">
+              <h2 className="font-display text-lg font-semibold">Follow-ups due</h2>
+              <span className="truncate text-xs text-ink-faint">Asked for by a visit, never booked</span>
+            </div>
               {dueFollowUps.length === 0 ? (
                 <EmptyState
                   title="Nothing outstanding"
@@ -360,7 +367,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
                   {dueFollowUps.map((r) => {
                     const overdue = r.followUpDate! < today.start;
                     return (
-                      <li key={r.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5">
+                      <li key={r.id} className="flex flex-wrap items-center gap-3 px-5 py-2.5">
                         <span className="tabular w-40 shrink-0 text-sm">
                           <span className={overdue ? "font-medium text-danger-ink" : "text-ink-muted"}>
                             <span className="whitespace-nowrap">{formatCalendarDate(r.followUpDate!)}</span>
@@ -394,13 +401,15 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
                 </ul>
               )}
             </Card>
-          </section>
           {missed.length > 0 ? (
-            <section>
-              <SectionTitle title="Missed" hint="Last 30 days" />
-              <Card className="divide-y divide-border">
+            <Card as="section" className="divide-y divide-border">
+              {/* Title inside the card, like the other panels. */}
+              <div className="flex items-baseline gap-2 px-5 pt-5 pb-3">
+                <h2 className="font-display text-lg font-semibold">Missed</h2>
+                <span className="truncate text-xs text-ink-faint">Last 30 days</span>
+              </div>
                 {missed.map((a) => (
-                  <div key={a.id} className="px-4 py-2.5">
+                  <div key={a.id} className="px-5 py-2.5">
                     <div className="flex items-baseline justify-between gap-2">
                       <Link
                         href={`/appointments/${a.id}`}
@@ -426,7 +435,6 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
                   </div>
                 ))}
               </Card>
-            </section>
           ) : null}
         </div>
 
