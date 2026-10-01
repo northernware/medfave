@@ -393,7 +393,7 @@ export function ScheduleRail({
           {todays.map((a) => {
             const start = minuteOfDay(a.scheduledAt);
             // Tall enough for its details even when short; a long visit grows with its length.
-            const height = Math.max(90, (a.durationMinutes / 60) * HOUR - 4);
+            const height = Math.max(104, (a.durationMinutes / 60) * HOUR - 4);
             const done = a.status === "COMPLETED" || a.status === "CANCELLED" || a.status === "NO_SHOW";
             const end = new Date(a.scheduledAt.getTime() + a.durationMinutes * 60_000);
             const action =
@@ -412,17 +412,20 @@ export function ScheduleRail({
             return (
               <div
                 key={a.id}
-                className={`absolute right-0 left-[76px] flex flex-col gap-1 overflow-hidden rounded-xl border px-3 py-2 ${done ? "border-border bg-surface-muted/50 opacity-70" : "border-border-strong bg-surface-muted"}`}
+                className={`absolute right-0 left-[76px] flex flex-col gap-1.5 overflow-hidden rounded-xl border px-4 py-3 ${done ? "border-border bg-surface-muted/50 opacity-70" : "border-border-strong bg-surface-muted"}`}
                 style={{ top: top(start) + 2, height }}
               >
-                {/* Status, name, reason, time — nothing else. */}
+                {/* Status, name, what for, time — nothing else. */}
                 <div className="flex items-center justify-between gap-2">
                   <Badge tone={APPOINTMENT_STATUS_TONE[a.status]}>{APPOINTMENT_STATUS_LABELS[a.status]}</Badge>
                   {action}
                 </div>
                 <Link href={itemHref(a.id)} className="min-w-0">
                   <span className="block truncate text-[13px] leading-5 font-semibold hover:underline">{fullName(a.patient)}</span>
-                  {a.reason ? <span className="block truncate text-[11px] leading-4 text-ink-muted">{a.reason}</span> : null}
+                  {/* What the visit is for (the service); the booking's own words on hover. */}
+                  <span title={a.reason ?? undefined} className="block truncate text-[11px] leading-4 text-ink-muted">
+                    {SERVICE_LABELS[a.service]}
+                  </span>
                   <span className="tabular block truncate text-[11px] leading-4 text-ink-faint">
                     {formatTime(a.scheduledAt)} – {formatTime(end)}
                   </span>
