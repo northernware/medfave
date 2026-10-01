@@ -34,5 +34,7 @@ export async function POST(request: Request, ctx: RouteContext<"/api/v1/doctor/a
       );
     case "clash":
       return apiError(409, "That time has been booked by someone else since. Book a new time instead.");
+    case "not-today":
+      return apiError(409, "Check in and start a visit on its day.");
   }
 }

@@ -88,6 +88,12 @@ export default async function DeskAppointmentPage({
         {appointment.autoNoShowAt ? <Badge tone="warn">Marked automatically</Badge> : null}
       </div>
 
+      {blocked === "not-today" ? (
+        <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm">
+          <p className="font-medium">Not today&rsquo;s visit.</p>
+          <p className="mt-0.5 text-ink-muted">Check people in on the day of their visit. Nothing was changed.</p>
+        </div>
+      ) : null}
       {blocked === "role" ? (
         <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm">
           <p className="font-medium">That is not a front-desk change.</p>

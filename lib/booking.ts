@@ -5,6 +5,7 @@ import { pickDoctor } from "@/lib/clinic";
 import { db, orm } from "@/src/prisma/db";
 import {
   clinicDayRange,
+  dayKey,
   formatDateTime,
   fromDateTimeLocalValue,
   instantFromDb,
@@ -447,7 +448,9 @@ export type StatusChange =
   | { ok: false; reason: "invalid" | "not-found" }
   | { ok: false; reason: "role" }
   | { ok: false; reason: "transition"; current: AppointmentStatus }
-  | { ok: false; reason: "clash"; clashId: string };
+  | { ok: false; reason: "clash"; clashId: string }
+  /** Checking in or starting a visit that isn't today. */
+  | { ok: false; reason: "not-today" };
 
 /**
  * Moves an appointment through the queue: confirm, check in, start, complete,
@@ -480,6 +483,12 @@ export async function changeAppointmentStatus(
   // The page only offers moves that exist, but the page is not the authority.
   if (!canMoveTo(existing.status, status)) {
     return { ok: false, reason: "transition", current: existing.status };
+  }
+
+  // Arriving and being seen happen on the day of the visit: a person can't be
+  // checked in for tomorrow (or last week) by a stray click on another day.
+  if ((status === "CHECKED_IN" || status === "IN_CONSULTATION") && !isClinicToday(existing.scheduledAt)) {
+    return { ok: false, reason: "not-today" };
   }
 
   const changes = {
@@ -531,4 +540,9 @@ export async function changeAppointmentStatus(
 
   revalidateAppointmentPages(appointmentId);
   return { ok: true, status };
+}
+
+/** Whether a stored visit time falls on today, by the clinic's clock. */
+export function isClinicToday(scheduledAt: string, now = new Date()) {
+  return dayKey(instantFromDb(scheduledAt)) === dayKey(now);
 }

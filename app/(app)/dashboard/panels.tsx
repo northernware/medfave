@@ -404,13 +404,13 @@ export function ScheduleRail({
                       {formatTime(a.scheduledAt)} · {SERVICE_LABELS[a.service]}
                     </span>
                   </Link>
-                  {a.status === "PENDING" || a.status === "CONFIRMED" ? (
+                  {selected === todayKey && (a.status === "PENDING" || a.status === "CONFIRMED") ? (
                     <form action={setAppointmentStatus}>
                       <input type="hidden" name="appointmentId" value={a.id} />
                       <input type="hidden" name="status" value="CHECKED_IN" />
                       <button className="rounded-full bg-surface px-2.5 py-1 text-xs font-semibold whitespace-nowrap hover:bg-accent-soft">Check in</button>
                     </form>
-                  ) : a.status === "CHECKED_IN" && canStart ? (
+                  ) : selected === todayKey && a.status === "CHECKED_IN" && canStart ? (
                     <form action={startConsultation}>
                       <input type="hidden" name="appointmentId" value={a.id} />
                       <button className="rounded-full bg-accent px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-on-accent">Start</button>
