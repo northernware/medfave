@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { issuePatientActivation, revokeCareLink, revokePatientActivation } from "@/app/actions/access";
+import { startOwnHousehold } from "@/app/actions/patients";
 import { requireStaff } from "@/lib/auth";
 import { orm } from "@/src/prisma/db";
 import { calendarDateFromDb, formatCalendarDate, formatDateTime, instantFromDb } from "@/lib/datetime";
@@ -107,7 +108,7 @@ export default async function DeskPatientPage({
 }: PageProps<"/desk/patients/[id]">) {
   const staff = await requireStaff();
   const { id } = await params;
-  const { code, pin, mail, for: forWho, to } = await searchParams;
+  const { code, pin, mail, for: forWho, to, household: householdNote } = await searchParams;
 
   const patient = await orm.Patient
     .select(
@@ -182,6 +183,15 @@ export default async function DeskPatientPage({
       .all(),
   ]);
   const careCodesLive = careCodes.filter((c) => instantToDbSafe(c.expiresAt));
+
+  // The rest of their household: who could come along if they start their own.
+  const housemates = await orm.Patient
+    .select("id", "firstName", "middleName", "lastName", "relationship")
+    .where((p) => p.householdId.eq(patient.household.id))
+    .where((p) => p.clinicId.eq(staff.clinicId))
+    .where((p) => p.archivedAt.isNull())
+    .all();
+  const others = housemates.filter((h) => h.id !== patient.id);
 
   return (
     <div className="space-y-6">
@@ -284,6 +294,45 @@ export default async function DeskPatientPage({
                   <button className={buttonClass("primary")}>Link their account</button>
                 </form>
               </>
+            )}
+          </div>
+        </Card>
+
+        <Card>
+          <CardHeader title="Household" subtitle={`${patient.household.name} household · ${housemates.length} ${housemates.length === 1 ? "person" : "people"}`} />
+          <div className="space-y-3 px-5 py-4">
+            {householdNote === "new" ? (
+              <p className="text-sm text-ok-ink">Their own household is set up. Records went with each person.</p>
+            ) : null}
+            {/* The household page is the doctor's. */}
+            {staff.doctorId ? (
+              <Link href={`/households/${patient.household.id}`} className="block text-sm font-medium text-accent-ink hover:underline">
+                Open household
+              </Link>
+            ) : null}
+            {patient.archivedAt || others.length === 0 ? null : (
+              // Starting a family of their own: a move, not a copy — one household per person.
+              <details className="group">
+                <summary className="cursor-pointer list-none text-sm font-medium text-ink-muted hover:text-ink">
+                  Start their own household…
+                </summary>
+                <form action={startOwnHousehold} className="mt-3 space-y-3">
+                  <input type="hidden" name="patientId" value={patient.id} />
+                  <p className="text-sm text-ink-muted">
+                    {patient.firstName} becomes head of a new {patient.lastName} household. Tick who moves with them.
+                  </p>
+                  <div className="space-y-1.5">
+                    {others.map((h) => (
+                      <label key={h.id} className="flex items-center gap-2 text-sm">
+                        <input type="checkbox" name="memberId" value={h.id} className="accent-[var(--accent)]" />
+                        {fullName(h)}
+                        <span className="text-ink-faint">· {RELATIONSHIP_LABELS[h.relationship]}</span>
+                      </label>
+                    ))}
+                  </div>
+                  <button className={buttonClass("secondary")}>Start household</button>
+                </form>
+              </details>
             )}
           </div>
         </Card>
