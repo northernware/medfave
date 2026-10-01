@@ -31,6 +31,7 @@ export const DOCTOR_LINKS: readonly NavLink[] = [
   { href: "/households", label: "Households", icon: "households", group: "Patients" },
   { href: "/documents", label: "Records requests", icon: "documents", group: "Patients" },
   { href: "/manage/schedule", label: "My hours", icon: "hours", group: "Clinic" },
+  { href: "/manage", label: "Clinic settings", icon: "settings", group: "Clinic" },
 ];
 
 /** The front desk's sections. */
@@ -50,10 +51,12 @@ export const MANAGE_LINKS = {
   admin: { href: "/admin/verify", label: "Admin", icon: "admin", group: "Medfave" },
 } satisfies Record<string, NavLink>;
 
-/** The views a member of staff can switch between, by role. */
-export type ViewKey = "doctor" | "desk" | "settings";
+/** The two ways of working a clinic's day, for those who can do both. */
+export type ViewKey = "doctor" | "desk";
 export const VIEWS: Record<ViewKey, { href: string; label: string }> = {
   doctor: { href: "/dashboard", label: "Doctor" },
   desk: { href: "/desk", label: "Front desk" },
-  settings: { href: "/manage", label: "Settings" },
 };
+
+/** Clinic settings: a link (sidebar and the clinic menu), not a view. */
+export const CLINIC_SETTINGS: NavLink = { href: "/manage", label: "Clinic settings", icon: "settings", group: "Clinic" };

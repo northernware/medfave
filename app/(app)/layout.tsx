@@ -12,7 +12,8 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
       home="/dashboard"
       links={DOCTOR_LINKS}
       clinic={{ id: doctor.clinicId, name: doctor.clinicName, role: "Doctor" }}
-      views={["doctor", "desk", "settings"]}
+      views={["doctor", "desk"]}
+      settingsHref="/manage"
       view="doctor"
       wide
       person={{ name: doctor.fullName, detail: doctor.specialty ?? doctor.email }}>

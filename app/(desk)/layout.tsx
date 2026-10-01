@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { requireStaff } from "@/lib/auth";
 import { AppShell } from "@/components/app-shell";
-import { DESK_LINKS, type ViewKey } from "@/components/nav-links";
+import { CLINIC_SETTINGS, DESK_LINKS, type ViewKey } from "@/components/nav-links";
 
 const ROLE = { SECRETARY: "Secretary", ADMIN: "Administrator", DOCTOR: "Doctor" } as const;
 
@@ -16,12 +16,14 @@ const ROLE = { SECRETARY: "Secretary", ADMIN: "Administrator", DOCTOR: "Doctor" 
 export default async function DeskLayout({ children }: { children: ReactNode }) {
   const staff = await requireStaff();
   const views: ViewKey[] =
-    staff.role === "DOCTOR" ? ["doctor", "desk", "settings"] : staff.role === "ADMIN" ? ["desk", "settings"] : ["desk"];
+    staff.role === "DOCTOR" ? ["doctor", "desk"] : ["desk"];
+  const manages = staff.role !== "SECRETARY";
 
   return (
     <AppShell
       home="/desk"
-      links={DESK_LINKS}
+      links={manages ? [...DESK_LINKS, CLINIC_SETTINGS] : DESK_LINKS}
+      settingsHref={manages ? "/manage" : undefined}
       clinic={{ id: staff.clinicId, name: staff.clinicName, role: ROLE[staff.role] }}
       views={views}
       view="desk"

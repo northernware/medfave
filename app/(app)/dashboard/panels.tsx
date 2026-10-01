@@ -303,10 +303,14 @@ export function ScheduleRail({
           </span>
         </div>
         <div className="relative" style={{ height: (hours.length - 1) * HOUR + 8 }}>
+          {/* The time column: one vertical line through every hour, the labels sitting on it. */}
+          <span aria-hidden className="absolute top-0 bottom-0 left-8 w-px -translate-x-1/2 bg-border-strong" />
           {hours.map((h) => (
-            <div key={h} className="absolute inset-x-0 flex items-start gap-3" style={{ top: top(h * 60) - 7 }}>
-              <span className="tabular w-14 shrink-0 text-right text-[11px] text-ink-faint">{label(h)}</span>
-              <span className="mt-[7px] h-px flex-1 bg-border" />
+            <div key={h} className="absolute inset-x-0 flex items-center" style={{ top: top(h * 60) - 8 }}>
+              <span className="w-16 shrink-0 text-center">
+                <span className="tabular bg-surface px-1 py-0.5 text-[11px] text-ink-faint">{label(h)}</span>
+              </span>
+              <span className="ml-2 h-px flex-1 bg-border/70" />
             </div>
           ))}
           {todays.map((a) => {
@@ -316,7 +320,7 @@ export function ScheduleRail({
             return (
               <div
                 key={a.id}
-                className={`absolute right-0 left-[68px] overflow-hidden rounded-xl border px-3 py-2 ${done ? "border-border bg-surface-muted/50 opacity-70" : "border-border-strong bg-surface-muted"}`}
+                className={`absolute right-0 left-[76px] overflow-hidden rounded-xl border px-3 py-2 ${done ? "border-border bg-surface-muted/50 opacity-70" : "border-border-strong bg-surface-muted"}`}
                 style={{ top: top(start) + 2, height }}
               >
                 <div className="flex items-start justify-between gap-2">
@@ -345,11 +349,12 @@ export function ScheduleRail({
             );
           })}
           {selected === todayKey && nowMinute >= firstHour * 60 && nowMinute <= lastHour * 60 ? (
-            <div className="pointer-events-none absolute inset-x-0 flex items-center" style={{ top: top(nowMinute) - 10 }}>
-              <span className="tabular w-14 shrink-0 rounded-full bg-ink px-1.5 py-0.5 text-center text-[11px] font-semibold text-canvas">
-                {formatTime(now).replace(/\s?[AP]M$/i, "")}
+            <div className="pointer-events-none absolute inset-x-0 z-10" style={{ top: top(nowMinute) }}>
+              {/* The line runs the full width, under the pill. */}
+              <span aria-hidden className="absolute inset-x-0 top-0 h-px bg-accent" />
+              <span className="absolute top-0 left-8 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap text-on-accent tabular">
+                {formatTime(now)}
               </span>
-              <span className="ml-1 h-px flex-1 bg-ink" />
             </div>
           ) : null}
         </div>
