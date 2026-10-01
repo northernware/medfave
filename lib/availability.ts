@@ -18,6 +18,8 @@ export type Closure = {
   startMinute: number | null;
   endMinute: number | null;
   reason: string;
+  /** "NONE", or "WEEKLY" / "MONTHLY" / "YEARLY": the stretch repeats from `startsOn`. Older rows have none. */
+  repeat?: string;
 };
 
 export type Schedule = {
@@ -54,12 +56,43 @@ export function hoursFor(schedule: Schedule, key: string): OpeningHours | null {
   return schedule.hours.find((h) => h.weekday === weekday) ?? null;
 }
 
+const keyOf = (y: number, m: number, d: number) => {
+  // Rolls over like Date: the 31st of a 30-day month doesn't exist, so that
+  // month's repeat is skipped rather than moved.
+  const at = new Date(Date.UTC(y, m - 1, d));
+  return at.getUTCDate() === d ? at.toISOString().slice(0, 10) : null;
+};
+const daysBetween = (from: string, to: string) =>
+  Math.round((Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000);
+
+/**
+ * Whether a closure covers a day, its repeats included. A repeating closure
+ * covers the same stretch (startsOn to endsOn) again every week, month or
+ * year, from its first day on.
+ */
+export function closureCovers(c: Closure, key: string): boolean {
+  const first = c.startsOn.slice(0, 10);
+  const last = c.endsOn.slice(0, 10);
+  if (key < first) return false;
+  const span = daysBetween(first, last);
+  const repeat = c.repeat ?? "NONE";
+  if (repeat === "NONE") return key <= last;
+  if (repeat === "WEEKLY") return daysBetween(first, key) % 7 <= span;
+  const [y, m] = key.split("-").map(Number);
+  const [, sm, sd] = first.split("-").map(Number);
+  // The stretch that started this month (or year), or the one before that may run into it.
+  const starts =
+    repeat === "MONTHLY"
+      ? [keyOf(y, m, sd), m === 1 ? keyOf(y - 1, 12, sd) : keyOf(y, m - 1, sd)]
+      : [keyOf(y, sm, sd), keyOf(y - 1, sm, sd)];
+  return starts.some((start) => start !== null && start >= first && key >= start && daysBetween(start, key) <= span);
+}
+
 /** A whole-day closure covering this date, if any. */
 export function fullDayClosure(schedule: Schedule, key: string): Closure | null {
   return (
     schedule.closures.find(
-      (c) =>
-        c.startMinute === null && c.endMinute === null && key >= c.startsOn && key <= c.endsOn,
+      (c) => c.startMinute === null && c.endMinute === null && closureCovers(c, key),
     ) ?? null
   );
 }
@@ -75,7 +108,7 @@ export function blockedIntervals(schedule: Schedule, key: string): BusyInterval[
     .map((b) => ({ start: b.startMinute, end: b.endMinute }));
 
   for (const closure of schedule.closures) {
-    if (key < closure.startsOn || key > closure.endsOn) continue;
+    if (!closureCovers(closure, key)) continue;
     if (closure.startMinute === null || closure.endMinute === null) continue;
     blocks.push({ start: closure.startMinute, end: closure.endMinute });
   }

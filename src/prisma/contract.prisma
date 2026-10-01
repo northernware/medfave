@@ -398,6 +398,9 @@ namespace public {
     minLeadMinutes    Int     @default(1440)
     maxLeadDays       Int     @default(180)
     defaultDurationMinutes Int @default(30)
+    /// Closed on Philippine regular holidays and special non-working days
+    /// (lib/holidays-ph.ts) unless turned off.
+    observeHolidays   Boolean @default(true)
     doctor            Doctor  @relation(fields: [doctorId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "ScheduleSettings_doctorId_fkey")
 
     @@map("ScheduleSettings")
@@ -480,6 +483,9 @@ namespace public {
     startMinute Int?
     endMinute   Int?
     reason      String
+    /// "NONE", or "WEEKLY" / "MONTHLY" / "YEARLY": the same stretch again every
+    /// week, month or year from `startsOn` on, until removed.
+    repeat      String      @default("NONE")
     doctor      Doctor      @relation(fields: [doctorId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "ClinicClosure_doctorId_fkey")
 
     @@index([doctorId, startsOn], map: "ClinicClosure_doctorId_startsOn_idx")

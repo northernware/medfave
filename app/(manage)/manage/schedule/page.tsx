@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
+import { or } from "@prisma/orm-postgres/orm-client";
+import { holidaysBetween } from "@/lib/holidays-ph";
+import { observesHolidays } from "@/lib/schedule";
 import Link from "next/link";
 import {
   addBreak,
   addClosure,
+  saveHolidays,
   removeBreak,
   removeClosure,
   saveBookingRules,
@@ -36,6 +40,7 @@ const SAVED: Record<string, string> = {
   clinic: "Clinic opening hours saved. Doctors' hours are kept inside them.",
   breaks: "Breaks updated.",
   closures: "Closures updated.",
+  holidays: "Holidays updated.",
   lengths: "Service lengths saved. They apply to new bookings.",
   rules: "Booking rules saved.",
 };
@@ -134,6 +139,8 @@ export default async function SchedulePage({ searchParams }: PageProps<"/manage/
   const now = new Date();
   const today = dayKey(now);
 
+  const observeHolidays = await observesHolidays(doctorId);
+  const upcomingHolidays = holidaysBetween(today, 365).slice(0, 3);
   const [hoursRows, breaks, closures, schedule, upcoming] = await Promise.all([
     orm.ClinicHours
       .select("weekday", "openMinute", "closeMinute")
@@ -145,10 +152,10 @@ export default async function SchedulePage({ searchParams }: PageProps<"/manage/
       .orderBy((b) => b.startMinute.asc())
       .all(),
     orm.ClinicClosure
-      .select("id", "startsOn", "endsOn", "startMinute", "endMinute", "reason")
+      .select("id", "startsOn", "endsOn", "startMinute", "endMinute", "reason", "repeat")
       .where((c) => c.doctorId.eq(doctorId))
       // Past closures no longer decide anything, so they are not shown.
-      .where((c) => c.endsOn.gte(today))
+      .where((c) => or(c.endsOn.gte(today), c.repeat.neq("NONE")))
       .orderBy((c) => c.startsOn.asc())
       .all(),
     loadSchedule(doctorId),
@@ -296,6 +303,7 @@ export default async function SchedulePage({ searchParams }: PageProps<"/manage/
                     {c.startMinute !== null && c.endMinute !== null
                       ? `, ${labelForMinute(c.startMinute)} to ${labelForMinute(c.endMinute)}`
                       : ", all day"}
+                    {c.repeat === "WEEKLY" ? ", every week" : c.repeat === "MONTHLY" ? ", every month" : c.repeat === "YEARLY" ? ", every year" : ""}
                   </span>
                 </span>
                 <form action={removeClosure.bind(null, doctorId)}>
@@ -309,6 +317,20 @@ export default async function SchedulePage({ searchParams }: PageProps<"/manage/
         <div className="px-5 py-4">
           <ClosureForm action={addClosure.bind(null, doctorId)} today={today} />
         </div>
+        {/* Built in: closed on Philippine holidays unless this doctor works them. */}
+        <form action={saveHolidays.bind(null, doctorId)} className="space-y-2 border-t border-border px-5 py-4">
+          <label className="flex items-start gap-3 text-sm">
+            <input type="checkbox" name="observe" defaultChecked={observeHolidays} className="mt-0.5 size-4 accent-accent" />
+            <span>
+              <span className="font-medium">Closed on Philippine holidays</span>
+              <span className="block text-ink-muted">
+                Next: {upcomingHolidays.map((h) => `${h.name} (${formatCalendarDate(calendarDateFromDb(h.date))})`).join(", ")}.
+                Eid holidays are proclaimed each year — add them above when announced.
+              </span>
+            </span>
+          </label>
+          <button className={buttonClass("secondary")}>Save</button>
+        </form>
       </Card>
 
       <Card>

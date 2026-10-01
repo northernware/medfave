@@ -33,7 +33,7 @@ import type {
 } from '@prisma/orm-postgres/contract/types';
 
 export type StorageHash =
-  StorageHashBase<'c1f6462a5eb3779d1b24f6bbcd0e4aa2b459c249c12e570f260a825d0ef9378b'>;
+  StorageHashBase<'b82f2892320cb0910011428e977d7aecc097880eb015f000423c0b0883280030'>;
 export type ExecutionHash = ExecutionHashBase<string>;
 export type ProfileHash =
   ProfileHashBase<'3916f444a8a17ad749191acf9e08dad97d1a327b88c2f1d45d12f240296aa8b2'>;
@@ -630,7 +630,6 @@ export type FieldOutputTypes = {
       readonly minLeadMinutes: CodecTypes['pg/int4@1']['output'];
       readonly maxLeadDays: CodecTypes['pg/int4@1']['output'];
       readonly defaultDurationMinutes: CodecTypes['pg/int4@1']['output'];
-      readonly observeHolidays: CodecTypes['pg/bool@1']['output'];
     };
     readonly ServiceDuration: {
       readonly id: CodecTypes['pg/text@1']['output'];
@@ -1060,7 +1059,6 @@ export type FieldInputTypes = {
       readonly minLeadMinutes: CodecTypes['pg/int4@1']['input'];
       readonly maxLeadDays: CodecTypes['pg/int4@1']['input'];
       readonly defaultDurationMinutes: CodecTypes['pg/int4@1']['input'];
-      readonly observeHolidays: CodecTypes['pg/bool@1']['input'];
     };
     readonly ServiceDuration: {
       readonly id: CodecTypes['pg/text@1']['input'];
@@ -1489,7 +1487,6 @@ export type StorageColumnTypes = {
       readonly doctorId: CodecTypes['pg/text@1']['output'];
       readonly maxLeadDays: CodecTypes['pg/int4@1']['output'];
       readonly minLeadMinutes: CodecTypes['pg/int4@1']['output'];
-      readonly observeHolidays: CodecTypes['pg/bool@1']['output'];
       readonly slotStepMinutes: CodecTypes['pg/int4@1']['output'];
     };
     readonly ServiceDuration: {
@@ -1919,7 +1916,6 @@ export type StorageColumnInputTypes = {
       readonly doctorId: CodecTypes['pg/text@1']['input'];
       readonly maxLeadDays: CodecTypes['pg/int4@1']['input'];
       readonly minLeadMinutes: CodecTypes['pg/int4@1']['input'];
-      readonly observeHolidays: CodecTypes['pg/bool@1']['input'];
       readonly slotStepMinutes: CodecTypes['pg/int4@1']['input'];
     };
     readonly ServiceDuration: {
@@ -5063,15 +5059,6 @@ type ContractBase = Omit<
                   readonly default: {
                     readonly kind: 'literal';
                     readonly value: DefaultLiteralValue<'pg/int4@1', 30>;
-                  };
-                };
-                readonly observeHolidays: {
-                  readonly nativeType: 'bool';
-                  readonly codecId: 'pg/bool@1';
-                  readonly nullable: false;
-                  readonly default: {
-                    readonly kind: 'literal';
-                    readonly value: DefaultLiteralValue<'pg/bool@1', true>;
                   };
                 };
               };
@@ -8917,10 +8904,6 @@ type ContractBase = Omit<
                 readonly nullable: false;
                 readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/int4@1' };
               };
-              readonly observeHolidays: {
-                readonly nullable: false;
-                readonly type: { readonly kind: 'scalar'; readonly codecId: 'pg/bool@1' };
-              };
             };
             readonly relations: {
               readonly doctor: {
@@ -8944,7 +8927,6 @@ type ContractBase = Omit<
                 readonly minLeadMinutes: { readonly column: 'minLeadMinutes' };
                 readonly maxLeadDays: { readonly column: 'maxLeadDays' };
                 readonly defaultDurationMinutes: { readonly column: 'defaultDurationMinutes' };
-                readonly observeHolidays: { readonly column: 'observeHolidays' };
               };
             };
           };

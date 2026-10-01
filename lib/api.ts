@@ -132,7 +132,7 @@ export async function clinicBookingInfo(clinicId: string, options: { doctorId?: 
           summary: describeWeek(schedule),
           hours: schedule.hours,
           breaks: schedule.breaks,
-          closures: schedule.closures.filter((c) => c.endsOn >= today),
+          closures: schedule.closures.filter((c) => c.endsOn >= today || (c.repeat ?? "NONE") !== "NONE"),
           slotStepMinutes: schedule.slotStepMinutes,
           earliestDay: earliestBookableDay(schedule),
           latestDay: latestBookableDay(schedule),
