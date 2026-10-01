@@ -118,15 +118,24 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
     ]);
 
   // The patients list: who is coming, soonest first; and the chosen one's last visit with this doctor.
-  const upcoming = (
+  // One row per patient: their next visit, and how many more they have booked.
+  const upcomingVisits = (
     await appointmentListQuery()
       .where((a) => a.doctorId.eq(doctor.id))
       .where((a) => a.scheduledAt.gte(instantToDb(today.start)))
       .where((a) => a.status.in(ACTIVE_STATUSES))
       .orderBy((a) => a.scheduledAt.asc())
-      .limit(7)
+      .limit(60)
       .all()
   ).map(toAppointmentListItem);
+  const moreFor = new Map<string, number>();
+  const upcoming = upcomingVisits
+    .filter((a) => {
+      const seen = moreFor.has(a.patient.id);
+      moreFor.set(a.patient.id, seen ? moreFor.get(a.patient.id)! + 1 : 0);
+      return !seen;
+    })
+    .slice(0, 7);
   const selected = upcoming.find((a) => a.id === visit) ?? upcoming[0] ?? null;
   const lastVisit = selected ? await loadLastVisit(selected.patient.id, doctor.id) : null;
   const todayKey = dayKey(now);
@@ -318,6 +327,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
             <PatientsList
               upcoming={upcoming}
+              moreFor={Object.fromEntries(moreFor)}
               selectedId={selected?.id ?? null}
               todayKey={todayKey}
               day={railDay === todayKey ? undefined : railDay}
