@@ -1,3 +1,4 @@
+import { AltArrowRightIcon } from "@solar-icons/react/linear/alt-arrow-right";
 import { buttonClass } from "./ui";
 
 /**
@@ -29,9 +30,7 @@ export function DangerZone({
     <details className="group rounded-xl border border-border bg-surface">
       <summary className="cursor-pointer list-none px-5 py-3.5 text-sm font-medium text-ink-muted transition-colors hover:text-danger-ink">
         {summary}
-        <span aria-hidden="true" className="ml-1.5 inline-block transition-transform group-open:rotate-90">
-          ›
-        </span>
+        <AltArrowRightIcon aria-hidden className="ml-1 inline-block size-4 align-[-3px] transition-transform group-open:rotate-90" />
       </summary>
       <div className="border-t border-border px-5 py-4">
         <p className="text-sm text-pretty text-ink-muted">{warning}</p>

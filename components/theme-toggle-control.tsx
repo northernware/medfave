@@ -1,5 +1,8 @@
 "use client";
 
+import { MonitorIcon } from "@solar-icons/react/linear/monitor";
+import { MoonIcon } from "@solar-icons/react/linear/moon";
+import { Sun2Icon } from "@solar-icons/react/linear/sun-2";
 import { useState } from "react";
 import { THEME_COOKIE, THEMES, type Theme } from "@/lib/theme";
 
@@ -9,12 +12,8 @@ const LABELS: Record<Theme, string> = {
   dark: "Dark",
 };
 
-const ICONS: Record<Theme, string> = {
-  system: "M4 5h16v11H4zM9 20h6M12 16v4",
-  light:
-    "M12 16a4 4 0 100-8 4 4 0 000 8zM12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4",
-  dark: "M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z",
-};
+const ICON_COMPONENTS = { system: MonitorIcon, light: Sun2Icon, dark: MoonIcon } satisfies Record<Theme, unknown>;
+
 
 /** Puts the choice on <html> for the stylesheet, and in the cookie for the server. */
 function applyTheme(theme: Theme) {
@@ -64,18 +63,10 @@ export function ThemeToggleControl({ initial }: { initial: Theme }) {
               active ? "bg-accent-soft text-accent-ink" : "text-ink-faint hover:text-ink",
             ].join(" ")}
           >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-              className="size-4"
-            >
-              <path d={ICONS[option]} />
-            </svg>
+            {(() => {
+              const Icon = ICON_COMPONENTS[option];
+              return <Icon className="size-4" aria-hidden />;
+            })()}
           </button>
         );
       })}

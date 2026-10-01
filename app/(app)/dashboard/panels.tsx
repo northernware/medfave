@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { AltArrowLeftIcon } from "@solar-icons/react/linear/alt-arrow-left";
+import { AltArrowRightIcon } from "@solar-icons/react/linear/alt-arrow-right";
 import { Fragment } from "react";
 import { CalendarIcon } from "@solar-icons/react/linear/calendar";
 import { setAppointmentStatus, startConsultation } from "@/app/actions/appointments";
@@ -364,10 +366,10 @@ export function ScheduleRail({
           <h2 className="font-display text-lg font-semibold">{monthLabel}</h2>
           <div className="flex items-center gap-1">
             <Link href={href(addDays(selected, -7))} scroll={false} aria-label="Previous week" className="grid size-8 place-items-center rounded-full hover:bg-surface-muted">
-              ‹
+              <AltArrowLeftIcon className="size-4" aria-hidden />
             </Link>
             <Link href={href(addDays(selected, 7))} scroll={false} aria-label="Next week" className="grid size-8 place-items-center rounded-full hover:bg-surface-muted">
-              ›
+              <AltArrowRightIcon className="size-4" aria-hidden />
             </Link>
           </div>
         </div>
