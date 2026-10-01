@@ -260,7 +260,7 @@ type RailItem = Pick<AppointmentListItem, "id" | "scheduledAt" | "durationMinute
   doctor?: { fullName: string };
 };
 
-const HOUR = 128; // px per hour on the timeline: room for a visit's details
+const HOUR = 160; // px per hour on the timeline: about five hours in view
 
 /** The week as a strip, then today as a timeline with a line at the current time. */
 export function ScheduleRail({
@@ -408,24 +408,25 @@ export function ScheduleRail({
                   <input type="hidden" name="appointmentId" value={a.id} />
                   <button className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap text-on-accent">Start</button>
                 </form>
-              ) : (
-                <Badge tone={APPOINTMENT_STATUS_TONE[a.status]}>{APPOINTMENT_STATUS_LABELS[a.status]}</Badge>
-              );
+              ) : null;
             return (
               <div
                 key={a.id}
                 className={`absolute right-0 left-[76px] flex flex-col gap-1 overflow-hidden rounded-xl border px-3 py-2 ${done ? "border-border bg-surface-muted/50 opacity-70" : "border-border-strong bg-surface-muted"}`}
                 style={{ top: top(start) + 2, height }}
               >
+                {/* Status, name, reason, time — nothing else. */}
+                <div className="flex items-center justify-between gap-2">
+                  <Badge tone={APPOINTMENT_STATUS_TONE[a.status]}>{APPOINTMENT_STATUS_LABELS[a.status]}</Badge>
+                  {action}
+                </div>
                 <Link href={itemHref(a.id)} className="min-w-0">
                   <span className="block truncate text-[13px] leading-5 font-semibold hover:underline">{fullName(a.patient)}</span>
-                  <span className="tabular block truncate text-[11px] leading-4 text-ink-muted">
-                    {formatTime(a.scheduledAt)} – {formatTime(end)} · {SERVICE_LABELS[a.service]}
+                  {a.reason ? <span className="block truncate text-[11px] leading-4 text-ink-muted">{a.reason}</span> : null}
+                  <span className="tabular block truncate text-[11px] leading-4 text-ink-faint">
+                    {formatTime(a.scheduledAt)} – {formatTime(end)}
                   </span>
-                  {a.reason ? <span className="block truncate text-[11px] leading-4 text-ink-faint">{a.reason}</span> : null}
-                  {a.doctor ? <span className="block truncate text-[11px] leading-4 text-ink-faint">{a.doctor.fullName}</span> : null}
                 </Link>
-                <div className="mt-auto flex">{action}</div>
               </div>
             );
           })}
