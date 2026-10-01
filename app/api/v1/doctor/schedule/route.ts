@@ -2,6 +2,7 @@ import { apiDoctor, apiError, readJson } from "@/lib/api";
 import { dayKey } from "@/lib/datetime";
 import { SERVICES } from "@/lib/domain";
 import { addBreakFor, addClosureFor, removeBreakFor, removeClosureFor, saveServiceLengthsFor } from "@/lib/schedule";
+import { or } from "@prisma/orm-postgres/orm-client";
 import { orm } from "@/src/prisma/db";
 
 /**
@@ -21,9 +22,10 @@ export async function GET(request: Request) {
       .where((b) => b.doctorId.eq(doctor.doctorId))
       .all(),
     orm.ClinicClosure
-      .select("id", "startsOn", "endsOn", "startMinute", "endMinute", "reason")
+      .select("id", "startsOn", "endsOn", "startMinute", "endMinute", "reason", "repeat")
       .where((c) => c.doctorId.eq(doctor.doctorId))
-      .where((c) => c.endsOn.gte(today))
+      // Over, unless it repeats.
+      .where((c) => or(c.endsOn.gte(today), c.repeat.neq("NONE")))
       .orderBy((c) => c.startsOn.asc())
       .all(),
     orm.ServiceDuration.select("service", "minutes").where((d) => d.doctorId.eq(doctor.doctorId)).all(),
@@ -43,7 +45,7 @@ export async function GET(request: Request) {
 /**
  * Body, one of:
  * - `{ kind: "break", weekday: 0-6 | null (every day), from: "HH:MM", to: "HH:MM", label }`
- * - `{ kind: "closure", startsOn: "YYYY-MM-DD", endsOn?, from?, to?, reason }` (no times = whole days)
+ * - `{ kind: "closure", startsOn: "YYYY-MM-DD", endsOn?, from?, to?, reason, repeat?: "NONE" | "WEEKLY" | "MONTHLY" | "YEARLY" }` (no times = whole days)
  * - `{ kind: "lengths", minutes: { [service]: number | null } }` (null = the built-in length)
  * → the same as GET.
  */
@@ -69,6 +71,7 @@ export async function POST(request: Request) {
     put("from", body.from);
     put("to", body.to);
     put("reason", body.reason);
+    put("repeat", body.repeat ?? "NONE");
     problem = await addClosureFor(doctor.doctorId, form);
   } else if (body.kind === "lengths") {
     const minutes = (body.minutes ?? {}) as Record<string, unknown>;

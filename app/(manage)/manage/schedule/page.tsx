@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { or } from "@prisma/orm-postgres/orm-client";
 import Link from "next/link";
 import {
   addBreak,
@@ -145,10 +146,10 @@ export default async function SchedulePage({ searchParams }: PageProps<"/manage/
       .orderBy((b) => b.startMinute.asc())
       .all(),
     orm.ClinicClosure
-      .select("id", "startsOn", "endsOn", "startMinute", "endMinute", "reason")
+      .select("id", "startsOn", "endsOn", "startMinute", "endMinute", "reason", "repeat")
       .where((c) => c.doctorId.eq(doctorId))
       // Past closures no longer decide anything, so they are not shown.
-      .where((c) => c.endsOn.gte(today))
+      .where((c) => or(c.endsOn.gte(today), c.repeat.neq("NONE")))
       .orderBy((c) => c.startsOn.asc())
       .all(),
     loadSchedule(doctorId),
@@ -296,6 +297,7 @@ export default async function SchedulePage({ searchParams }: PageProps<"/manage/
                     {c.startMinute !== null && c.endMinute !== null
                       ? `, ${labelForMinute(c.startMinute)} to ${labelForMinute(c.endMinute)}`
                       : ", all day"}
+                    {c.repeat === "WEEKLY" ? ", every week" : c.repeat === "MONTHLY" ? ", every month" : c.repeat === "YEARLY" ? ", every year" : ""}
                   </span>
                 </span>
                 <form action={removeClosure.bind(null, doctorId)}>

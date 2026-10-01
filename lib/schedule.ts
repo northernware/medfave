@@ -61,8 +61,12 @@ export async function removeBreakFor(doctorId: string, id: string): Promise<bool
   return true;
 }
 
+/** How long a repeating closure may last, so one repeat ends before the next begins. */
+const REPEAT_LIMIT: Record<string, number> = { NONE: Infinity, WEEKLY: 6, MONTHLY: 27, YEARLY: 364 };
+
 /**
- * A day or a run of days off, or part of one.
+ * A day or a run of days off, or part of one, once or repeating weekly,
+ * monthly or yearly.
  *
  * Both times or neither: a closure with only a start is not a period, and
  * guessing where it ends would close the clinic for longer than anyone said.
@@ -76,6 +80,7 @@ export async function addClosureFor(doctorId: string, formData: FormData): Promi
   const from = rawFrom ? minuteOf(rawFrom) : null;
   const to = rawTo ? minuteOf(rawTo) : null;
   const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v);
+  const repeat = String(formData.get("repeat") ?? "").trim() || "NONE";
 
   const fieldErrors: Record<string, string[]> = {};
   if (!reason) fieldErrors.reason = ["Say why — it is shown to anybody who tries to book"];
@@ -84,6 +89,13 @@ export async function addClosureFor(doctorId: string, formData: FormData): Promi
   if (!isDate(endsOn)) fieldErrors.endsOn = ["Choose the last day"];
   if (isDate(startsOn) && isDate(endsOn) && endsOn < startsOn) {
     fieldErrors.endsOn = ["Cannot end before it starts"];
+  }
+  if (!(repeat in REPEAT_LIMIT)) {
+    fieldErrors.repeat = ["Choose how it repeats"];
+  } else if (repeat !== "NONE" && isDate(startsOn) && isDate(endsOn)) {
+    // A repeat can't overlap the next one: a week off can't repeat weekly.
+    const span = (Date.parse(endsOn) - Date.parse(startsOn)) / 86_400_000 + 1;
+    if (span > REPEAT_LIMIT[repeat]) fieldErrors.endsOn = [`Too long to repeat ${repeat.toLowerCase()} — at most ${REPEAT_LIMIT[repeat]} days`];
   }
   if (Boolean(rawFrom) !== Boolean(rawTo)) {
     fieldErrors[rawFrom ? "to" : "from"] = ["Give both times, or neither for the whole day"];
@@ -102,6 +114,7 @@ export async function addClosureFor(doctorId: string, formData: FormData): Promi
     startMinute: from,
     endMinute: to,
     reason,
+    repeat,
   });
   return null;
 }

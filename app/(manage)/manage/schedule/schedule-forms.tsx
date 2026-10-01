@@ -147,6 +147,14 @@ export function ClosureForm({ action, today }: { action: Action; today: string }
         <Field label="Ending at" htmlFor="closure-to" error={err?.to}>
           <TextInput id="closure-to" name="to" type="time" step={300} invalid={Boolean(err?.to)} />
         </Field>
+        <Field label="Repeats" htmlFor="closure-repeat" error={err?.repeat} hint="Every week, month or year from the first day, until removed.">
+          <Select id="closure-repeat" name="repeat" defaultValue="NONE">
+            <option value="NONE">Doesn&rsquo;t repeat</option>
+            <option value="WEEKLY">Every week</option>
+            <option value="MONTHLY">Every month</option>
+            <option value="YEARLY">Every year</option>
+          </Select>
+        </Field>
       </FieldGrid>
       <SubmitButton>Add closure</SubmitButton>
     </form>

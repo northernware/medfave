@@ -301,7 +301,7 @@ export async function loadSchedule(doctorId: string): Promise<Schedule> {
       .where((b) => b.doctorId.eq(doctorId))
       .all(),
     orm.ClinicClosure
-      .select("startsOn", "endsOn", "startMinute", "endMinute", "reason")
+      .select("startsOn", "endsOn", "startMinute", "endMinute", "reason", "repeat")
       .where((c) => c.doctorId.eq(doctorId))
       .all(),
     orm.ServiceDuration

@@ -1913,6 +1913,13 @@
                   "kind": "scalar"
                 }
               },
+              "repeat": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "startMinute": {
                 "nullable": true,
                 "type": {
@@ -1961,6 +1968,9 @@
                 },
                 "reason": {
                   "column": "reason"
+                },
+                "repeat": {
+                  "column": "repeat"
                 },
                 "startMinute": {
                   "column": "startMinute"
@@ -7080,6 +7090,15 @@
                   "nativeType": "text",
                   "nullable": false
                 },
+                "repeat": {
+                  "codecId": "pg/text@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": "NONE"
+                  },
+                  "nativeType": "text",
+                  "nullable": false
+                },
                 "startMinute": {
                   "codecId": "pg/int4@1",
                   "nativeType": "int4",
@@ -10360,7 +10379,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "673c57b6b3d212b6264b568f99982193cf6501d1b5345b465fd88fc7e6841cbf"
+    "storageHash": "b82f2892320cb0910011428e977d7aecc097880eb015f000423c0b0883280030"
   },
   "capabilities": {
     "postgres": {

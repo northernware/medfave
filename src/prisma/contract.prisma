@@ -480,6 +480,9 @@ namespace public {
     startMinute Int?
     endMinute   Int?
     reason      String
+    /// "NONE", or "WEEKLY" / "MONTHLY" / "YEARLY": the same stretch again every
+    /// week, month or year from `startsOn` on, until removed.
+    repeat      String      @default("NONE")
     doctor      Doctor      @relation(fields: [doctorId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "ClinicClosure_doctorId_fkey")
 
     @@index([doctorId, startsOn], map: "ClinicClosure_doctorId_startsOn_idx")
