@@ -10,13 +10,14 @@ import { ageFrom, CONSULTED_STATUSES, fullName, SEX_LABELS } from "@/lib/domain"
 import { RecordForm } from "@/components/forms/record-form";
 import { blankRecord } from "@/lib/form-defaults";
 import { AlertBanner, AllergyBanner } from "@/components/allergy-banner";
-import { Card, PageHeader } from "@/components/ui";
+import { buttonClass, Card, PageHeader } from "@/components/ui";
+import { sharesCharts } from "@/lib/care";
 
 export const metadata: Metadata = { title: "Document visit" };
 
 export default async function NewRecordPage({ searchParams }: PageProps<"/records/new">) {
   const doctor = await requireDoctor();
-  const { patientId, appointmentId } = await searchParams;
+  const { patientId, appointmentId, fresh } = await searchParams;
 
   if (typeof patientId !== "string") notFound();
 
@@ -56,6 +57,39 @@ export default async function NewRecordPage({ searchParams }: PageProps<"/record
   const defaults = blankRecord(toDateTimeLocalValue(new Date()));
   if (locked) defaults.appointmentId = locked.id;
 
+  // A return visit picks up where the last one left off: the working
+  // diagnosis, the plan and the medicines, for the doctor to keep, edit or
+  // clear; and the height, which rarely changes. Nothing measured today is
+  // copied — a carried-over blood pressure would look like today's reading.
+  // Only a note this doctor may read (their own, or any in a shared-chart clinic).
+  const shared = await sharesCharts(doctor.clinicId);
+  const last =
+    fresh === "1"
+      ? null
+      : await orm.MedicalRecord
+          .select("id", "visitDate", "heightCm", "assessment", "treatmentPlan")
+          .include("prescriptions", (rx) => rx.select("drugName", "dosage", "frequency", "duration", "instructions"))
+          .where((r) => r.patientId.eq(patient.id))
+          .where((r) => r.clinicId.eq(doctor.clinicId))
+          .where((r) => r.status.eq("FINALIZED"))
+          .where((r) => r.archivedAt.isNull())
+          .where((r) => (shared ? r.id.isNotNull() : r.doctorId.eq(doctor.id)))
+          .orderBy((r) => r.visitDate.desc())
+          .first();
+  const carriedFrom = last ? formatDateTime(instantFromDb(last.visitDate)) : null;
+  if (last) {
+    if (last.heightCm != null) defaults.heightCm = String(last.heightCm);
+    defaults.assessment = last.assessment ?? "";
+    defaults.treatmentPlan = last.treatmentPlan ?? "";
+    defaults.prescriptions = last.prescriptions.map((rx) => ({
+      drugName: rx.drugName,
+      dosage: rx.dosage,
+      frequency: rx.frequency,
+      duration: rx.duration ?? "",
+      instructions: rx.instructions ?? "",
+    }));
+  }
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -73,6 +107,21 @@ export default async function NewRecordPage({ searchParams }: PageProps<"/record
 
       <AlertBanner alerts={patient.alerts} />
       <AllergyBanner status={patient.allergyStatus} allergies={patient.allergies} />
+
+      {carriedFrom ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-accent/30 bg-accent-tint px-4 py-3 text-sm">
+          <p>
+            <span className="font-medium">Filled from the visit on {carriedFrom}:</span>{" "}
+            <span className="text-ink-muted">assessment, plan, medicines and height. Today&rsquo;s complaint, vitals and examination start blank.</span>
+          </p>
+          <Link
+            href={`/records/new?patientId=${patient.id}${locked ? `&appointmentId=${locked.id}` : ""}&fresh=1`}
+            className={buttonClass("secondary")}
+          >
+            Start blank
+          </Link>
+        </div>
+      ) : null}
 
       <Card className="p-5 sm:p-6">
         <RecordForm
