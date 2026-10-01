@@ -13,7 +13,7 @@ Opened: 2026-10-01 22:33 PHT
 
 ## Tested
 - `tsc` and `eslint` are clean. The migration is additive only.
-- Results of the dev-DB run are below.
+- On the dev DB as patient2@medfave.com: added a family member, sent a request for them, and the doctor accepted it as a new record. The new chart has no login of its own, sits in patient2's household marked as a child, and patient2 has a caregiver link. Test rows removed.
 
 ## Not done / next
 - Mobile: a My family screen, and "Who is this for?" on Find a doctor requests.
