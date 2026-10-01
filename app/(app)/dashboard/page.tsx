@@ -195,12 +195,12 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   const firstName = doctor.fullName.replace(/^Dr\.?\s+/i, "").split(/\s+/)[0];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
 
       {/* On wide screens the schedule is pinned to the window's right edge, like the
           sidebar on the left, and the page leaves room for it. */}
-      <div className="grid grid-cols-1 gap-6 xl:pr-[324px]">
-        <div className="min-w-0 space-y-6">
+      <div className="grid grid-cols-1 gap-3 xl:pr-[352px]">
+        <div className="min-w-0 space-y-3">
           <PageHeader
             title={`Good day, ${firstName}`}
             subtitle={formatDayHeading(now)}
@@ -221,7 +221,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
               </>
             }
           />
-          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <StatCard value={todays.length} label="Today" hint={remaining > 0 ? `${remaining} still to come` : "Nothing left today"} />
             <StatCard
               value={waiting.length}
@@ -308,7 +308,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
             </section>
           ) : null}
 
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
             <PatientsList
               upcoming={upcoming}
               selectedId={selected?.id ?? null}
