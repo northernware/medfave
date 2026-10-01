@@ -77,7 +77,7 @@ export function Card({
   return (
     <Tag
       className={[
-        "rounded-lg border border-border bg-surface",
+        "rounded-xl border border-border bg-surface",
         raised ? "shadow-card" : "",
         className,
       ].join(" ")}
