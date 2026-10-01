@@ -461,7 +461,7 @@ export function ScheduleRail({
             return (
               <div
                 key={a.id}
-                className={`absolute flex flex-col gap-1.5 overflow-hidden rounded-xl border px-4 py-3 ${lanes[idx].of > 1 ? "px-3" : ""} ${done ? "border-border bg-surface-muted/50 opacity-70" : "border-border-strong bg-surface-muted"}`}
+                className={`absolute z-[1] flex flex-col gap-1.5 overflow-hidden rounded-xl border px-4 py-3 ${lanes[idx].of > 1 ? "px-3" : ""} ${done ? "border-border bg-surface [&>*]:opacity-60" : "border-border-strong bg-surface-muted"}`}
                 style={{
                   top: top(start) + 2,
                   height,
