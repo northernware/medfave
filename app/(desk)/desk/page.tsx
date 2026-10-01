@@ -7,12 +7,16 @@ import { sweepNoShows } from "@/lib/no-show";
 import { sendDueReminders } from "@/lib/reminders";
 import { clinicDoctors } from "@/lib/clinic";
 import {
+  calendarDateFromDb,
   CLINIC_TIME_ZONE,
   clinicDayRange,
+  dayKey,
+  formatCalendarDate,
   formatDayHeading,
   formatTime,
   instantFromDb,
   instantToDb,
+  startOfClinicDay,
 } from "@/lib/datetime";
 import {
   ACTIVE_STATUSES,
@@ -22,8 +26,9 @@ import {
   QUEUE_STATUSES,
   SERVICE_LABELS,
 } from "@/lib/domain";
-import { Badge, buttonClass, Card, EmptyState, SectionTitle } from "@/components/ui";
-import { HeartMark } from "@/components/brand";
+import { addDays, weekdayOf } from "@/lib/scheduling";
+import { Badge, buttonClass, EmptyState, PageHeader } from "@/components/ui";
+import { PANEL, ScheduleRail, StatCard } from "@/app/(app)/dashboard/panels";
 
 export const metadata: Metadata = { title: "Front desk" };
 
@@ -32,8 +37,20 @@ function minutesBetween(from: Date, to: Date) {
   return Math.max(0, Math.floor((to.getTime() - from.getTime()) / 60_000));
 }
 
-export default async function DeskPage() {
+/** Good morning / afternoon / evening, by the clinic's clock. */
+function greeting(now: Date) {
+  const hour = Number(new Intl.DateTimeFormat("en-US", { hour: "numeric", hour12: false, timeZone: CLINIC_TIME_ZONE }).format(now));
+  return hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+}
+
+/**
+ * The front desk's day, laid out like the doctor's: what needs the desk now on
+ * the left (who is here, who is asking, who is coming), and the clinic's
+ * schedule pinned on the right.
+ */
+export default async function DeskPage({ searchParams }: PageProps<"/desk">) {
   const staff = await requireStaff();
+  const { day } = await searchParams;
   const now = new Date();
   const today = clinicDayRange(now);
 
@@ -44,21 +61,45 @@ export default async function DeskPage() {
   }
   await sendDueReminders(staff.clinicId, now);
 
-  const [todaysRows, queueRows, pendingRequests] = await Promise.all([
+  const todayKey = dayKey(now);
+  const railDay = typeof day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(day) ? day : todayKey;
+  const railMonday = addDays(railDay, -((weekdayOf(railDay) + 6) % 7));
+
+  const visitsBetween = (from: Date, to: Date) =>
     orm.Appointment
-      .select("id", "scheduledAt", "durationMinutes", "service", "reason", "status", "room")
+      .select("id", "scheduledAt", "durationMinutes", "service", "reason", "status")
       .include("patient", (p) => p.select("id", "firstName", "middleName", "lastName", "contactNumber"))
       .include("doctor", (d) => d.select("id", "fullName"))
       .where((a) => a.clinicId.eq(staff.clinicId))
-      .where((a) => a.scheduledAt.gte(instantToDb(today.start)))
-      .where((a) => a.scheduledAt.lt(instantToDb(today.end)))
+      .where((a) => a.scheduledAt.gte(instantToDb(from)))
+      .where((a) => a.scheduledAt.lt(instantToDb(to)))
       .orderBy((a) => a.scheduledAt.asc())
+      .all();
+
+  const [todaysRows, railRows, weekRows, queueRows, requestRows, requestCount] = await Promise.all([
+    visitsBetween(today.start, today.end),
+    railDay === todayKey ? Promise.resolve(null) : visitsBetween(startOfClinicDay(railDay), startOfClinicDay(addDays(railDay, 1))),
+    orm.Appointment
+      .select("scheduledAt")
+      .where((a) => a.clinicId.eq(staff.clinicId))
+      .where((a) => a.status.in(ACTIVE_STATUSES))
+      .where((a) => a.scheduledAt.gte(instantToDb(startOfClinicDay(railMonday))))
+      .where((a) => a.scheduledAt.lt(instantToDb(startOfClinicDay(addDays(railMonday, 7)))))
       .all(),
     orm.Appointment
       .select("id", "scheduledAt", "service", "reason", "arrivedAt", "consultationStartedAt", "status")
       .include("patient", (p) => p.select("id", "firstName", "middleName", "lastName"))
+      .include("doctor", (d) => d.select("fullName"))
       .where((a) => a.clinicId.eq(staff.clinicId))
       .where((a) => a.status.in(QUEUE_STATUSES))
+      .all(),
+    orm.AppointmentRequest
+      .select("id", "preferredDate", "preferredTime", "service", "createdAt", "newFirstName", "newMiddleName", "newLastName", "rescheduleOfId")
+      .include("patient", (p) => p.select("firstName", "middleName", "lastName"))
+      .where((r) => r.clinicId.eq(staff.clinicId))
+      .where((r) => r.status.eq("PENDING"))
+      .orderBy((r) => r.createdAt.asc())
+      .limit(5)
       .all(),
     orm.AppointmentRequest
       .where((r) => r.clinicId.eq(staff.clinicId))
@@ -67,197 +108,178 @@ export default async function DeskPage() {
   ]);
 
   const todays = todaysRows.map((a) => ({ ...a, scheduledAt: instantFromDb(a.scheduledAt) }));
+  const railItems = railRows ? railRows.map((a) => ({ ...a, scheduledAt: instantFromDb(a.scheduledAt) })) : todays;
+  const busyDays = [...new Set(weekRows.map((a) => dayKey(instantFromDb(a.scheduledAt))))];
   const queue = queueRows
     .map((a) => ({
       ...a,
       scheduledAt: instantFromDb(a.scheduledAt),
       arrivedAt: a.arrivedAt ? instantFromDb(a.arrivedAt) : null,
-      consultationStartedAt: a.consultationStartedAt
-        ? instantFromDb(a.consultationStartedAt)
-        : null,
+      consultationStartedAt: a.consultationStartedAt ? instantFromDb(a.consultationStartedAt) : null,
     }))
     .sort((a, b) => (a.arrivedAt?.getTime() ?? 0) - (b.arrivedAt?.getTime() ?? 0));
 
   const waiting = queue.filter((a) => a.status === "CHECKED_IN");
   const seeing = queue.filter((a) => a.status === "IN_CONSULTATION");
-  const remaining = todays.filter(
-    (a) => ACTIVE_STATUSES.includes(a.status) && a.scheduledAt >= now,
-  ).length;
+  const remaining = todays.filter((a) => ACTIVE_STATUSES.includes(a.status) && a.scheduledAt >= now);
+  const requestName = (r: (typeof requestRows)[number]) =>
+    r.patient ? fullName(r.patient) : fullName({ firstName: r.newFirstName ?? "", middleName: r.newMiddleName, lastName: r.newLastName ?? "" });
 
   return (
-    <div className="space-y-6">
-      {/* The day at a glance, in the brand's colours — the same greeting the app opens with. */}
-      <section className="relative overflow-hidden rounded-xl bg-brand px-5 py-6 text-white sm:px-8 sm:py-8">
-        <HeartMark tone="white" className="pointer-events-none absolute -top-6 -right-2 size-20 opacity-15 sm:-top-4 sm:right-6 sm:size-28" />
-        <HeartMark tone="white" className="pointer-events-none absolute right-40 bottom-3 hidden size-12 opacity-15 sm:block" />
-        <p className="text-sm font-medium text-white/85">{formatDayHeading(now)}</p>
-        <h1 className="mt-1 font-display text-[28px] leading-9 font-semibold tracking-[-0.015em] sm:text-[34px] sm:leading-10">
-          {greeting(now)}, {staff.fullName.split(/\s+/)[0]}
-        </h1>
-        <dl className="mt-5 grid grid-cols-3 gap-2 sm:max-w-xl sm:gap-3">
-          <HeroStat label="Today" value={todays.length} hint={remaining > 0 ? `${remaining} to come` : "All done"} />
-          <HeroStat
-            label="Waiting"
-            value={waiting.length}
-            hint={seeing.length > 0 ? `${seeing.length} with doctor` : "Nobody yet"}
-          />
-          <HeroStat
-            label="Requests"
-            value={pendingRequests.n}
-            hint={pendingRequests.n > 0 ? "To answer" : "None"}
-            href={pendingRequests.n > 0 ? "/desk/requests" : undefined}
-          />
-        </dl>
-      </section>
+    <div className="space-y-3 xl:pr-[352px]">
+      <PageHeader
+        title={`${greeting(now)}, ${staff.fullName.split(/\s+/)[0]}`}
+        subtitle={formatDayHeading(now)}
+        actions={
+          <>
+            <Link href="/desk/appointments/new?source=WALK_IN" className={buttonClass("primary")}>
+              Register walk-in
+            </Link>
+            <Link href="/desk/appointments/new" className={buttonClass("secondary")}>
+              Book appointment
+            </Link>
+            <Link href="/desk/patients/new" className={buttonClass("secondary")}>
+              Add patient
+            </Link>
+          </>
+        }
+      />
 
-      <div className="grid grid-cols-3 gap-2 sm:gap-3">
-        <ActionTile
-          href="/desk/appointments/new?source=WALK_IN"
-          label="Walk-in"
-          icon="M13 4a2 2 0 11-4 0 2 2 0 014 0zM9 21l2-6 3 2v4M8 12l3-4 3 2 3 1M11 8l-2 5"
-          primary
-        />
-        <ActionTile href="/desk/appointments/new" label="Book" icon="M8 3v4M16 3v4M4 9h16M5 5h14v16H5zM12 13v4M10 15h4" />
-        <ActionTile href="/desk/patients/new" label="Add patient" icon="M10 11a4 4 0 100-8 4 4 0 000 8zM3 21v-1a7 7 0 0111.5-5.4M19 14v6M16 17h6" />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatCard value={todays.length} label="Today" hint={remaining.length > 0 ? `${remaining.length} still to come` : "Nothing left today"} />
+        <StatCard value={waiting.length} label="Waiting" tone="warn" hint={seeing.length > 0 ? `${seeing.length} with the doctor` : "Nobody waiting"} />
+        <StatCard value={requestCount.n} label="Requests" tone="danger" hint={requestCount.n > 0 ? "To answer" : "None outstanding"} href="/desk/requests" />
+        <StatCard value={seeing.length} label="With the doctor" hint="In consultation now" />
       </div>
 
-      {queue.length > 0 ? (
-        <section>
-          <SectionTitle title="Waiting room" hint="Here now — waiting or with the doctor" />
-          <Card raised className="divide-y divide-border border-warn/40">
-            {queue.map((a) => {
-              const withDoctor = a.status === "IN_CONSULTATION";
-              return (
-                <div key={a.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5">
-                  <span className="nums w-16 shrink-0 text-sm font-medium">
-                    {formatTime(a.arrivedAt ?? a.scheduledAt)}
-                    {a.arrivedAt ? (
-                      <span className="tabular block font-sans text-xs font-normal text-ink-muted">
-                        {withDoctor
-                          ? `waited ${minutesBetween(a.arrivedAt, a.consultationStartedAt ?? now)}m`
-                          : `waiting ${minutesBetween(a.arrivedAt, now)}m`}
-                      </span>
-                    ) : null}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <Link
-                      href={`/desk/appointments/${a.id}`}
-                      className="block truncate text-sm font-medium hover:underline"
-                    >
-                      {fullName(a.patient)}
-                    </Link>
-                    <span className="block truncate text-xs text-ink-muted">
-                      {SERVICE_LABELS[a.service]} · {a.reason}
-                    </span>
-                  </span>
-                  {withDoctor ? (
-                    <Badge dot tone="accent">
-                      In consultation
-                    </Badge>
-                  ) : (
-                    <Badge dot tone="warn">
-                      Waiting
-                    </Badge>
-                  )}
-                </div>
-              );
-            })}
-          </Card>
-        </section>
-      ) : null}
-
-      <section>
-        <SectionTitle
-          title="Today's schedule"
-          action={
-            <Link href="/desk/appointments" className="font-medium text-accent-ink hover:underline">
-              All appointments
-            </Link>
-          }
-        />
-        <Card>
-          {todays.length === 0 ? (
-            <EmptyState title="A clear day" description="Nothing booked for today." />
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        {/* Who is here: waiting or with the doctor, in the order they arrived. */}
+        <section className={`${PANEL} p-5`}>
+          <div className="mb-4 flex items-baseline justify-between gap-2">
+            <h2 className="font-display text-lg font-semibold">Waiting room</h2>
+            <span className="text-xs text-ink-faint">By arrival</span>
+          </div>
+          {queue.length === 0 ? (
+            <EmptyState title="Nobody here yet" description="Check people in from the schedule as they arrive." />
           ) : (
-            <ul className="divide-y divide-border">
-              {todays.map((a) => (
-                <li key={a.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5">
-                  <span className="nums w-16 shrink-0 text-sm font-medium">
-                    {formatTime(a.scheduledAt)}
-                  </span>
-                  <Link href={`/desk/appointments/${a.id}`} className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium">
-                      {fullName(a.patient)}
+            <ul className="space-y-2">
+              {queue.map((a) => {
+                const withDoctor = a.status === "IN_CONSULTATION";
+                return (
+                  <li key={a.id}>
+                    <Link href={`/desk/appointments/${a.id}`} className="flex items-center gap-3 rounded-xl bg-surface-muted/70 px-3 py-2.5 hover:bg-surface-muted">
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-semibold">{fullName(a.patient)}</span>
+                        <span className="block truncate text-xs text-ink-muted">
+                          {a.doctor.fullName} · {SERVICE_LABELS[a.service]}
+                        </span>
+                      </span>
+                      <span className="shrink-0 text-right">
+                        <Badge dot tone={withDoctor ? "accent" : "warn"}>{withDoctor ? "With the doctor" : "Waiting"}</Badge>
+                        {a.arrivedAt ? (
+                          <span className="tabular mt-1 block text-xs text-ink-faint">
+                            {withDoctor
+                              ? `waited ${minutesBetween(a.arrivedAt, a.consultationStartedAt ?? now)}m`
+                              : `${minutesBetween(a.arrivedAt, now)}m · since ${formatTime(a.arrivedAt)}`}
+                          </span>
+                        ) : null}
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+
+        {/* Who is asking: requests from the app, oldest first. */}
+        <section className={`${PANEL} p-5`}>
+          <div className="mb-4 flex items-baseline justify-between gap-2">
+            <h2 className="font-display text-lg font-semibold">Requests</h2>
+            <Link href="/desk/requests" className="text-sm font-medium text-accent-ink hover:underline">
+              Answer {requestCount.n > 0 ? `(${requestCount.n})` : ""}
+            </Link>
+          </div>
+          {requestRows.length === 0 ? (
+            <EmptyState title="Nothing to answer" description="Requests patients send from the app appear here." />
+          ) : (
+            <ul className="space-y-2">
+              {requestRows.map((r) => (
+                <li key={r.id}>
+                  <Link href="/desk/requests" className="flex items-center gap-3 rounded-xl bg-surface-muted/70 px-3 py-2.5 hover:bg-surface-muted">
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold">
+                        {requestName(r)}
+                        {!r.patient ? <span className="ml-1.5 text-xs font-normal text-accent-ink">New</span> : null}
+                        {r.rescheduleOfId ? <span className="ml-1.5 text-xs font-normal text-warn-ink">Move</span> : null}
+                      </span>
+                      <span className="block truncate text-xs text-ink-muted">{SERVICE_LABELS[r.service]}</span>
                     </span>
-                    <span className="block truncate text-xs text-ink-muted">
-                      {a.doctor.fullName} · {a.reason}
-                      {a.patient.contactNumber ? ` · ${a.patient.contactNumber}` : ""}
+                    <span className="tabular shrink-0 text-right text-sm leading-tight font-medium">
+                      {formatCalendarDate(calendarDateFromDb(r.preferredDate)).replace(/, \d{4}$/, "")}
+                      <span className="block text-xs font-normal text-ink-faint">{r.preferredTime ?? "Any time"}</span>
                     </span>
                   </Link>
-                  <span className="flex shrink-0 items-center gap-2">
-                    <Badge dot tone={APPOINTMENT_STATUS_TONE[a.status]}>
-                      {APPOINTMENT_STATUS_LABELS[a.status]}
-                    </Badge>
-                    {/* Checking somebody in is the desk's own move. Starting the
-                        consultation is not, and is not offered here. */}
-                    {a.status === "PENDING" || a.status === "CONFIRMED" ? (
-                      <form action={setAppointmentStatus}>
-                        <input type="hidden" name="appointmentId" value={a.id} />
-                        <input type="hidden" name="status" value="CHECKED_IN" />
-                        <button className={buttonClass("secondary")}>Check in</button>
-                      </form>
-                    ) : null}
-                  </span>
                 </li>
               ))}
             </ul>
           )}
-        </Card>
+        </section>
+      </div>
+
+      {/* Who is coming today, with the numbers the desk rings. */}
+      <section className={`${PANEL} p-5`}>
+        <div className="mb-4 flex items-baseline justify-between gap-2">
+          <h2 className="font-display text-lg font-semibold">Coming today</h2>
+          <Link href="/desk/appointments" className="text-sm font-medium text-accent-ink hover:underline">
+            All appointments
+          </Link>
+        </div>
+        {todays.length === 0 ? (
+          <EmptyState title="A clear day" description="Nothing booked for today." />
+        ) : (
+          <ul className="divide-y divide-border">
+            {todays.map((a) => (
+              <li key={a.id} className="flex flex-wrap items-center gap-3 py-2.5">
+                <span className="tabular w-16 shrink-0 text-sm font-medium">{formatTime(a.scheduledAt)}</span>
+                <Link href={`/desk/appointments/${a.id}`} className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-semibold">{fullName(a.patient)}</span>
+                  <span className="block truncate text-xs text-ink-muted">
+                    {a.doctor.fullName} · {a.reason}
+                    {a.patient.contactNumber ? ` · ${a.patient.contactNumber}` : ""}
+                  </span>
+                </Link>
+                <span className="flex shrink-0 items-center gap-2">
+                  <Badge dot tone={APPOINTMENT_STATUS_TONE[a.status]}>{APPOINTMENT_STATUS_LABELS[a.status]}</Badge>
+                  {a.status === "PENDING" || a.status === "CONFIRMED" ? (
+                    <form action={setAppointmentStatus}>
+                      <input type="hidden" name="appointmentId" value={a.id} />
+                      <input type="hidden" name="status" value="CHECKED_IN" />
+                      <button className={buttonClass("secondary")}>Check in</button>
+                    </form>
+                  ) : null}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
+
+      {/* The clinic's schedule, pinned right like Today's. The desk checks people in; it doesn't start consultations. */}
+      <div className="xl:fixed xl:top-3 xl:right-3 xl:bottom-3 xl:z-10 xl:w-[340px]">
+        <ScheduleRail
+          items={railItems}
+          dayKey={railDay}
+          busyDays={busyDays}
+          todayKey={todayKey}
+          now={now}
+          keep=""
+          hrefFor={(key) => (key === todayKey ? "/desk" : `/desk?day=${key}`)}
+          itemHref={(id) => `/desk/appointments/${id}`}
+          canStart={false}
+          calendarHref={null}
+        />
+      </div>
     </div>
-  );
-}
-
-/** Good morning / afternoon / evening, by the clinic's clock. */
-function greeting(now: Date) {
-  const hour = Number(new Intl.DateTimeFormat("en-US", { hour: "numeric", hour12: false, timeZone: CLINIC_TIME_ZONE }).format(now));
-  return hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-}
-
-function HeroStat({ label, value, hint, href }: { label: string; value: number; hint: string; href?: string }) {
-  const body = (
-    <>
-      <dt className="text-xs font-medium text-white/80">{label}</dt>
-      <dd className="nums mt-1 font-display text-[28px] leading-none font-semibold">{value}</dd>
-      <dd className="mt-1 truncate text-xs text-white/80">{hint}</dd>
-    </>
-  );
-  const box = "block rounded-lg bg-white/15 px-3 py-3 sm:px-4";
-  return href ? (
-    <Link href={href} className={`${box} transition-colors hover:bg-white/25`}>
-      {body}
-    </Link>
-  ) : (
-    <div className={box}>{body}</div>
-  );
-}
-
-/** One of the desk's three everyday moves, as a big target that works on a phone. */
-function ActionTile({ href, label, icon, primary = false }: { href: string; label: string; icon: string; primary?: boolean }) {
-  return (
-    <Link
-      href={href}
-      className={[
-        "flex flex-col items-center gap-2 rounded-lg border px-2 py-4 text-center text-sm font-semibold transition-colors sm:flex-row sm:justify-center sm:gap-3 sm:py-5",
-        primary
-          ? "border-transparent bg-accent text-on-accent hover:bg-accent-hover"
-          : "border-border bg-surface text-ink hover:border-accent/40 hover:bg-accent-tint",
-      ].join(" ")}
-    >
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="size-6 shrink-0">
-        <path d={icon} />
-      </svg>
-      {label}
-    </Link>
   );
 }

@@ -27,6 +27,7 @@ export default async function DeskLayout({ children }: { children: ReactNode }) 
       clinic={{ id: staff.clinicId, name: staff.clinicName, role: ROLE[staff.role] }}
       views={views}
       view="desk"
+      wide
       person={{ name: staff.fullName, detail: ROLE[staff.role] }}>
       {children}
     </AppShell>
