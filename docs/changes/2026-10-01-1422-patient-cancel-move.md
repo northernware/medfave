@@ -10,6 +10,6 @@ Opened: 2026-10-01 14:22 PHT
 
 **Why:** the user asked for patients to reschedule or cancel themselves; the clinic sets the cancel cut-off, and moves go through the clinic.
 
-**Tested:** see the PR's later notes.
+**Tested:** `tsc`, eslint; on the local server with the demo patient: request → accepted (by the desk's accept function) → asked to move to an overlapping time (allowed; old visit cancelled with "Moved at the patient's request…") → a second move while one waits is refused → `canMove`/`movePending` flags right → patient cancel works, a second cancel is refused, unknown id 404. Test rows removed. Not tested: the cut-off refusal, the web Cancelling setting by hand.
 
 **Heads-up:** migration `20261001T0619_patient_cancel_move` (additive: `Clinic.patientCancelHours`, `AppointmentRequest.rescheduleOfId`).
