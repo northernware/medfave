@@ -8,4 +8,4 @@ Opened: 2026-10-01 11:33 PHT
 
 **Why:** doctors should manage their whole schedule from the app (mobile-first).
 
-**Tested:** `tsc`, eslint. Web schedule page behaviour unchanged by construction; exercised through the app next.
+**Tested:** `tsc`, eslint; against the local dev server as the demo doctor: GET, add break, a bad break (422 "Has to end after it starts"), add closure, set and reset lengths, delete both, 404 for an unknown id. Test rows removed. The web schedule page was not clicked through after the move.
