@@ -439,13 +439,13 @@ export function ScheduleRail({
             const done = a.status === "COMPLETED" || a.status === "CANCELLED" || a.status === "NO_SHOW";
             const end = new Date(a.scheduledAt.getTime() + a.durationMinutes * 60_000);
             const action =
-              selected === todayKey && (a.status === "PENDING" || a.status === "CONFIRMED") ? (
+              (a.status === "PENDING" || a.status === "CONFIRMED") ? (
                 <form action={setAppointmentStatus}>
                   <input type="hidden" name="appointmentId" value={a.id} />
                   <input type="hidden" name="status" value="CHECKED_IN" />
                   <button className="rounded-full bg-surface px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap hover:bg-accent-soft">Check in</button>
                 </form>
-              ) : selected === todayKey && a.status === "CHECKED_IN" && canStart ? (
+              ) : a.status === "CHECKED_IN" && canStart ? (
                 <form action={startConsultation}>
                   <input type="hidden" name="appointmentId" value={a.id} />
                   <button className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap text-on-accent">Start</button>

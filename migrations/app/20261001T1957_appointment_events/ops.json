@@ -1,0 +1,245 @@
+[
+  {
+    "id": "table.AppointmentEvent",
+    "label": "Create table \"AppointmentEvent\"",
+    "summary": "Creates table \"AppointmentEvent\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "AppointmentEvent"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"AppointmentEvent\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AppointmentEvent\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"AppointmentEvent\"",
+        "sql": "CREATE TABLE \"public\".\"AppointmentEvent\" (\n  \"appointmentId\" text NOT NULL,\n  \"at\" timestamp(3) NOT NULL,\n  \"byId\" text,\n  \"clinicId\" text NOT NULL,\n  \"id\" text NOT NULL,\n  \"previousScheduledAt\" timestamp(3),\n  \"status\" \"AppointmentStatus\",\n  CONSTRAINT \"AppointmentEvent_pkey\" PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"AppointmentEvent\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AppointmentEvent\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.AppointmentEvent.AppointmentEvent_appointmentId_idx",
+    "label": "Create index \"AppointmentEvent_appointmentId_idx\" on \"AppointmentEvent\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "AppointmentEvent_appointmentId_idx",
+        "table": "AppointmentEvent"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"AppointmentEvent_appointmentId_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AppointmentEvent_appointmentId_idx\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"AppointmentEvent_appointmentId_idx\"",
+        "sql": "CREATE INDEX \"AppointmentEvent_appointmentId_idx\" ON \"public\".\"AppointmentEvent\" (\"appointmentId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"AppointmentEvent_appointmentId_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AppointmentEvent_appointmentId_idx\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.AppointmentEvent.AppointmentEvent_byId_idx",
+    "label": "Create index \"AppointmentEvent_byId_idx\" on \"AppointmentEvent\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "AppointmentEvent_byId_idx",
+        "table": "AppointmentEvent"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"AppointmentEvent_byId_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AppointmentEvent_byId_idx\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"AppointmentEvent_byId_idx\"",
+        "sql": "CREATE INDEX \"AppointmentEvent_byId_idx\" ON \"public\".\"AppointmentEvent\" (\"byId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"AppointmentEvent_byId_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AppointmentEvent_byId_idx\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.AppointmentEvent.AppointmentEvent_appointmentId_fkey",
+    "label": "Add foreign key \"AppointmentEvent_appointmentId_fkey\" on \"AppointmentEvent\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "AppointmentEvent_appointmentId_fkey",
+        "table": "AppointmentEvent"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"AppointmentEvent_appointmentId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AppointmentEvent_appointmentId_fkey",
+          "public",
+          "\"public\".\"AppointmentEvent\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"AppointmentEvent_appointmentId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"AppointmentEvent\"\nADD CONSTRAINT \"AppointmentEvent_appointmentId_fkey\"\nFOREIGN KEY (\"appointmentId\")\nREFERENCES \"public\".\"Appointment\" (\"id\")\nON DELETE CASCADE\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"AppointmentEvent_appointmentId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AppointmentEvent_appointmentId_fkey",
+          "public",
+          "\"public\".\"AppointmentEvent\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.AppointmentEvent.AppointmentEvent_clinicId_fkey",
+    "label": "Add foreign key \"AppointmentEvent_clinicId_fkey\" on \"AppointmentEvent\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "AppointmentEvent_clinicId_fkey",
+        "table": "AppointmentEvent"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"AppointmentEvent_clinicId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AppointmentEvent_clinicId_fkey",
+          "public",
+          "\"public\".\"AppointmentEvent\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"AppointmentEvent_clinicId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"AppointmentEvent\"\nADD CONSTRAINT \"AppointmentEvent_clinicId_fkey\"\nFOREIGN KEY (\"clinicId\")\nREFERENCES \"public\".\"Clinic\" (\"id\")\nON DELETE CASCADE\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"AppointmentEvent_clinicId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AppointmentEvent_clinicId_fkey",
+          "public",
+          "\"public\".\"AppointmentEvent\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.AppointmentEvent.AppointmentEvent_byId_fkey",
+    "label": "Add foreign key \"AppointmentEvent_byId_fkey\" on \"AppointmentEvent\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "AppointmentEvent_byId_fkey",
+        "table": "AppointmentEvent"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"AppointmentEvent_byId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AppointmentEvent_byId_fkey",
+          "public",
+          "\"public\".\"AppointmentEvent\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"AppointmentEvent_byId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"AppointmentEvent\"\nADD CONSTRAINT \"AppointmentEvent_byId_fkey\"\nFOREIGN KEY (\"byId\")\nREFERENCES \"public\".\"Account\" (\"id\")\nON DELETE SET NULL\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"AppointmentEvent_byId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AppointmentEvent_byId_fkey",
+          "public",
+          "\"public\".\"AppointmentEvent\""
+        ]
+      }
+    ]
+  }
+]

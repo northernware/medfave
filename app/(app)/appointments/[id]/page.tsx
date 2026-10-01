@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { deleteAppointment, setAppointmentStatus } from "@/app/actions/appointments";
 import { requireDoctor } from "@/lib/auth";
+import { visitHistory } from "@/lib/visit-history";
+import { VisitHistory } from "@/components/visit-history";
 import { orm } from "@/src/prisma/db";
 import { calendarDateFromDb, instantFromDb } from "@/lib/datetime";
 import { formatDateTime, formatTime } from "@/lib/datetime";
@@ -64,6 +66,7 @@ export default async function AppointmentPage({
   if (!appointment) notFound();
 
   const { patient } = appointment;
+  const history = await visitHistory(appointment.id, doctor.clinicId);
 
   // Named rather than described: the reader's next question is "taken by whom".
   const blocking =
@@ -327,6 +330,8 @@ export default async function AppointmentPage({
           ) : null}
         </div>
       </Card>
+
+      <VisitHistory entries={history} />
 
       <DangerZone
         action={deleteAppointment}

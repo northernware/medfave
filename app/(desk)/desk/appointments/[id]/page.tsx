@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { setAppointmentStatus } from "@/app/actions/appointments";
 import { requireStaff } from "@/lib/auth";
+import { visitHistory } from "@/lib/visit-history";
+import { VisitHistory } from "@/components/visit-history";
 import { orm } from "@/src/prisma/db";
 import { calendarDateFromDb, formatDateTime, formatTime, instantFromDb } from "@/lib/datetime";
 import {
@@ -59,6 +61,7 @@ export default async function DeskAppointmentPage({
   if (!appointment) notFound();
 
   const { patient } = appointment;
+  const history = await visitHistory(appointment.id, staff.clinicId);
   const moves = STATUS_TRANSITIONS[appointment.status].filter(
     (next) => staff.role !== "SECRETARY" || DESK_STATUSES.includes(next),
   );
@@ -150,6 +153,8 @@ export default async function DeskAppointmentPage({
           </div>
         </Card>
       ) : null}
+
+      <VisitHistory entries={history} />
     </div>
   );
 }
