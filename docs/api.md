@@ -56,10 +56,10 @@ are `YYYY-MM-DD` and times of day `HH:MM`, both in clinic time (Asia/Manila).
 
 | | |
 | --- | --- |
-| `POST /auth/signup` | `{ fullName, email, password, confirmPassword, role: "PATIENT" \| "DOCTOR", consent: true }` → `201 { token, expiresAt, viewer }`. Open sign-up: the account is signed in at once, unverified, and linked to nothing (`role: "none"`) |
+| `POST /auth/signup` | `{ firstName, middleName?, lastName, email, password, confirmPassword, role: "PATIENT" \| "DOCTOR", consent: true }` → `201 { token, expiresAt, viewer }`. The name is joined into `fullName` and tidied (all-lower or ALL-CAPS typing is title-cased; mixed case kept); `fullName` alone is still accepted. Open sign-up: the account is signed in at once, unverified, and linked to nothing (`role: "none"`) |
 | `POST /auth/resend-verification` | → `{ sent }`. A new verification link to the signed-in account's email |
 | `POST /auth/login` | `{ email, password }` → `{ token, expiresAt, viewer }` |
-| `POST /auth/activate` | `{ code, fullName, email, password, confirmPassword }` → `201 { token, expiresAt, viewer }`. Turns the activation code the clinic gave a patient into their login. |
+| `POST /auth/activate` | `{ code, firstName, middleName?, lastName, email, password, confirmPassword }` → `201 { token, expiresAt, viewer }`. Turns the activation code the clinic gave a patient into their login. |
 | `GET /auth/providers` | → `{ google }`. Whether "Continue with Google" is set up on this server; show the button only when `true` |
 | `POST /auth/google/exchange` | `{ code, verifier }` → `{ token, expiresAt, viewer }`. The end of a Google sign-in; see below |
 | `GET /me` | `{ viewer }` |

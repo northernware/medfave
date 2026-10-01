@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { withFullName } from "@/lib/names";
 import {
   AllergySeverity,
   AppointmentStatus,
@@ -104,10 +105,10 @@ const dateTimeLocal = (label: string) =>
  * for the account being made, and are never used to find a chart to attach it
  * to. See `activatePatientAccount`.
  */
-export const activationSchema = z
+export const activationSchema = z.preprocess(withFullName, z
   .object({
     code: z.string().trim().min(4, "Enter the code the clinic gave you").max(40),
-    fullName: requiredText("Full name", 120),
+    fullName: requiredText("Your first and last name", 120),
     email: z.string().trim().toLowerCase().pipe(z.email("Enter a valid email address")),
     password: z.string().min(10, "Use at least 10 characters").max(200),
     confirmPassword: z.string(),
@@ -115,20 +116,20 @@ export const activationSchema = z
   .refine((v) => v.password === v.confirmPassword, {
     message: "Passwords do not match",
     path: ["confirmPassword"],
-  });
+  }));
 
 /** Accepting a staff invitation. The role comes from the invitation, not here. */
-export const inviteAcceptSchema = z
+export const inviteAcceptSchema = z.preprocess(withFullName, z
   .object({
     code: z.string().trim().min(4, "Enter the invitation code").max(40),
-    fullName: requiredText("Full name", 120),
+    fullName: requiredText("Your first and last name", 120),
     password: z.string().min(10, "Use at least 10 characters").max(200),
     confirmPassword: z.string(),
   })
   .refine((v) => v.password === v.confirmPassword, {
     message: "Passwords do not match",
     path: ["confirmPassword"],
-  });
+  }));
 
 /**
  * A person's own account details.
@@ -137,10 +138,13 @@ export const inviteAcceptSchema = z
  * credential — the action re-issues the session rather than leaving them
  * holding one that names an address they no longer have.
  */
-export const accountDetailsSchema = z.object({
-  fullName: requiredText("Full name", 120),
-  email: z.string().trim().toLowerCase().pipe(z.email("Enter a valid email address")),
-});
+export const accountDetailsSchema = z.preprocess(
+  withFullName,
+  z.object({
+    fullName: requiredText("Your first and last name", 120),
+    email: z.string().trim().toLowerCase().pipe(z.email("Enter a valid email address")),
+  }),
+);
 
 /**
  * Changing a password while signed in.

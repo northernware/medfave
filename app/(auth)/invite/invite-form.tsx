@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { acceptStaffInvite } from "@/app/actions/auth";
 import { Field, FormError, SubmitButton, TextInput } from "@/components/form";
+import { NameFields } from "@/components/name-fields";
 import { EMPTY_FORM_STATE } from "@/lib/validation";
 
 export function InviteForm({ code = "" }: { code?: string }) {
@@ -25,15 +26,7 @@ export function InviteForm({ code = "" }: { code?: string }) {
         />
       </Field>
 
-      <Field label="Full name" htmlFor="fullName" error={err?.fullName} required>
-        <TextInput
-          id="fullName"
-          name="fullName"
-          required
-          placeholder="Maria Santos"
-          invalid={Boolean(err?.fullName)}
-        />
-      </Field>
+      <NameFields error={err?.fullName} />
 
       {/* The address is not asked for: it is the one the invitation was sent
           to, and letting it be typed here would make the invitation a blank

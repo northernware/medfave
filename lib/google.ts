@@ -8,6 +8,7 @@ import {
   generateState,
 } from "arctic";
 import { z } from "zod";
+import { withFullName } from "@/lib/names";
 import { db, orm } from "@/src/prisma/db";
 import { instantToDb } from "@/lib/datetime";
 import { appUrl } from "@/lib/email";
@@ -199,11 +200,14 @@ export async function pendingGoogle(): Promise<PendingGoogle | null> {
   return (claims?.pending ?? null) as PendingGoogle | null;
 }
 
-const finishSchema = z.object({
-  fullName: z.string().trim().min(2, "Enter your full name").max(120),
-  role: z.enum(SignupRole, { message: "Choose patient or doctor" }),
-  consent: z.literal("on", { message: "You need to agree to the privacy notice" }),
-});
+const finishSchema = z.preprocess(
+  withFullName,
+  z.object({
+    fullName: z.string().trim().min(2, "Enter your first and last name").max(120),
+    role: z.enum(SignupRole, { message: "Choose patient or doctor" }),
+    consent: z.literal("on", { message: "You need to agree to the privacy notice" }),
+  }),
+);
 
 export type GoogleSignUpResult =
   | { ok: true; accountId: string; app: AppReturn | null }
