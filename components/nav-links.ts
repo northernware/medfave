@@ -34,6 +34,14 @@ export const DOCTOR_LINKS: readonly NavLink[] = [
   { href: "/manage", label: "Clinic settings", icon: "settings", group: "Clinic" },
 ];
 
+/** A patient's own sections on the web. */
+export const PATIENT_LINKS: readonly NavLink[] = [
+  { href: "/portal", label: "Home", icon: "today", group: "My care" },
+  { href: "/portal/request", label: "Request a visit", icon: "calendar", group: "My care" },
+  { href: "/portal/documents", label: "Documents", icon: "documents", group: "My care" },
+  { href: "/portal/details", label: "My details", icon: "details", group: "My care" },
+];
+
 /** The front desk's sections. */
 export const DESK_LINKS: readonly NavLink[] = [
   { href: "/desk", label: "Today", icon: "today", group: "Front desk" },

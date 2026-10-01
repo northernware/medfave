@@ -62,11 +62,17 @@ export function ClinicSwitcher({
   clinic,
   clinics,
   settingsHref,
+  switchAction,
+  addHref,
   compact = false,
 }: {
   clinic: { id: string; name: string; role: string };
   clinics: { id: string; name: string }[];
   settingsHref?: string;
+  /** Posts `clinicId` to switch clinic (patients, who can be at several). */
+  switchAction?: (formData: FormData) => void | Promise<void>;
+  /** Where to link another clinic. */
+  addHref?: string;
   compact?: boolean;
 }) {
   const { open, setOpen, ref } = usePopover();
@@ -94,22 +100,42 @@ export function ClinicSwitcher({
       {open ? (
         <div role="menu" className={`${PANEL} top-full left-0 mt-1.5 w-full`}>
           <p className="px-2.5 pt-1 pb-1.5 text-[11px] font-semibold tracking-[0.08em] text-ink-faint uppercase">Your clinics</p>
-          {clinics.map((c) => (
-            <div key={c.id} role="menuitem" className={ROW}>
-              <span className="squircle grid size-7 place-items-center rounded-md bg-brand/90 text-[10px] font-bold text-white">
-                {initialsOf(c.name)}
-              </span>
-              <span className="min-w-0 flex-1 truncate">{c.name}</span>
-              {c.id === clinic.id ? <CheckCircleIcon className="size-4 text-accent-ink" aria-label="Current" /> : null}
-            </div>
-          ))}
+          {clinics.map((c) => {
+            const row = (
+              <>
+                <span className="squircle grid size-7 place-items-center rounded-md bg-brand/90 text-[10px] font-bold text-white">
+                  {initialsOf(c.name)}
+                </span>
+                <span className="min-w-0 flex-1 truncate">{c.name}</span>
+                {c.id === clinic.id ? <CheckCircleIcon className="size-4 text-accent-ink" aria-label="Current" /> : null}
+              </>
+            );
+            return switchAction && c.id !== clinic.id ? (
+              <form key={c.id} action={switchAction}>
+                <input type="hidden" name="clinicId" value={c.id} />
+                <button role="menuitem" className={ROW}>{row}</button>
+              </form>
+            ) : (
+              <div key={c.id} role="menuitem" className={ROW}>
+                {row}
+              </div>
+            );
+          })}
+          {addHref ? (
+            <Link href={addHref} role="menuitem" className={`${ROW} text-accent-ink`}>
+              <span className="grid size-7 place-items-center text-lg">+</span>
+              Add a clinic
+            </Link>
+          ) : null}
           {settingsHref ? (
             <Link href={settingsHref} role="menuitem" className={`${ROW} mt-1 border-t border-border pt-2.5`}>
               <SettingsIcon className="size-5 text-ink-muted" aria-hidden />
               Clinic settings
             </Link>
           ) : null}
-          <p className="px-2.5 pt-2 pb-1 text-xs text-ink-faint">Working at more than one clinic is coming soon.</p>
+          {switchAction ? null : (
+            <p className="px-2.5 pt-2 pb-1 text-xs text-ink-faint">Working at more than one clinic is coming soon.</p>
+          )}
         </div>
       ) : null}
     </div>
@@ -222,28 +248,49 @@ export function ClinicSection({
   clinic,
   clinics,
   settingsHref,
+  switchAction,
+  addHref,
 }: {
   clinic: { id: string; name: string; role: string };
   clinics: { id: string; name: string }[];
   settingsHref?: string;
+  switchAction?: (formData: FormData) => void | Promise<void>;
+  addHref?: string;
 }) {
   return (
     <div>
       <p className="px-1 pb-1.5 text-[11px] font-semibold tracking-[0.08em] text-ink-faint uppercase">
         {clinics.length > 1 ? "Your clinics" : "Clinic"}
       </p>
-      {clinics.map((c) => (
-        <div key={c.id} className="flex items-center gap-2.5 rounded-lg px-1 py-1.5 text-sm">
-          <span className="squircle grid size-8 shrink-0 place-items-center rounded-md bg-brand text-[10px] font-bold text-white">
-            {initialsOf(c.name)}
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate font-semibold">{c.name}</span>
-            {c.id === clinic.id ? <span className="block text-xs text-ink-faint">{clinic.role}</span> : null}
-          </span>
-          {c.id === clinic.id && clinics.length > 1 ? <CheckCircleIcon className="size-4 text-accent-ink" aria-label="Current" /> : null}
-        </div>
-      ))}
+      {clinics.map((c) => {
+        const row = (
+          <>
+            <span className="squircle grid size-8 shrink-0 place-items-center rounded-md bg-brand text-[10px] font-bold text-white">
+              {initialsOf(c.name)}
+            </span>
+            <span className="min-w-0 flex-1 text-left">
+              <span className="block truncate font-semibold">{c.name}</span>
+              {c.id === clinic.id ? <span className="block text-xs text-ink-faint">{clinic.role}</span> : null}
+            </span>
+            {c.id === clinic.id && clinics.length > 1 ? <CheckCircleIcon className="size-4 text-accent-ink" aria-label="Current" /> : null}
+          </>
+        );
+        return switchAction && c.id !== clinic.id ? (
+          <form key={c.id} action={switchAction}>
+            <input type="hidden" name="clinicId" value={c.id} />
+            <button className="flex w-full items-center gap-2.5 rounded-lg px-1 py-1.5 text-sm hover:bg-surface-muted">{row}</button>
+          </form>
+        ) : (
+          <div key={c.id} className="flex items-center gap-2.5 rounded-lg px-1 py-1.5 text-sm">
+            {row}
+          </div>
+        );
+      })}
+      {addHref ? (
+        <Link href={addHref} className={`${ROW} text-accent-ink`}>
+          + Add a clinic
+        </Link>
+      ) : null}
       {settingsHref ? (
         <Link href={settingsHref} className={ROW}>
           <SettingsIcon className="size-5 text-ink-muted" aria-hidden />
