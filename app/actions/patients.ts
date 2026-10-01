@@ -779,6 +779,9 @@ export async function startOwnHousehold(formData: FormData) {
   });
 
   revalidatePath(`/desk/patients/${patientId}`);
+  revalidatePath(`/patients/${patientId}`);
   revalidatePath(`/households/${householdId}`);
-  redirect(`/desk/patients/${patientId}?household=new`);
+  // Back to the chart it was started from: the desk's or the doctor's.
+  const back = String(formData.get("back") ?? "");
+  redirect(`${back === `/patients/${patientId}` ? back : `/desk/patients/${patientId}`}?household=new`);
 }

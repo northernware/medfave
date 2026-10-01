@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { archivePatient, deletePatient, restorePatient } from "@/app/actions/patients";
 import { requireDoctor } from "@/lib/auth";
+import { StartHousehold } from "@/components/start-household";
 import { caresFor, logChartAccess, sharesCharts } from "@/lib/care";
 import { orm } from "@/src/prisma/db";
 import { appointmentListQuery, toAppointmentListItem } from "@/lib/queries";
@@ -126,6 +127,16 @@ export default async function PatientPage({
   const archivedVisits = patient.medicalRecords.filter((r) => r.archivedAt !== null);
 
   const archived = patient.archivedAt !== null;
+  // The rest of their household, for "Start their own household".
+  const housemates = archived
+    ? []
+    : await orm.Patient
+        .select("id", "firstName", "middleName", "lastName", "relationship")
+        .where((p) => p.householdId.eq(patient.household.id))
+        .where((p) => p.clinicId.eq(doctor.clinicId))
+        .where((p) => p.id.neq(patient.id))
+        .where((p) => p.archivedAt.isNull())
+        .all();
   const archivedBy = patient.archivedById
     ? await orm.Account.select("fullName").where((a) => a.id.eq(patient.archivedById!)).first()
     : null;
@@ -352,6 +363,11 @@ export default async function PatientPage({
         <aside className="space-y-4">
           <AlertBanner alerts={patient.alerts} />
           <AllergyBanner status={patient.allergyStatus} allergies={patient.allergies} />
+      {housemates.length > 0 ? (
+        <Card className="p-4">
+          <StartHousehold patient={patient} others={housemates} back={`/patients/${patient.id}`} />
+        </Card>
+      ) : null}
       <Card className="p-4">
         <dl className="grid grid-cols-2 gap-x-4 gap-y-3.5">
           <Detail label="Patient number" value={<span className="nums whitespace-nowrap">{patient.patientNumber ?? "—"}</span>} />

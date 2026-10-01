@@ -1,0 +1,46 @@
+import { startOwnHousehold } from "@/app/actions/patients";
+import { buttonClass } from "@/components/ui";
+import { fullName, RELATIONSHIP_LABELS } from "@/lib/domain";
+import type { Relationship } from "@/lib/enums";
+
+/**
+ * Somebody starting a family of their own: a new household with them at its
+ * head, and whichever housemates go with them. A move, not a copy — one
+ * household per person. Shared by the desk's chart and the doctor's.
+ */
+export function StartHousehold({
+  patient,
+  others,
+  back,
+}: {
+  patient: { id: string; firstName: string; lastName: string };
+  others: { id: string; firstName: string; middleName: string | null; lastName: string; relationship: Relationship }[];
+  /** Where to land afterwards: this chart. */
+  back: string;
+}) {
+  if (others.length === 0) return null;
+  return (
+    <details className="group">
+      <summary className="cursor-pointer list-none text-sm font-medium text-ink-muted hover:text-ink">
+        Start their own household…
+      </summary>
+      <form action={startOwnHousehold} className="mt-3 space-y-3">
+        <input type="hidden" name="patientId" value={patient.id} />
+        <input type="hidden" name="back" value={back} />
+        <p className="text-sm text-ink-muted">
+          {patient.firstName} becomes head of a new {patient.lastName} household. Tick who moves with them.
+        </p>
+        <div className="space-y-1.5">
+          {others.map((h) => (
+            <label key={h.id} className="flex items-center gap-2 text-sm">
+              <input type="checkbox" name="memberId" value={h.id} className="accent-[var(--accent)]" />
+              {fullName(h)}
+              <span className="text-ink-faint">· {RELATIONSHIP_LABELS[h.relationship]}</span>
+            </label>
+          ))}
+        </div>
+        <button className={buttonClass("secondary")}>Start household</button>
+      </form>
+    </details>
+  );
+}

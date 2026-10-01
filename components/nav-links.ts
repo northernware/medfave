@@ -40,6 +40,7 @@ export const PATIENT_LINKS: readonly NavLink[] = [
   { href: "/portal/request", label: "Request a visit", icon: "calendar", group: "My care" },
   { href: "/portal/documents", label: "Documents", icon: "documents", group: "My care" },
   { href: "/portal/details", label: "My details", icon: "details", group: "My care" },
+  { href: "/portal/family", label: "My family", icon: "households", group: "My care" },
 ];
 
 /** The front desk's sections. */
