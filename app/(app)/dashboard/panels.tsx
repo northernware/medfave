@@ -255,9 +255,12 @@ export function LastVisitDetails({ visit, doctorName }: { visit: LastVisit | nul
 /** What the schedule panel needs of a visit. */
 type RailItem = Pick<AppointmentListItem, "id" | "scheduledAt" | "durationMinutes" | "service" | "status"> & {
   patient: { firstName: string; middleName: string | null; lastName: string };
+  reason?: string | null;
+  /** Shown on the desk, where the day has every doctor's visits. */
+  doctor?: { fullName: string };
 };
 
-const HOUR = 96; // px per hour on the timeline
+const HOUR = 128; // px per hour on the timeline: room for a visit's details
 
 /** The week as a strip, then today as a timeline with a line at the current time. */
 export function ScheduleRail({
@@ -389,36 +392,40 @@ export function ScheduleRail({
           ))}
           {todays.map((a) => {
             const start = minuteOfDay(a.scheduledAt);
-            const height = Math.max(54, (a.durationMinutes / 60) * HOUR - 4);
+            // Tall enough for its details even when short; a long visit grows with its length.
+            const height = Math.max(96, (a.durationMinutes / 60) * HOUR - 4);
             const done = a.status === "COMPLETED" || a.status === "CANCELLED" || a.status === "NO_SHOW";
+            const end = new Date(a.scheduledAt.getTime() + a.durationMinutes * 60_000);
+            const action =
+              selected === todayKey && (a.status === "PENDING" || a.status === "CONFIRMED") ? (
+                <form action={setAppointmentStatus}>
+                  <input type="hidden" name="appointmentId" value={a.id} />
+                  <input type="hidden" name="status" value="CHECKED_IN" />
+                  <button className="rounded-full bg-surface px-2.5 py-1 text-xs font-semibold whitespace-nowrap hover:bg-accent-soft">Check in</button>
+                </form>
+              ) : selected === todayKey && a.status === "CHECKED_IN" && canStart ? (
+                <form action={startConsultation}>
+                  <input type="hidden" name="appointmentId" value={a.id} />
+                  <button className="rounded-full bg-accent px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-on-accent">Start</button>
+                </form>
+              ) : (
+                <Badge tone={APPOINTMENT_STATUS_TONE[a.status]}>{APPOINTMENT_STATUS_LABELS[a.status]}</Badge>
+              );
             return (
               <div
                 key={a.id}
-                className={`absolute right-0 left-[76px] overflow-hidden rounded-xl border px-3 py-2 ${done ? "border-border bg-surface-muted/50 opacity-70" : "border-border-strong bg-surface-muted"}`}
+                className={`absolute right-0 left-[76px] flex flex-col gap-1 overflow-hidden rounded-xl border px-3 py-2 ${done ? "border-border bg-surface-muted/50 opacity-70" : "border-border-strong bg-surface-muted"}`}
                 style={{ top: top(start) + 2, height }}
               >
-                <div className="flex items-start justify-between gap-2">
-                  <Link href={itemHref(a.id)} className="min-w-0">
-                    <span className="block truncate text-sm font-semibold hover:underline">{fullName(a.patient)}</span>
-                    <span className="block truncate text-xs text-ink-muted">
-                      {formatTime(a.scheduledAt)} · {SERVICE_LABELS[a.service]}
-                    </span>
-                  </Link>
-                  {selected === todayKey && (a.status === "PENDING" || a.status === "CONFIRMED") ? (
-                    <form action={setAppointmentStatus}>
-                      <input type="hidden" name="appointmentId" value={a.id} />
-                      <input type="hidden" name="status" value="CHECKED_IN" />
-                      <button className="rounded-full bg-surface px-2.5 py-1 text-xs font-semibold whitespace-nowrap hover:bg-accent-soft">Check in</button>
-                    </form>
-                  ) : selected === todayKey && a.status === "CHECKED_IN" && canStart ? (
-                    <form action={startConsultation}>
-                      <input type="hidden" name="appointmentId" value={a.id} />
-                      <button className="rounded-full bg-accent px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-on-accent">Start</button>
-                    </form>
-                  ) : (
-                    <Badge tone={APPOINTMENT_STATUS_TONE[a.status]}>{APPOINTMENT_STATUS_LABELS[a.status]}</Badge>
-                  )}
-                </div>
+                <Link href={itemHref(a.id)} className="min-w-0">
+                  <span className="block truncate text-sm font-semibold hover:underline">{fullName(a.patient)}</span>
+                  <span className="tabular block truncate text-xs text-ink-muted">
+                    {formatTime(a.scheduledAt)} – {formatTime(end)} · {SERVICE_LABELS[a.service]}
+                  </span>
+                  {a.reason ? <span className="block truncate text-xs text-ink-faint">{a.reason}</span> : null}
+                  {a.doctor ? <span className="block truncate text-xs text-ink-faint">{a.doctor.fullName}</span> : null}
+                </Link>
+                <div className="mt-auto flex">{action}</div>
               </div>
             );
           })}
