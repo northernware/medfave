@@ -109,6 +109,9 @@ export const activationSchema = z.preprocess(withFullName, z
   .object({
     code: z.string().trim().min(4, "Enter the code the clinic gave you").max(40),
     fullName: requiredText("Your first and last name", 120),
+    firstName: z.string().optional(),
+    middleName: z.string().optional(),
+    lastName: z.string().optional(),
     email: z.string().trim().toLowerCase().pipe(z.email("Enter a valid email address")),
     password: z.string().min(10, "Use at least 10 characters").max(200),
     confirmPassword: z.string(),
@@ -123,6 +126,9 @@ export const inviteAcceptSchema = z.preprocess(withFullName, z
   .object({
     code: z.string().trim().min(4, "Enter the invitation code").max(40),
     fullName: requiredText("Your first and last name", 120),
+    firstName: z.string().optional(),
+    middleName: z.string().optional(),
+    lastName: z.string().optional(),
     password: z.string().min(10, "Use at least 10 characters").max(200),
     confirmPassword: z.string(),
   })
@@ -142,6 +148,9 @@ export const accountDetailsSchema = z.preprocess(
   withFullName,
   z.object({
     fullName: requiredText("Your first and last name", 120),
+    firstName: z.string().optional(),
+    middleName: z.string().optional(),
+    lastName: z.string().optional(),
     email: z.string().trim().toLowerCase().pipe(z.email("Enter a valid email address")),
   }),
 );

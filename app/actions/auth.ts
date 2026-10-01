@@ -1,5 +1,6 @@
 "use server";
 
+import { namePartsOf } from "@/lib/names";
 import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
 import { db, orm } from "@/src/prisma/db";
@@ -105,6 +106,7 @@ export async function acceptStaffInvite(
           email,
           passwordHash: await bcrypt.hash(password, 12),
           fullName,
+          ...namePartsOf(parsed.data),
           createdAt: now,
           updatedAt: now,
         })

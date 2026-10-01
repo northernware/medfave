@@ -5,6 +5,7 @@ import { hasPassed, instantToDb } from "@/lib/datetime";
 import { newId } from "@/lib/ids";
 import { hit, hitAll, LIMITS, TOO_MANY } from "@/lib/rate-limit";
 import { asPin, hashPin, hashToken } from "@/lib/tokens";
+import { namePartsOf } from "@/lib/names";
 import { activationSchema, loginSchema, toFieldErrors, type FormState } from "@/lib/validation";
 
 /*
@@ -150,6 +151,7 @@ export async function activatePatient(input: Record<string, unknown>, address: s
       email,
       passwordHash: await bcrypt.hash(password, 12),
       fullName: parsed.data.fullName,
+      ...namePartsOf(parsed.data),
       createdAt: now,
       updatedAt: now,
     });

@@ -175,6 +175,13 @@
                   }
                 }
               },
+              "firstName": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "fullName": {
                 "nullable": false,
                 "type": {
@@ -184,6 +191,20 @@
               },
               "id": {
                 "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "lastName": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "middleName": {
+                "nullable": true,
                 "type": {
                   "codecId": "pg/text@1",
                   "kind": "scalar"
@@ -463,11 +484,20 @@
                 "emailVerifiedAt": {
                   "column": "emailVerifiedAt"
                 },
+                "firstName": {
+                  "column": "firstName"
+                },
                 "fullName": {
                   "column": "fullName"
                 },
                 "id": {
                   "column": "id"
+                },
+                "lastName": {
+                  "column": "lastName"
+                },
+                "middleName": {
+                  "column": "middleName"
                 },
                 "passwordHash": {
                   "column": "passwordHash"
@@ -5903,6 +5933,11 @@
                     "precision": 3
                   }
                 },
+                "firstName": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "fullName": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -5912,6 +5947,16 @@
                   "codecId": "pg/text@1",
                   "nativeType": "text",
                   "nullable": false
+                },
+                "lastName": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "middleName": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 },
                 "passwordHash": {
                   "codecId": "pg/text@1",
@@ -10432,7 +10477,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "e8befc5b48a6d344d614e64abb0f3969c7e1cea35103eec16e71f7e121cff755"
+    "storageHash": "0b2b4b32fe5e85628f657cb59f235c4de2ed33e778bdea58eedf804597e24394"
   },
   "capabilities": {
     "postgres": {

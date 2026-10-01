@@ -34,5 +34,28 @@ export function withFullName(input: unknown): unknown {
   const first = tidyName(v.firstName);
   const middle = tidyName(v.middleName);
   const last = tidyName(v.lastName);
-  return { ...v, fullName: first && last ? [first, middle, last].filter(Boolean).join(" ") : "" };
+  return {
+    ...v,
+    firstName: first,
+    middleName: middle,
+    lastName: last,
+    fullName: first && last ? [first, middle, last].filter(Boolean).join(" ") : "",
+  };
+}
+
+export type NameParts = { firstName: string | null; middleName: string | null; lastName: string | null };
+
+/**
+ * The parts to store with an account. As sent, when they were; otherwise a
+ * best guess from a full name (title dropped, last word as the last name) —
+ * only for older clients and backfilling, since "Dela Cruz" is two words.
+ */
+export function namePartsOf(d: { firstName?: string | null; middleName?: string | null; lastName?: string | null; fullName: string }): NameParts {
+  if (d.firstName && d.lastName) {
+    return { firstName: d.firstName, middleName: d.middleName || null, lastName: d.lastName };
+  }
+  const words = d.fullName.replace(/^(Dr|Dra)\.?\s+/i, "").trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return { firstName: null, middleName: null, lastName: null };
+  if (words.length === 1) return { firstName: words[0], middleName: null, lastName: null };
+  return { firstName: words.slice(0, -1).join(" "), middleName: null, lastName: words[words.length - 1] };
 }

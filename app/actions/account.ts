@@ -1,5 +1,6 @@
 "use server";
 
+import { namePartsOf } from "@/lib/names";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
@@ -50,6 +51,7 @@ export async function updateAccountDetails(
 
   await orm.Account.where((a) => a.id.eq(viewer.accountId)).update({
     fullName,
+    ...namePartsOf(parsed.data),
     email,
     updatedAt: instantToDb(new Date()),
   });

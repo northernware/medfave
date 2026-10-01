@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { Field, FieldGrid, FormError, SubmitButton, TextInput } from "@/components/form";
+import { NameFields } from "@/components/name-fields";
 import { EMPTY_FORM_STATE, type FormState } from "@/lib/validation";
 
 type Action = (state: FormState, formData: FormData) => Promise<FormState>;
@@ -11,7 +12,7 @@ export function AccountDetailsForm({
   defaults,
 }: {
   action: Action;
-  defaults: { fullName: string; email: string };
+  defaults: { fullName: string; email: string; firstName: string | null; middleName: string | null; lastName: string | null };
 }) {
   const [state, formAction] = useActionState(action, EMPTY_FORM_STATE);
   const err = state.fieldErrors;
@@ -20,16 +21,9 @@ export function AccountDetailsForm({
     <form action={formAction} className="space-y-4">
       <FormError message={state.message} />
 
+      <NameFields error={err?.fullName} defaults={defaults} />
+
       <FieldGrid>
-        <Field label="Full name" htmlFor="fullName" error={err?.fullName} required>
-          <TextInput
-            id="fullName"
-            name="fullName"
-            defaultValue={defaults.fullName}
-            required
-            invalid={Boolean(err?.fullName)}
-          />
-        </Field>
         <Field
           label="Email"
           htmlFor="email"

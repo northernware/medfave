@@ -7,6 +7,7 @@ import {
 } from "@/app/actions/account";
 import { homeFor, requireViewer } from "@/lib/auth";
 import { orm } from "@/src/prisma/db";
+import { namePartsOf } from "@/lib/names";
 import { buttonClass, Card, CardHeader, PageHeader } from "@/components/ui";
 import { AccountDetailsForm, ClinicianProfileForm, PasswordForm } from "./account-forms";
 
@@ -38,6 +39,9 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
     : null;
 
   const role = viewer.staff?.role;
+  // The name in parts: as stored, or a best guess for accounts from before they were kept.
+  const stored = await orm.Account.select("firstName", "middleName", "lastName").where((a) => a.id.eq(viewer.accountId)).first();
+  const parts = stored?.firstName ? stored : namePartsOf({ fullName: viewer.fullName });
   const standing = role
     ? `${role === "DOCTOR" ? "Doctor" : role === "SECRETARY" ? "Secretary" : "Administrator"} at ${viewer.staff!.clinicName}`
     : viewer.charts.length > 0
@@ -70,7 +74,7 @@ export default async function AccountPage({ searchParams }: PageProps<"/account"
         <div className="px-5 py-4">
           <AccountDetailsForm
             action={updateAccountDetails}
-            defaults={{ fullName: viewer.fullName, email: viewer.email }}
+            defaults={{ fullName: viewer.fullName, email: viewer.email, ...parts }}
           />
         </div>
       </Card>

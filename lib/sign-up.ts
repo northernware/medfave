@@ -1,7 +1,7 @@
 import "server-only";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { withFullName } from "@/lib/names";
+import { namePartsOf, withFullName } from "@/lib/names";
 import { orm } from "@/src/prisma/db";
 import { hasPassed, instantToDb } from "@/lib/datetime";
 import { appUrl, sendEmailVerification } from "@/lib/email";
@@ -27,6 +27,9 @@ const VERIFY_DAYS = 3;
 export const signUpSchema = z.preprocess(withFullName, z
   .object({
     fullName: z.string().trim().min(2, "Enter your first and last name").max(120),
+    firstName: z.string().optional(),
+    middleName: z.string().optional(),
+    lastName: z.string().optional(),
     email: z.string().trim().toLowerCase().pipe(z.email("Enter a valid email address")),
     password: z.string().min(10, "Use at least 10 characters").max(200),
     confirmPassword: z.string(),
@@ -62,6 +65,7 @@ export async function createAccount(input: Record<string, unknown>): Promise<Sig
     email,
     passwordHash: await bcrypt.hash(password, 12),
     fullName,
+    ...namePartsOf(parsed.data),
     signupRole: role,
     consentedAt: now,
     consentVersion: PRIVACY_NOTICE_VERSION,
