@@ -17,7 +17,9 @@ import {
   instantToDb,
   calendarDateFromDb,
   dayKey,
+  startOfClinicDay,
 } from "@/lib/datetime";
+import { addDays } from "@/lib/scheduling";
 import {
   ACTIVE_STATUSES,
   APPOINTMENT_STATUS_LABELS,
@@ -38,7 +40,7 @@ function minutesBetween(from: Date, to: Date) {
 }
 
 export default async function DashboardPage({ searchParams }: PageProps<"/dashboard">) {
-  const { visit } = await searchParams;
+  const { visit, day } = await searchParams;
   const doctor = await requireDoctor();
   const now = new Date();
   const today = clinicDayRange(now);
@@ -145,6 +147,19 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   // Prisma 8 reads temporal columns as text; the UI works in `Date`, so each list
   // is converted once here rather than at every call site below.
   const todays = todaysRows.map(toAppointmentListItem);
+  // The schedule panel's day: today, or one picked from its week strip.
+  const railDay = typeof day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(day) ? day : todayKey;
+  const railItems =
+    railDay === todayKey
+      ? todays
+      : (
+          await appointmentListQuery()
+            .where((a) => a.doctorId.eq(doctor.id))
+            .where((a) => a.scheduledAt.gte(instantToDb(startOfClinicDay(railDay))))
+            .where((a) => a.scheduledAt.lt(instantToDb(startOfClinicDay(addDays(railDay, 1)))))
+            .orderBy((a) => a.scheduledAt.asc())
+            .all()
+        ).map(toAppointmentListItem);
   const queue = waitingRows
     .map((a) => ({
       ...a,
@@ -291,7 +306,12 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           ) : null}
 
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
-            <PatientsList upcoming={upcoming} selectedId={selected?.id ?? null} todayKey={todayKey} />
+            <PatientsList
+              upcoming={upcoming}
+              selectedId={selected?.id ?? null}
+              todayKey={todayKey}
+              day={railDay === todayKey ? undefined : railDay}
+            />
             <LastVisitDetails visit={lastVisit} doctorName={doctor.fullName} />
           </div>
 
@@ -404,7 +424,13 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
 
         {/* Rail: the day as a timeline, then standing context. */}
         <div className="space-y-6">
-          <ScheduleRail todays={todays} todayKey={todayKey} now={now} />
+          <ScheduleRail
+            items={railItems}
+            dayKey={railDay}
+            todayKey={todayKey}
+            now={now}
+            keep={typeof visit === "string" ? `visit=${encodeURIComponent(visit)}` : ""}
+          />
           <section>
             <SectionTitle title="Practice" />
             <Card className="divide-y divide-border">

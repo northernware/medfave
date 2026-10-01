@@ -65,10 +65,13 @@ export function PatientsList({
   upcoming,
   selectedId,
   todayKey,
+  day,
 }: {
   upcoming: AppointmentListItem[];
   selectedId: string | null;
   todayKey: string;
+  /** The schedule panel's day, kept when another patient is picked. */
+  day?: string;
 }) {
   return (
     <section className={`${PANEL} flex flex-col p-5`}>
@@ -86,7 +89,7 @@ export function PatientsList({
             return (
               <li key={a.id}>
                 <Link
-                  href={`/dashboard?visit=${a.id}`}
+                  href={`/dashboard?visit=${a.id}${day ? `&day=${day}` : ""}`}
                   scroll={false}
                   className={[
                     "flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors",
@@ -221,17 +224,25 @@ const HOUR = 72; // px per hour on the timeline
 
 /** The week as a strip, then today as a timeline with a line at the current time. */
 export function ScheduleRail({
-  todays,
+  items: todays,
+  dayKey: selected,
   todayKey,
   now,
+  keep,
 }: {
-  todays: AppointmentListItem[];
+  /** The chosen day's visits. */
+  items: AppointmentListItem[];
+  /** The chosen day (YYYY-MM-DD); today unless picked from the strip. */
+  dayKey: string;
   todayKey: string;
   now: Date;
+  /** Other dashboard state to keep in links (the selected patient). */
+  keep: string;
 }) {
-  const monday = addDays(todayKey, -((weekdayOf(todayKey) + 6) % 7));
+  const href = (key: string) => `/dashboard?${[keep, key === todayKey ? "" : `day=${key}`].filter(Boolean).join("&")}`;
+  const monday = addDays(selected, -((weekdayOf(selected) + 6) % 7));
   const week = Array.from({ length: 7 }, (_, i) => addDays(monday, i));
-  const [y, m] = todayKey.split("-").map(Number);
+  const [y, m] = selected.split("-").map(Number);
   const monthLabel = new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString("en-PH", { month: "long", year: "numeric", timeZone: "UTC" });
   const weekdayLabel = (key: string) =>
     new Date(`${key}T00:00:00Z`).toLocaleDateString("en-PH", { weekday: "short", timeZone: "UTC" });
@@ -248,20 +259,26 @@ export function ScheduleRail({
   return (
     <section className={`${PANEL} flex flex-col overflow-hidden`}>
       <div className="border-b border-border p-5">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <h2 className="font-display text-lg font-semibold">{monthLabel}</h2>
-          <Link href="/calendar" className="text-sm font-medium text-accent-ink hover:underline">
-            Calendar
-          </Link>
+          <div className="flex items-center gap-1">
+            <Link href={href(addDays(selected, -7))} scroll={false} aria-label="Previous week" className="grid size-8 place-items-center rounded-full hover:bg-surface-muted">
+              ‹
+            </Link>
+            <Link href={href(addDays(selected, 7))} scroll={false} aria-label="Next week" className="grid size-8 place-items-center rounded-full hover:bg-surface-muted">
+              ›
+            </Link>
+          </div>
         </div>
         <div className="mt-4 grid grid-cols-7 text-center">
           {week.map((key) => {
+            const on = key === selected;
             const today = key === todayKey;
             return (
-              <Link key={key} href={`/calendar?day=${key}`} className="group space-y-2">
+              <Link key={key} href={href(key)} scroll={false} aria-current={on ? "date" : undefined} className="group space-y-2">
                 <span className="block text-xs text-ink-faint">{weekdayLabel(key)}</span>
                 <span
-                  className={`mx-auto grid size-9 place-items-center rounded-full text-sm font-semibold transition-colors ${today ? "bg-ink text-canvas" : "group-hover:bg-surface-muted"}`}
+                  className={`mx-auto grid size-9 place-items-center rounded-full text-sm font-semibold transition-colors ${on ? "bg-ink text-canvas" : today ? "text-accent-ink ring-1 ring-accent/50" : "group-hover:bg-surface-muted"}`}
                 >
                   {Number(key.slice(8))}
                 </span>
@@ -273,9 +290,16 @@ export function ScheduleRail({
 
       <div className="p-5 pb-6">
         <div className="mb-4 flex items-baseline justify-between">
-          <h3 className="font-semibold">Today</h3>
-          <span className="text-xs text-ink-faint">
+          <h3 className="font-semibold">
+            {selected === todayKey
+              ? "Today"
+              : new Date(`${selected}T00:00:00Z`).toLocaleDateString("en-PH", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" })}
+          </h3>
+          <span className="flex items-center gap-3 text-xs text-ink-faint">
             {todays.length} visit{todays.length === 1 ? "" : "s"}
+            <Link href={`/calendar?day=${selected}`} className="font-medium text-accent-ink hover:underline">
+              Open in calendar
+            </Link>
           </span>
         </div>
         <div className="relative" style={{ height: (hours.length - 1) * HOUR + 8 }}>
@@ -320,7 +344,7 @@ export function ScheduleRail({
               </div>
             );
           })}
-          {nowMinute >= firstHour * 60 && nowMinute <= lastHour * 60 ? (
+          {selected === todayKey && nowMinute >= firstHour * 60 && nowMinute <= lastHour * 60 ? (
             <div className="pointer-events-none absolute inset-x-0 flex items-center" style={{ top: top(nowMinute) - 10 }}>
               <span className="tabular w-14 shrink-0 rounded-full bg-ink px-1.5 py-0.5 text-center text-[11px] font-semibold text-canvas">
                 {formatTime(now).replace(/\s?[AP]M$/i, "")}
@@ -329,7 +353,7 @@ export function ScheduleRail({
             </div>
           ) : null}
         </div>
-        {todays.length === 0 ? <p className="mt-4 text-center text-sm text-ink-muted">A clear day.</p> : null}
+        {todays.length === 0 ? <p className="mt-4 text-center text-sm text-ink-muted">Nothing booked.</p> : null}
       </div>
     </section>
   );
