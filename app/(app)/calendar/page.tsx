@@ -91,7 +91,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
   return (
     // The month grid earns more width than the rest of the app, so on wide
     // screens this page reaches past the shell’s max-width.
-    <div className="space-y-6 2xl:-mx-16">
+    <div className="space-y-6">
       <PageHeader
         title="Calendar"
         subtitle={`${appointments.length} booked across ${bookedDays} ${bookedDays === 1 ? "day" : "days"} this month`}
