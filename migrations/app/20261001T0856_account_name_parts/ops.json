@@ -1,0 +1,128 @@
+[
+  {
+    "id": "column.public.Account.firstName",
+    "label": "Add column \"firstName\" to \"Account\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "firstName",
+        "table": "Account"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"firstName\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Account",
+          "firstName"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"firstName\"",
+        "sql": "ALTER TABLE \"public\".\"Account\" ADD COLUMN \"firstName\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"firstName\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Account",
+          "firstName"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Account.lastName",
+    "label": "Add column \"lastName\" to \"Account\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "lastName",
+        "table": "Account"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"lastName\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Account",
+          "lastName"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"lastName\"",
+        "sql": "ALTER TABLE \"public\".\"Account\" ADD COLUMN \"lastName\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"lastName\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Account",
+          "lastName"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Account.middleName",
+    "label": "Add column \"middleName\" to \"Account\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "middleName",
+        "table": "Account"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"middleName\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Account",
+          "middleName"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"middleName\"",
+        "sql": "ALTER TABLE \"public\".\"Account\" ADD COLUMN \"middleName\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"middleName\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Account",
+          "middleName"
+        ]
+      }
+    ]
+  }
+]

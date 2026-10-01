@@ -647,6 +647,12 @@ namespace public {
     /// password" sets one.
     passwordHash String?
     fullName     String
+    /// The name in parts, as typed at sign-up or on the account page (tidied,
+    /// lib/names.ts); `fullName` is them joined. Null on accounts made before
+    /// the parts were kept, until backfilled or edited.
+    firstName    String?
+    middleName   String?
+    lastName     String?
     /// Sessions issued before this instant stop being accepted.
     ///
     /// The cookie is a stateless JWT, so there is otherwise no way to end a

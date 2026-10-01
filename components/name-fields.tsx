@@ -5,10 +5,20 @@ import { Field, TextInput } from "@/components/form";
  * them into `fullName` (lib/names.ts). `defaultName` splits a known full name
  * (from Google, say) as a starting point: the last word as the last name.
  */
-export function NameFields({ error, defaultName = "" }: { error?: string[]; defaultName?: string }) {
+export function NameFields({
+  error,
+  defaultName = "",
+  defaults,
+}: {
+  error?: string[];
+  defaultName?: string;
+  /** The stored parts, when known (the account page). */
+  defaults?: { firstName: string | null; middleName: string | null; lastName: string | null };
+}) {
   const words = defaultName.trim().split(/\s+/).filter(Boolean);
-  const first = words.length > 1 ? words.slice(0, -1).join(" ") : (words[0] ?? "");
-  const last = words.length > 1 ? words[words.length - 1] : "";
+  const first = defaults?.firstName ?? (words.length > 1 ? words.slice(0, -1).join(" ") : (words[0] ?? ""));
+  const middle = defaults?.middleName ?? "";
+  const last = defaults?.lastName ?? (words.length > 1 ? words[words.length - 1] : "");
   return (
     <div className="space-y-1.5">
       <div className="grid gap-3 sm:grid-cols-[1fr_0.8fr_1fr]">
@@ -16,7 +26,7 @@ export function NameFields({ error, defaultName = "" }: { error?: string[]; defa
           <TextInput id="firstName" name="firstName" autoComplete="given-name" autoCapitalize="words" defaultValue={first} required invalid={Boolean(error)} />
         </Field>
         <Field label="Middle name" htmlFor="middleName" hint="Optional">
-          <TextInput id="middleName" name="middleName" autoComplete="additional-name" autoCapitalize="words" />
+          <TextInput id="middleName" name="middleName" autoComplete="additional-name" autoCapitalize="words" defaultValue={middle} />
         </Field>
         <Field label="Last name" htmlFor="lastName" required>
           <TextInput id="lastName" name="lastName" autoComplete="family-name" autoCapitalize="words" defaultValue={last} required invalid={Boolean(error)} />

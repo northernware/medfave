@@ -120,10 +120,12 @@ export default async function DeskPage({ searchParams }: PageProps<"/desk">) {
   const requestName = (r: (typeof requestRows)[number]) =>
     r.patient ? fullName(r.patient) : fullName({ firstName: r.newFirstName ?? "", middleName: r.newMiddleName, lastName: r.newLastName ?? "" });
 
+  const me = await orm.Account.select("firstName").where((a) => a.id.eq(staff.accountId)).first();
+
   return (
     <div className="space-y-3 xl:pr-[352px]">
       <PageHeader
-        title={greetingFor(staff.fullName, staff.role === "DOCTOR", now)}
+        title={greetingFor(staff.fullName, staff.role === "DOCTOR", now, me?.firstName)}
         subtitle={formatDayHeading(now)}
         actions={
           <>

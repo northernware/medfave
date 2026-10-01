@@ -194,6 +194,8 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   ).length;
 
 
+  const me = await orm.Account.select("firstName").where((a) => a.id.eq(doctor.accountId)).first();
+
   return (
     <div className="space-y-3">
 
@@ -202,7 +204,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
       <div className="grid grid-cols-1 gap-3 xl:pr-[352px]">
         <div className="min-w-0 space-y-3">
           <PageHeader
-            title={greetingFor(doctor.fullName, true, now)}
+            title={greetingFor(doctor.fullName, true, now, me?.firstName)}
             subtitle={formatDayHeading(now)}
             actions={
               <>

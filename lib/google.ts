@@ -8,7 +8,7 @@ import {
   generateState,
 } from "arctic";
 import { z } from "zod";
-import { withFullName } from "@/lib/names";
+import { namePartsOf, withFullName } from "@/lib/names";
 import { db, orm } from "@/src/prisma/db";
 import { instantToDb } from "@/lib/datetime";
 import { appUrl } from "@/lib/email";
@@ -204,6 +204,9 @@ const finishSchema = z.preprocess(
   withFullName,
   z.object({
     fullName: z.string().trim().min(2, "Enter your first and last name").max(120),
+    firstName: z.string().optional(),
+    middleName: z.string().optional(),
+    lastName: z.string().optional(),
     role: z.enum(SignupRole, { message: "Choose patient or doctor" }),
     consent: z.literal("on", { message: "You need to agree to the privacy notice" }),
   }),
@@ -233,6 +236,7 @@ export async function completeGoogleSignUp(input: Record<string, unknown>): Prom
         id: newId(),
         email: pending.email,
         fullName: parsed.data.fullName,
+        ...namePartsOf(parsed.data),
         emailVerifiedAt: now,
         signupRole: parsed.data.role,
         consentedAt: now,
