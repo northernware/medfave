@@ -197,7 +197,9 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   return (
     <div className="space-y-6">
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+      {/* On wide screens the schedule is pinned to the window's right edge, like the
+          sidebar on the left, and the page leaves room for it. */}
+      <div className="grid grid-cols-1 gap-6 xl:pr-[324px]">
         <div className="min-w-0 space-y-6">
           <PageHeader
             title={`Good day, ${firstName}`}
@@ -425,7 +427,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
 
         {/* Rail: the day as a timeline, the window's height. It starts at the top of the
             page (the greeting sits in the left column) and stays put while the left scrolls. */}
-        <div className="xl:sticky xl:top-3 xl:-mt-7 xl:h-[calc(100dvh-1.5rem)]">
+        <div className="xl:fixed xl:top-3 xl:right-3 xl:bottom-3 xl:z-10 xl:w-[340px]">
           <ScheduleRail
             items={railItems}
             dayKey={railDay}

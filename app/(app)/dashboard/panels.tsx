@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CalendarIcon } from "@solar-icons/react/linear/calendar";
 import { setAppointmentStatus, startConsultation } from "@/app/actions/appointments";
 import { CLINIC_TIME_ZONE, dayKey, formatCalendarDate, formatTime } from "@/lib/datetime";
 import { APPOINTMENT_STATUS_LABELS, APPOINTMENT_STATUS_TONE, fullName, SERVICE_LABELS } from "@/lib/domain";
@@ -295,21 +296,27 @@ export function ScheduleRail({
         </div>
       </div>
 
-      {/* The day scrolls inside the panel when it doesn't fit. */}
-      <div className="min-h-0 flex-1 overflow-y-auto p-5 pb-6">
-        <div className="mb-4 flex items-baseline justify-between">
+      <div className="flex shrink-0 items-center justify-between px-5 pt-5 pb-3">
           <h3 className="font-semibold">
             {selected === todayKey
               ? "Today"
               : new Date(`${selected}T00:00:00Z`).toLocaleDateString("en-PH", { weekday: "long", month: "short", day: "numeric", timeZone: "UTC" })}
           </h3>
-          <span className="flex items-center gap-3 text-xs text-ink-faint">
+          <span className="flex items-center gap-2 text-xs text-ink-faint">
             {todays.length} visit{todays.length === 1 ? "" : "s"}
-            <Link href={`/calendar?day=${selected}`} className="font-medium text-accent-ink hover:underline">
-              Open in calendar
+            <Link
+              href={`/calendar?day=${selected}`}
+              aria-label="Open in calendar"
+              title="Open in calendar"
+              className="grid size-8 place-items-center rounded-full text-accent-ink hover:bg-surface-muted"
+            >
+              <CalendarIcon className="size-[18px]" aria-hidden />
             </Link>
           </span>
-        </div>
+      </div>
+
+      {/* Only the hours scroll; no scrollbar showing. */}
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-2 pb-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <div className="relative" style={{ height: (hours.length - 1) * HOUR + 8 }}>
           {/* The time column: one vertical line through every hour, the labels sitting on it. */}
           <span aria-hidden className="absolute top-0 bottom-0 left-8 w-px -translate-x-1/2 bg-border-strong" />
