@@ -22,6 +22,7 @@ export function AppShell({
   view,
   person,
   narrow = false,
+  wide = false,
   children,
 }: {
   home: string;
@@ -36,6 +37,8 @@ export function AppShell({
   person: { name: string; detail: string };
   /** Settings-style pages read better at a form's width. */
   narrow?: boolean;
+  /** Dashboards use the whole width of the window. */
+  wide?: boolean;
   children: ReactNode;
 }) {
   const all = clinics ?? [{ id: clinic.id, name: clinic.name }];
@@ -76,7 +79,7 @@ export function AppShell({
       </header>
 
       <main className="min-w-0 flex-1">
-        <div className={`mx-auto w-full ${narrow ? "max-w-4xl" : "max-w-6xl"} px-4 py-6 sm:px-6 lg:px-10 lg:py-10`}>{children}</div>
+        <div className={`mx-auto w-full ${narrow ? "max-w-4xl" : wide ? "max-w-[1680px]" : "max-w-6xl"} px-4 py-6 sm:px-6 lg:px-10 lg:py-10`}>{children}</div>
       </main>
     </div>
   );

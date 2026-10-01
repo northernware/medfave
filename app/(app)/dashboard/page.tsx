@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { setAppointmentStatus, startConsultation } from "@/app/actions/appointments";
+import { startConsultation } from "@/app/actions/appointments";
 import { requireDoctor } from "@/lib/auth";
 import { caredForIds, idsOrNone } from "@/lib/care";
 import { orm } from "@/src/prisma/db";
@@ -16,6 +16,7 @@ import {
   instantFromDb,
   instantToDb,
   calendarDateFromDb,
+  dayKey,
 } from "@/lib/datetime";
 import {
   ACTIVE_STATUSES,
@@ -24,16 +25,20 @@ import {
   fullName,
   QUEUE_STATUSES,
   SERVICE_LABELS,
+  SEX_LABELS,
+  ageFrom,
 } from "@/lib/domain";
 import { appointmentListQuery, toAppointmentListItem } from "@/lib/queries";
-import { Badge, Card, EmptyState, PageHeader, SectionTitle, Stat, StatStrip, buttonClass } from "@/components/ui";
+import { Badge, Card, EmptyState, PageHeader, SectionTitle, buttonClass } from "@/components/ui";
+import { LastVisitDetails, PatientsList, ScheduleRail, StatCard, type LastVisit } from "./panels";
 
 /** Whole minutes between two moments, floored — the number a receptionist reads. */
 function minutesBetween(from: Date, to: Date) {
   return Math.max(0, Math.floor((to.getTime() - from.getTime()) / 60_000));
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({ searchParams }: PageProps<"/dashboard">) {
+  const { visit } = await searchParams;
   const doctor = await requireDoctor();
   const now = new Date();
   const today = clinicDayRange(now);
@@ -123,6 +128,20 @@ export default async function DashboardPage() {
         .aggregate((agg) => ({ n: agg.count() })),
     ]);
 
+  // The patients list: who is coming, soonest first; and the chosen one's last visit with this doctor.
+  const upcoming = (
+    await appointmentListQuery()
+      .where((a) => a.doctorId.eq(doctor.id))
+      .where((a) => a.scheduledAt.gte(instantToDb(today.start)))
+      .where((a) => a.status.in(ACTIVE_STATUSES))
+      .orderBy((a) => a.scheduledAt.asc())
+      .limit(7)
+      .all()
+  ).map(toAppointmentListItem);
+  const selected = upcoming.find((a) => a.id === visit) ?? upcoming[0] ?? null;
+  const lastVisit = selected ? await loadLastVisit(selected.patient.id, doctor.id) : null;
+  const todayKey = dayKey(now);
+
   // Prisma 8 reads temporal columns as text; the UI works in `Date`, so each list
   // is converted once here rather than at every call site below.
   const todays = todaysRows.map(toAppointmentListItem);
@@ -182,37 +201,19 @@ export default async function DashboardPage() {
         }
       />
 
-      {/* One object with internal rules, rather than four detached tiles. */}
-      <StatStrip>
-        <Stat
-          label="Today"
-          value={todays.length}
-          hint={remaining > 0 ? `${remaining} still to come` : "Nothing left today"}
-        />
-        <Stat
-          label="Waiting"
-          value={waiting.length}
-          tone={waiting.length > 0 ? "warn" : undefined}
-          hint={
-            inConsultation.length > 0
-              ? `${inConsultation.length} with the doctor`
-              : waiting.length > 0
-                ? "Checked in, not seen"
-                : "Nobody checked in"
-          }
-        />
-        <Stat
-          label="Follow-ups due"
-          value={dueFollowUps.length}
-          tone={dueFollowUps.length > 0 ? "danger" : undefined}
-          hint={dueFollowUps.length > 0 ? "Asked for, not booked" : "All booked"}
-        />
-        <Stat label="Upcoming" value={upcomingCount.n} hint="Booked after today" />
-      </StatStrip>
-
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Main column: what the doctor works through, in the order they work it. */}
-        <div className="space-y-6 lg:col-span-2">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <div className="min-w-0 space-y-6">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <StatCard value={todays.length} label="Today" hint={remaining > 0 ? `${remaining} still to come` : "Nothing left today"} />
+            <StatCard
+              value={waiting.length}
+              label="Waiting"
+              tone="warn"
+              hint={inConsultation.length > 0 ? `${inConsultation.length} with you` : waiting.length > 0 ? "Checked in" : "Nobody checked in"}
+            />
+            <StatCard value={dueFollowUps.length} label="Follow-ups due" tone="danger" hint={dueFollowUps.length > 0 ? "Asked for, not booked" : "All booked"} />
+            <StatCard value={upcomingCount.n} label="Upcoming" hint="Booked after today" href="/appointments" />
+          </div>
           {queue.length > 0 ? (
             <section>
               <SectionTitle title="Waiting room" hint="Here now — waiting or with the doctor" />
@@ -289,65 +290,10 @@ export default async function DashboardPage() {
             </section>
           ) : null}
 
-          <section>
-            <SectionTitle
-              title="Today's schedule"
-              action={
-                <Link href="/appointments" className="font-medium text-accent-ink hover:underline">
-                  All appointments
-                </Link>
-              }
-            />
-            <Card>
-              {todays.length === 0 ? (
-                <EmptyState title="A clear day" description="No appointments booked for today." />
-              ) : (
-                <ul className="divide-y divide-border">
-                  {todays.map((a) => (
-                    <li
-                      key={a.id}
-                      className="flex flex-wrap items-center gap-3 px-4 py-2.5 transition-colors hover:bg-surface-muted"
-                    >
-                      <span className="nums w-16 shrink-0 text-sm font-medium">
-                        {formatTime(a.scheduledAt)}
-                      </span>
-                      <Link href={`/appointments/${a.id}`} className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-medium">{fullName(a.patient)}</span>
-                        <span className="block truncate text-xs text-ink-muted">
-                          {a.patient.household.name} · {a.reason}
-                        </span>
-                      </Link>
-                      <span className="flex shrink-0 items-center gap-2">
-                        <Badge dot tone={APPOINTMENT_STATUS_TONE[a.status]}>
-                          {APPOINTMENT_STATUS_LABELS[a.status]}
-                        </Badge>
-                        {/* One click moves the patient to the next step of the flow. */}
-                        {a.status === "PENDING" || a.status === "CONFIRMED" ? (
-                          <form action={setAppointmentStatus}>
-                            <input type="hidden" name="appointmentId" value={a.id} />
-                            <input type="hidden" name="status" value="CHECKED_IN" />
-                            <button className={buttonClass("secondary")}>Check in</button>
-                          </form>
-                        ) : a.status === "CHECKED_IN" ? (
-                          <form action={startConsultation}>
-                            <input type="hidden" name="appointmentId" value={a.id} />
-                            <button className={buttonClass("primary")}>Start consultation</button>
-                          </form>
-                        ) : a.status === "IN_CONSULTATION" && a.medicalRecord ? (
-                          <Link
-                            href={`/records/${a.medicalRecord.id}/edit`}
-                            className={buttonClass("secondary")}
-                          >
-                            Open notes
-                          </Link>
-                        ) : null}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </Card>
-          </section>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)]">
+            <PatientsList upcoming={upcoming} selectedId={selected?.id ?? null} todayKey={todayKey} />
+            <LastVisitDetails visit={lastVisit} doctorName={doctor.fullName} />
+          </div>
 
           {drafts.length > 0 ? (
             <section>
@@ -421,28 +367,6 @@ export default async function DashboardPage() {
               )}
             </Card>
           </section>
-        </div>
-
-        {/* Rail: standing context, not today's work. */}
-        <div className="space-y-6">
-          <section>
-            <SectionTitle title="Practice" />
-            <Card className="divide-y divide-border">
-              <div className="flex items-baseline justify-between px-4 py-3">
-                <span className="text-sm text-ink-muted">Households</span>
-                <Link href="/households" className="nums text-[15px] font-semibold hover:underline">
-                  {householdCount.n}
-                </Link>
-              </div>
-              <div className="flex items-baseline justify-between px-4 py-3">
-                <span className="text-sm text-ink-muted">Patients</span>
-                <Link href="/patients" className="nums text-[15px] font-semibold hover:underline">
-                  {patientCount.n}
-                </Link>
-              </div>
-            </Card>
-          </section>
-
           {missed.length > 0 ? (
             <section>
               <SectionTitle title="Missed" hint="Last 30 days" />
@@ -477,7 +401,72 @@ export default async function DashboardPage() {
             </section>
           ) : null}
         </div>
+
+        {/* Rail: the day as a timeline, then standing context. */}
+        <div className="space-y-6">
+          <ScheduleRail todays={todays} todayKey={todayKey} now={now} />
+          <section>
+            <SectionTitle title="Practice" />
+            <Card className="divide-y divide-border">
+              <div className="flex items-baseline justify-between px-4 py-3">
+                <span className="text-sm text-ink-muted">Households</span>
+                <Link href="/households" className="nums text-[15px] font-semibold hover:underline">
+                  {householdCount.n}
+                </Link>
+              </div>
+              <div className="flex items-baseline justify-between px-4 py-3">
+                <span className="text-sm text-ink-muted">Patients</span>
+                <Link href="/patients" className="nums text-[15px] font-semibold hover:underline">
+                  {patientCount.n}
+                </Link>
+              </div>
+            </Card>
+          </section>
+
+        </div>
       </div>
     </div>
   );
+}
+
+/** A patient's most recent visit note by this doctor, with what's needed beside the patients list. */
+async function loadLastVisit(patientId: string, doctorId: string): Promise<LastVisit | null> {
+  const [patient, record, allergies] = await Promise.all([
+    orm.Patient.select("id", "firstName", "middleName", "lastName", "sex", "dateOfBirth", "patientNumber").where((p) => p.id.eq(patientId)).first(),
+    orm.MedicalRecord
+      .select("id", "visitDate", "chiefComplaint", "assessment", "treatmentPlan", "notes", "followUpDate")
+      .include("prescriptions", (rx) => rx.select("drugName", "dosage", "frequency"))
+      .where((r) => r.patientId.eq(patientId))
+      // Notes are their author's: only this doctor's own show here.
+      .where((r) => r.doctorId.eq(doctorId))
+      .where((r) => r.archivedAt.isNull())
+      .orderBy((r) => r.visitDate.desc())
+      .first(),
+    orm.PatientAllergy.select("label").where((a) => a.patientId.eq(patientId)).all(),
+  ]);
+  if (!patient) return null;
+  return {
+    patient: {
+      id: patient.id,
+      firstName: patient.firstName,
+      middleName: patient.middleName,
+      lastName: patient.lastName,
+      sexLabel: SEX_LABELS[patient.sex],
+      age: ageFrom(calendarDateFromDb(patient.dateOfBirth)),
+      patientNumber: patient.patientNumber,
+    },
+    record: record
+      ? {
+          id: record.id,
+          visitDate: instantFromDb(record.visitDate),
+          chiefComplaint: record.chiefComplaint,
+          assessment: record.assessment,
+          treatmentPlan: record.treatmentPlan,
+          notes: record.notes,
+          followUpDate: record.followUpDate ? calendarDateFromDb(record.followUpDate) : null,
+          prescriptions: record.prescriptions,
+        }
+      : null,
+    allergies: allergies.map((a) => a.label),
+  };
 }
