@@ -19,7 +19,7 @@ import {
   dayKey,
   startOfClinicDay,
 } from "@/lib/datetime";
-import { addDays } from "@/lib/scheduling";
+import { addDays, weekdayOf } from "@/lib/scheduling";
 import {
   ACTIVE_STATUSES,
   APPOINTMENT_STATUS_LABELS,
@@ -149,6 +149,21 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   const todays = todaysRows.map(toAppointmentListItem);
   // The schedule panel's day: today, or one picked from its week strip.
   const railDay = typeof day === "string" && /^\d{4}-\d{2}-\d{2}$/.test(day) ? day : todayKey;
+  // Days in the strip's week with something booked, for a dot under each.
+  const railMonday = addDays(railDay, -((weekdayOf(railDay) + 6) % 7));
+  const busyDays = [
+    ...new Set(
+      (
+        await orm.Appointment
+          .select("scheduledAt")
+          .where((a) => a.doctorId.eq(doctor.id))
+          .where((a) => a.status.in(ACTIVE_STATUSES))
+          .where((a) => a.scheduledAt.gte(instantToDb(startOfClinicDay(railMonday))))
+          .where((a) => a.scheduledAt.lt(instantToDb(startOfClinicDay(addDays(railMonday, 7)))))
+          .all()
+      ).map((a) => dayKey(instantFromDb(a.scheduledAt))),
+    ),
+  ];
   const railItems =
     railDay === todayKey
       ? todays
@@ -427,6 +442,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           <ScheduleRail
             items={railItems}
             dayKey={railDay}
+            busyDays={busyDays}
             todayKey={todayKey}
             now={now}
             keep={typeof visit === "string" ? `visit=${encodeURIComponent(visit)}` : ""}

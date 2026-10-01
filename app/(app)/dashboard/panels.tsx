@@ -226,10 +226,13 @@ const HOUR = 72; // px per hour on the timeline
 export function ScheduleRail({
   items: todays,
   dayKey: selected,
+  busyDays = [],
   todayKey,
   now,
   keep,
 }: {
+  /** Days this week with visits booked: a dot under each. */
+  busyDays?: string[];
   /** The chosen day's visits. */
   items: AppointmentListItem[];
   /** The chosen day (YYYY-MM-DD); today unless picked from the strip. */
@@ -275,13 +278,17 @@ export function ScheduleRail({
             const on = key === selected;
             const today = key === todayKey;
             return (
-              <Link key={key} href={href(key)} scroll={false} aria-current={on ? "date" : undefined} className="group space-y-2">
+              <Link key={key} href={href(key)} scroll={false} aria-current={on ? "date" : undefined} className="group space-y-1.5">
                 <span className="block text-xs text-ink-faint">{weekdayLabel(key)}</span>
                 <span
                   className={`mx-auto grid size-9 place-items-center rounded-full text-sm font-semibold transition-colors ${on ? "bg-accent text-on-accent" : today ? "text-accent-ink ring-1 ring-accent/50" : "group-hover:bg-surface-muted"}`}
                 >
                   {Number(key.slice(8))}
                 </span>
+                <span
+                  aria-label={busyDays.includes(key) ? "Has visits" : undefined}
+                  className={`mx-auto block size-1.5 rounded-full ${busyDays.includes(key) ? (on ? "bg-accent" : "bg-accent/70") : "bg-transparent"}`}
+                />
               </Link>
             );
           })}
