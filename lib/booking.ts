@@ -302,7 +302,9 @@ export function queueStamps(
   existing: { arrivedAt: unknown; consultationStartedAt: unknown },
   now: Instant,
 ) {
-  const stamps: { arrivedAt?: Instant; consultationStartedAt?: Instant } = {};
+  const stamps: { arrivedAt?: Instant | null; consultationStartedAt?: Instant } = {};
+  // Not here after all (an undone check-in, or a booking put back): no arrival time.
+  if (status === "CONFIRMED" || status === "PENDING") stamps.arrivedAt = null;
   if ((status === "CHECKED_IN" || status === "IN_CONSULTATION") && !existing.arrivedAt) {
     stamps.arrivedAt = now;
   }
