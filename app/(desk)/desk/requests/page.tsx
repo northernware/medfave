@@ -4,6 +4,7 @@ import { acceptRequest, declineRequest } from "@/app/actions/requests";
 import { findPossibleDuplicates } from "@/lib/queries";
 import { requireStaff } from "@/lib/auth";
 import { orm } from "@/src/prisma/db";
+import { visitTimes } from "@/lib/patient-visits";
 import { calendarDateFromDb, formatCalendarDate, formatDateTime, instantFromDb } from "@/lib/datetime";
 import { fullName, SERVICE_LABELS } from "@/lib/domain";
 import { Badge, buttonClass, Card, CardHeader, EmptyState, PageHeader } from "@/components/ui";
@@ -17,7 +18,7 @@ export default async function DeskRequestsPage({ searchParams }: PageProps<"/des
   const [pending, decided] = await Promise.all([
     orm.AppointmentRequest
       .select(
-        "id", "preferredDate", "preferredTime", "service", "reason", "createdAt",
+        "id", "preferredDate", "preferredTime", "service", "reason", "createdAt", "rescheduleOfId",
         "newFirstName", "newMiddleName", "newLastName", "newDateOfBirth", "newContactNumber", "newEmail",
       )
       .include("doctor", (d) => d.select("fullName"))
@@ -56,6 +57,7 @@ export default async function DeskRequestsPage({ searchParams }: PageProps<"/des
         ] as const),
     ),
   );
+  const moving = await visitTimes(pending.map((r) => r.rescheduleOfId));
   const nameOf = (r: { patient: Parameters<typeof fullName>[0] | null; newFirstName: string | null; newMiddleName: string | null; newLastName: string | null }) =>
     r.patient ? fullName(r.patient) : fullName({ firstName: r.newFirstName ?? "", middleName: r.newMiddleName, lastName: r.newLastName ?? "" });
 
@@ -103,6 +105,12 @@ export default async function DeskRequestsPage({ searchParams }: PageProps<"/des
                         {nameOf(r)} <Badge tone="accent">New patient</Badge>
                       </span>
                     )}
+                    {r.rescheduleOfId && moving.get(r.rescheduleOfId) ? (
+                      <p className="text-sm">
+                        <Badge tone="warn">Move</Badge>{" "}
+                        <span className="text-ink-muted">from {formatDateTime(moving.get(r.rescheduleOfId)!)}. Accepting frees that time.</span>
+                      </p>
+                    ) : null}
                     <p className="text-sm text-ink-muted">
                       {r.doctor ? <span className="font-medium text-ink">For {r.doctor.fullName} · </span> : null}
                       {SERVICE_LABELS[r.service]} · {r.reason}

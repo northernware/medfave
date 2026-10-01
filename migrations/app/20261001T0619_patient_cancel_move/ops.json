@@ -1,0 +1,86 @@
+[
+  {
+    "id": "column.public.AppointmentRequest.rescheduleOfId",
+    "label": "Add column \"rescheduleOfId\" to \"AppointmentRequest\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "rescheduleOfId",
+        "table": "AppointmentRequest"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"rescheduleOfId\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AppointmentRequest",
+          "rescheduleOfId"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"rescheduleOfId\"",
+        "sql": "ALTER TABLE \"public\".\"AppointmentRequest\" ADD COLUMN \"rescheduleOfId\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"rescheduleOfId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AppointmentRequest",
+          "rescheduleOfId"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Clinic.patientCancelHours",
+    "label": "Add column \"patientCancelHours\" to \"Clinic\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "patientCancelHours",
+        "table": "Clinic"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"patientCancelHours\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Clinic",
+          "patientCancelHours"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"patientCancelHours\"",
+        "sql": "ALTER TABLE \"public\".\"Clinic\" ADD COLUMN \"patientCancelHours\" int4 DEFAULT 2 NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"patientCancelHours\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Clinic",
+          "patientCancelHours"
+        ]
+      }
+    ]
+  }
+]

@@ -1179,6 +1179,13 @@
                   "kind": "scalar"
                 }
               },
+              "rescheduleOfId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "service": {
                 "nullable": false,
                 "type": {
@@ -1367,6 +1374,9 @@
                 "requestedById": {
                   "column": "requestedById"
                 },
+                "rescheduleOfId": {
+                  "column": "rescheduleOfId"
+                },
                 "service": {
                   "column": "service"
                 },
@@ -1545,6 +1555,13 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "patientCancelHours": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
                   "kind": "scalar"
                 }
               },
@@ -1774,6 +1791,9 @@
                 },
                 "name": {
                   "column": "name"
+                },
+                "patientCancelHours": {
+                  "column": "patientCancelHours"
                 },
                 "sharedCharts": {
                   "column": "sharedCharts"
@@ -6567,6 +6587,11 @@
                   "nativeType": "text",
                   "nullable": false
                 },
+                "rescheduleOfId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "service": {
                   "codecId": "pg/enum@1",
                   "nativeType": "ServiceType",
@@ -6959,6 +6984,15 @@
                 "name": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
+                  "nullable": false
+                },
+                "patientCancelHours": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 2
+                  },
+                  "nativeType": "int4",
                   "nullable": false
                 },
                 "sharedCharts": {
@@ -10398,7 +10432,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "c1f6462a5eb3779d1b24f6bbcd0e4aa2b459c249c12e570f260a825d0ef9378b"
+    "storageHash": "e8befc5b48a6d344d614e64abb0f3969c7e1cea35103eec16e71f7e121cff755"
   },
   "capabilities": {
     "postgres": {

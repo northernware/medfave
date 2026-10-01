@@ -611,6 +611,9 @@ namespace public {
     /// Whether the clinic appears in the app's "Find a doctor". Opt-in; a
     /// clinic that isn't listed is still reachable by its link.
     listed        Boolean @default(false)
+    /// How long before a visit a patient may still cancel it themselves in the
+    /// app; after that they ring the clinic.
+    patientCancelHours Int @default(2)
     createdAt     TimestampString(3) @default(now())
     updatedAt     TimestampString(3)
     members       ClinicMember[]
@@ -806,6 +809,9 @@ namespace public {
     status            pg.enum(AppointmentRequestStatus) @default("PENDING")
     /// Set when accepting produced a booking.
     appointmentId     String?
+    /// Set when the patient is asking to move a visit they already have: on
+    /// acceptance the new visit is booked and this one cancelled.
+    rescheduleOfId    String?
     decisionNote      String?
     decidedById       String?
     decidedAt         TimestampString(3)?
