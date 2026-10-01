@@ -278,17 +278,17 @@ export function ScheduleRail({
             const on = key === selected;
             const today = key === todayKey;
             return (
-              <Link key={key} href={href(key)} scroll={false} aria-current={on ? "date" : undefined} className="group space-y-1.5">
+              <Link key={key} href={href(key)} scroll={false} aria-current={on ? "date" : undefined} className="group space-y-2">
                 <span className="block text-xs text-ink-faint">{weekdayLabel(key)}</span>
                 <span
-                  className={`mx-auto grid size-9 place-items-center rounded-full text-sm font-semibold transition-colors ${on ? "bg-accent text-on-accent" : today ? "text-accent-ink ring-1 ring-accent/50" : "group-hover:bg-surface-muted"}`}
+                  className={`relative mx-auto grid size-9 place-items-center rounded-full text-sm font-semibold transition-colors ${on ? "bg-accent text-on-accent" : today ? "text-accent-ink ring-1 ring-accent/50" : "group-hover:bg-surface-muted"}`}
                 >
                   {Number(key.slice(8))}
+                  {/* Visits that day: a dot tucked under the number, hidden by the filled circle when chosen. */}
+                  {busyDays.includes(key) && !on ? (
+                    <span aria-label="Has visits" className="absolute bottom-0.5 left-1/2 size-1 -translate-x-1/2 rounded-full bg-accent" />
+                  ) : null}
                 </span>
-                <span
-                  aria-label={busyDays.includes(key) ? "Has visits" : undefined}
-                  className={`mx-auto block size-1.5 rounded-full ${busyDays.includes(key) ? (on ? "bg-accent" : "bg-accent/70") : "bg-transparent"}`}
-                />
               </Link>
             );
           })}
