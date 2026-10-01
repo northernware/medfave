@@ -11,6 +11,9 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
     <AppShell
       home="/dashboard"
       links={DOCTOR_LINKS}
+      clinic={{ id: doctor.clinicId, name: doctor.clinicName, role: "Doctor" }}
+      views={["doctor", "desk", "settings"]}
+      view="doctor"
       person={{ name: doctor.fullName, detail: doctor.specialty ?? doctor.email }}>
       {children}
     </AppShell>

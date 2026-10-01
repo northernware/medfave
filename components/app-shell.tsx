@@ -1,104 +1,80 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
-import { logout } from "@/app/actions/auth";
 import { Brand } from "@/components/brand";
 import { Nav } from "@/components/nav";
-import type { NavLink } from "@/components/nav-links";
+import type { NavLink, ViewKey } from "@/components/nav-links";
+import { ClinicSwitcher, ProfileMenu, ViewSwitch } from "@/components/shell-menus";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 /**
- * The frame every signed-in clinic screen shares — the doctor's and the front
- * desk's: a sidebar on a wide screen; on a phone, a slim bar with the sections
- * as scrolling pills beneath it.
+ * The frame every signed-in clinic screen shares — doctor, front desk and
+ * clinic settings. Built like a multi-clinic platform: the clinic at the top
+ * (a switcher, ready for doctors who work at several), the views this person
+ * can work in (Doctor / Front desk / Settings), the sections in groups, and the
+ * person at the foot with account, theme and sign-out in a menu. On a phone: a
+ * slim bar with the clinic and the person, and the sections as pills.
  */
 export function AppShell({
   home,
   links,
-  context,
+  clinic,
+  clinics,
+  views,
+  view,
   person,
   narrow = false,
   children,
 }: {
   home: string;
   links: readonly NavLink[];
-  /** A line under the logo: which clinic, which side of it. */
-  context?: string;
+  /** The clinic being worked in, and this person's role there. */
+  clinic: { id: string; name: string; role: string };
+  /** Every clinic this login works at (one, for now). */
+  clinics?: { id: string; name: string }[];
+  /** The views this person may switch between, and the one this is. */
+  views: ViewKey[];
+  view: ViewKey;
   person: { name: string; detail: string };
   /** Settings-style pages read better at a form's width. */
   narrow?: boolean;
   children: ReactNode;
 }) {
-  const initials = person.name
-    .replace(/^(Dr\.?|Dra\.?)\s+/i, "")
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? "")
-    .join("");
+  const all = clinics ?? [{ id: clinic.id, name: clinic.name }];
+  const theme = <ThemeToggle />;
 
   return (
     <div className="lg:flex lg:min-h-dvh">
-      <aside className="hidden lg:sticky lg:top-0 lg:flex lg:h-dvh lg:w-[248px] lg:shrink-0 lg:flex-col lg:border-r lg:border-border lg:bg-surface">
-        <div className="px-5 pt-6 pb-5">
+      <aside className="hidden lg:sticky lg:top-0 lg:flex lg:h-dvh lg:w-[264px] lg:shrink-0 lg:flex-col lg:gap-4 lg:border-r lg:border-border lg:bg-surface lg:px-3 lg:py-5">
+        <div className="px-2">
           <Brand href={home} />
-          {context ? <p className="mt-2 truncate text-xs text-ink-faint">{context}</p> : null}
         </div>
-        <div className="flex-1 overflow-y-auto px-3">
+        <ClinicSwitcher clinic={clinic} clinics={all} />
+        <ViewSwitch views={views} current={view} />
+        <div className="-mx-1 flex-1 overflow-y-auto px-1 pt-1">
           <Nav orientation="sidebar" links={links} home={home} />
         </div>
-        <PersonCard name={person.name} detail={person.detail} initials={initials} />
+        <div className="border-t border-border pt-3">
+          <ProfileMenu person={person} theme={theme} />
+        </div>
       </aside>
 
-      <header className="sticky top-0 z-10 border-b border-border bg-surface/95 backdrop-blur lg:hidden">
-        <div className="flex items-center justify-between gap-3 px-4 py-3">
-          <div className="min-w-0">
-            <Brand href={home} />
-            {context ? <p className="mt-0.5 truncate text-xs text-ink-faint">{context}</p> : null}
+      <header className="sticky top-0 z-20 border-b border-border bg-surface/95 backdrop-blur lg:hidden">
+        <div className="flex items-center justify-between gap-3 px-4 py-2.5">
+          <div className="min-w-0 flex-1">
+            <ClinicSwitcher clinic={clinic} clinics={all} compact />
           </div>
-          <Link
-            href="/account"
-            aria-label={`${person.name} — account`}
-            className="grid size-9 shrink-0 place-items-center rounded-full bg-accent-soft font-display text-xs font-semibold text-accent-ink"
-          >
-            {initials}
-          </Link>
+          <ProfileMenu person={person} theme={theme} compact />
         </div>
+        {views.length > 1 ? (
+          <div className="px-4 pb-2">
+            <ViewSwitch views={views} current={view} />
+          </div>
+        ) : null}
         <Nav orientation="bar" links={links} home={home} />
       </header>
 
       <main className="min-w-0 flex-1">
         <div className={`mx-auto w-full ${narrow ? "max-w-4xl" : "max-w-6xl"} px-4 py-6 sm:px-6 lg:px-10 lg:py-10`}>{children}</div>
       </main>
-    </div>
-  );
-}
-
-function PersonCard({ name, detail, initials }: { name: string; detail: string; initials: string }) {
-  return (
-    <div className="border-t border-border p-3">
-      <Link
-        href="/account"
-        className="flex items-center gap-2.5 rounded-md px-2 py-2 transition-colors hover:bg-surface-muted"
-      >
-        <span
-          aria-hidden="true"
-          className="grid size-9 shrink-0 place-items-center rounded-full bg-accent-soft font-display text-xs font-semibold text-accent-ink"
-        >
-          {initials}
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium">{name}</p>
-          <p className="truncate text-xs text-ink-faint">{detail}</p>
-        </div>
-      </Link>
-      <div className="flex items-center justify-between gap-2 px-2 pt-2">
-        <span className="text-xs text-ink-faint">Theme</span>
-        <ThemeToggle />
-      </div>
-      <form action={logout}>
-        <button className="mt-1 w-full rounded-full px-3 py-1.5 text-left text-sm text-ink-muted transition-colors hover:bg-surface-muted hover:text-ink">
-          Sign out
-        </button>
-      </form>
     </div>
   );
 }
