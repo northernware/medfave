@@ -161,8 +161,8 @@ export default async function DeskPatientPage({
       ? instantToDbSafe(activation.expiresAt)
       : null;
 
-  // Logins that look after this chart for the patient, and any caregiver code still out.
-  const [carers, careCode] = await Promise.all([
+  // Logins that look after this chart for the patient, and the caregiver codes still out (one per person).
+  const [carers, careCodes] = await Promise.all([
     orm.CareLink
       .select("id", "caregiverName", "createdAt")
       .include("account", (a) => a.select("fullName", "email"))
@@ -178,10 +178,10 @@ export default async function DeskPatientPage({
       .where((a) => a.forCaregiver.eq(true))
       .where((a) => a.usedAt.isNull())
       .where((a) => a.revokedAt.isNull())
-      .orderBy((a) => a.createdAt.desc())
-      .first(),
+      .orderBy((a) => a.createdAt.asc())
+      .all(),
   ]);
-  const careCodeLive = careCode && instantToDbSafe(careCode.expiresAt) ? careCode : null;
+  const careCodesLive = careCodes.filter((c) => instantToDbSafe(c.expiresAt));
 
   return (
     <div className="space-y-6">
@@ -305,21 +305,19 @@ export default async function DeskPatientPage({
                 </form>
               </div>
             ))}
-            {careCodeLive ? (
-              <div className="flex flex-wrap items-center gap-3 px-5 py-3">
+            {careCodesLive.map((c) => (
+              <div key={c.id} className="flex flex-wrap items-center gap-3 px-5 py-3">
                 <Badge dot tone="accent">
-                  Code issued{careCodeLive.caregiverName ? ` · ${careCodeLive.caregiverName}` : ""}
+                  Code issued{c.caregiverName ? ` · ${c.caregiverName}` : ""}
                 </Badge>
-                <span className="text-sm text-ink-muted">
-                  Expires {formatDateTime(instantFromDb(careCodeLive.expiresAt))}
-                </span>
+                <span className="text-sm text-ink-muted">Expires {formatDateTime(instantFromDb(c.expiresAt))}</span>
                 <form action={revokePatientActivation}>
                   <input type="hidden" name="patientId" value={patient.id} />
-                  <input type="hidden" name="for" value="caregiver" />
+                  <input type="hidden" name="activationId" value={c.id} />
                   <button className={buttonClass("secondary")}>Revoke</button>
                 </form>
               </div>
-            ) : null}
+            ))}
             {patient.archivedAt ? null : (
               <form action={issuePatientActivation} className="flex flex-wrap items-center gap-2 px-5 py-4">
                 <input type="hidden" name="patientId" value={patient.id} />
