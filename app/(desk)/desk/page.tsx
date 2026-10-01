@@ -8,7 +8,6 @@ import { sendDueReminders } from "@/lib/reminders";
 import { clinicDoctors } from "@/lib/clinic";
 import {
   calendarDateFromDb,
-  CLINIC_TIME_ZONE,
   clinicDayRange,
   dayKey,
   formatCalendarDate,
@@ -27,6 +26,7 @@ import {
   SERVICE_LABELS,
 } from "@/lib/domain";
 import { addDays, weekdayOf } from "@/lib/scheduling";
+import { greetingFor } from "@/lib/greeting";
 import { Badge, buttonClass, EmptyState, PageHeader } from "@/components/ui";
 import { PANEL, ScheduleRail, StatCard } from "@/app/(app)/dashboard/panels";
 
@@ -37,11 +37,6 @@ function minutesBetween(from: Date, to: Date) {
   return Math.max(0, Math.floor((to.getTime() - from.getTime()) / 60_000));
 }
 
-/** Good morning / afternoon / evening, by the clinic's clock. */
-function greeting(now: Date) {
-  const hour = Number(new Intl.DateTimeFormat("en-US", { hour: "numeric", hour12: false, timeZone: CLINIC_TIME_ZONE }).format(now));
-  return hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
-}
 
 /**
  * The front desk's day, laid out like the doctor's: what needs the desk now on
@@ -128,7 +123,7 @@ export default async function DeskPage({ searchParams }: PageProps<"/desk">) {
   return (
     <div className="space-y-3 xl:pr-[352px]">
       <PageHeader
-        title={`${greeting(now)}, ${staff.fullName.split(/\s+/)[0]}`}
+        title={greetingFor(staff.fullName, staff.role === "DOCTOR", now)}
         subtitle={formatDayHeading(now)}
         actions={
           <>

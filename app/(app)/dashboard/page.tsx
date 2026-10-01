@@ -19,6 +19,7 @@ import {
   startOfClinicDay,
 } from "@/lib/datetime";
 import { addDays, weekdayOf } from "@/lib/scheduling";
+import { greetingFor } from "@/lib/greeting";
 import {
   ACTIVE_STATUSES,
   APPOINTMENT_STATUS_LABELS,
@@ -192,7 +193,6 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
     (a) => ACTIVE_STATUSES.includes(a.status) && a.scheduledAt >= now,
   ).length;
 
-  const firstName = doctor.fullName.replace(/^Dr\.?\s+/i, "").split(/\s+/)[0];
 
   return (
     <div className="space-y-3">
@@ -202,7 +202,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
       <div className="grid grid-cols-1 gap-3 xl:pr-[352px]">
         <div className="min-w-0 space-y-3">
           <PageHeader
-            title={`Good day, ${firstName}`}
+            title={greetingFor(doctor.fullName, true, now)}
             subtitle={formatDayHeading(now)}
             actions={
               <>
