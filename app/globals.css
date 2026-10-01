@@ -284,3 +284,20 @@ fieldset {
     margin: 16mm;
   }
 }
+
+/* iPhone Safari gives date and time inputs a built-in minimum width and its
+   own appearance, so they ignore w-full and push past their card. Let them
+   shrink like any other field. */
+input[type="date"],
+input[type="datetime-local"],
+input[type="time"] {
+  min-width: 0;
+  max-width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+}
+input[type="date"]::-webkit-date-and-time-value,
+input[type="datetime-local"]::-webkit-date-and-time-value,
+input[type="time"]::-webkit-date-and-time-value {
+  text-align: left;
+}
