@@ -351,7 +351,7 @@ export function ScheduleRail({
           {selected === todayKey && nowMinute >= firstHour * 60 && nowMinute <= lastHour * 60 ? (
             <div className="pointer-events-none absolute inset-x-0 z-10" style={{ top: top(nowMinute) }}>
               {/* The line runs the full width, under the pill. */}
-              <span aria-hidden className="absolute inset-x-0 top-0 h-px bg-accent" />
+              <span aria-hidden className="absolute -right-5 -left-5 top-0 h-px bg-accent" />
               <span className="absolute top-0 left-8 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap text-on-accent tabular">
                 {formatTime(now)}
               </span>
