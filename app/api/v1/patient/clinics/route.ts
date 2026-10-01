@@ -13,7 +13,9 @@ export async function GET(request: Request) {
 
 /**
  * "Add a clinic": redeem another clinic's activation code, and its chart joins
- * this login. Body: `{ code }`. Open to any signed-in account — a first code is
+ * this login. Body: `{ code, confirmedPatientId }` — the `patientId` from
+ * `POST /activation/preview`, once the person said it's them. (Optional for
+ * now, for app builds from before the preview; required once they're gone.) Open to any signed-in account — a first code is
  * how an account with no clinic yet becomes a patient.
  */
 export async function POST(request: Request) {
@@ -23,7 +25,7 @@ export async function POST(request: Request) {
   const body = await readJson(request);
   if (!body) return apiError(400, "Send `{ code }` as JSON.");
 
-  const result = await linkPatientActivation(viewer.accountId, body.code);
+  const result = await linkPatientActivation(viewer.accountId, body.code, body.confirmedPatientId);
   if (!result.ok) return apiError(result.message === TOO_MANY ? 429 : 422, result.message ?? "That code can't be used.", result.fieldErrors);
   return Response.json({ clinic: { id: result.clinicId, name: result.clinicName } }, { status: 201 });
 }

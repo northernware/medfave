@@ -8,7 +8,8 @@ import { activatePatient } from "@/lib/sign-in";
  * A patient's activation code for a new login and an app token — the app's
  * version of the web's "Activate your account". See `activatePatient`.
  *
- * Body: `{ code, fullName, email, password, confirmPassword }`.
+ * Body: `{ code, confirmedPatientId, fullName, email, password, confirmPassword }`,
+ * `confirmedPatientId` from `POST /activation/preview` (optional for older app builds).
  */
 export async function POST(request: Request) {
   const body = await readJson(request);

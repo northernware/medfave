@@ -1,20 +1,52 @@
 "use client";
 
-import { useActionState } from "react";
-import { addClinic } from "@/app/actions/portal";
+import { useActionState, useState } from "react";
+import { addClinic, previewAddClinic } from "@/app/actions/portal";
+import { ActivationConfirm } from "@/components/activation-confirm";
 import { Field, FormError, SubmitButton } from "@/components/form";
 import { CodeInput } from "@/components/code-input";
-import { EMPTY_FORM_STATE } from "@/lib/validation";
+import { buttonClass } from "@/components/ui";
+import type { ActivationPreview } from "@/lib/sign-in";
+import { EMPTY_FORM_STATE, type FormState } from "@/lib/validation";
 
-export function AddClinicForm({ code = "" }: { code?: string }) {
-  const [state, action] = useActionState(addClinic, EMPTY_FORM_STATE);
+const NOTHING_SHOWN: FormState & { preview?: ActivationPreview } = EMPTY_FORM_STATE;
+
+/** Two steps: the code shows whose chart it opens; only "This is me" links it. */
+export function AddClinicForm({ code = "", email }: { code?: string; email: string }) {
+  const [shown, preview] = useActionState(previewAddClinic, NOTHING_SHOWN);
+  const [state, link] = useActionState(addClinic, EMPTY_FORM_STATE);
+  // Cancel sets aside this lookup only; entering a code again shows a fresh one.
+  const [cancelled, setCancelled] = useState<object | null>(null);
+  const confirming = shown.preview && cancelled !== shown ? shown.preview : null;
+
+  if (confirming) {
+    return (
+      <form action={link} className="space-y-4 p-5">
+        <FormError message={state.message} />
+        <input type="hidden" name="code" value={confirming.code} />
+        <input type="hidden" name="confirmedPatientId" value={confirming.patientId} />
+        <ActivationConfirm preview={confirming} signedInAs={email} />
+        <div className="flex flex-wrap gap-2">
+          <SubmitButton pendingLabel="Adding…">This is me — add clinic</SubmitButton>
+          <button
+            type="button"
+            className={buttonClass("secondary")}
+            onClick={() => setCancelled(shown)}
+          >
+            Cancel
+          </button>
+        </div>
+      </form>
+    );
+  }
+
   return (
-    <form action={action} className="space-y-4 p-5">
-      <FormError message={state.message} />
-      <Field label="Activation code" htmlFor="code" error={state.fieldErrors?.code} required>
-        <CodeInput id="code" defaultValue={code} invalid={Boolean(state.fieldErrors?.code)} />
+    <form action={preview} className="space-y-4 p-5">
+      <FormError message={shown.message} />
+      <Field label="Activation code" htmlFor="code" error={shown.fieldErrors?.code} required>
+        <CodeInput id="code" defaultValue={code} invalid={Boolean(shown.fieldErrors?.code)} />
       </Field>
-      <SubmitButton pendingLabel="Adding…">Add clinic</SubmitButton>
+      <SubmitButton pendingLabel="Checking…">Continue</SubmitButton>
     </form>
   );
 }

@@ -71,6 +71,84 @@ async function liveActivation(code: string) {
   return activation;
 }
 
+/**
+ * Whose chart a code opens, shown before it is linked so the person can say
+ * "this is me". Without it a code typed into the wrong login — a family
+ * member's, a tester's — joins somebody else's records to it silently.
+ *
+ * Just enough to recognise oneself: the name, the birthday, the clinic, and
+ * the email the clinic has, masked. The code holder was handed this by the
+ * desk, so it tells them nothing the clinic didn't mean them to have.
+ */
+export type ActivationPreview = {
+  /** Echoed back on confirm, so the link is to the chart that was shown. */
+  patientId: string;
+  code: string;
+  name: string;
+  born: string;
+  clinicName: string;
+  /** The email on the chart, masked ("jn•••@gmail.com"), or null when it has none. */
+  emailOnFile: string | null;
+  /** The chart has an email and it isn't this login's. Warned about, not refused: it may be old, mistyped or shared. */
+  emailDiffers: boolean;
+};
+
+export type PreviewResult = { ok: true; preview: ActivationPreview } | ({ ok: false } & FormState);
+
+const maskEmail = (email: string) => {
+  const [user, domain] = email.split("@");
+  return domain ? `${user.slice(0, 2)}•••@${domain}` : "•••";
+};
+
+const sameEmail = (a: string | null | undefined, b: string | null | undefined) =>
+  Boolean(a && b && a.trim().toLowerCase() === b.trim().toLowerCase());
+
+/**
+ * Looks a code up without spending it. `key` is what the attempts are counted
+ * against (the account, or the address when signed out); `email` is the login's
+ * email to compare, when there is one yet.
+ */
+export async function previewActivation(rawCode: unknown, key: string, email?: string): Promise<PreviewResult> {
+  const code = typeof rawCode === "string" ? rawCode.trim() : "";
+  if (code.length < 4) return { ok: false, message: "Enter the code the clinic gave you.", fieldErrors: { code: ["Required"] } };
+  if (!(await hit(key, LIMITS.codeAttempts))) return { ok: false, message: TOO_MANY };
+
+  const activation = await liveActivation(code);
+  if (!activation) return REFUSE_CODE;
+
+  const [patient, clinic] = await Promise.all([
+    orm.Patient.select("id", "firstName", "middleName", "lastName", "dateOfBirth", "email")
+      .where((p) => p.id.eq(activation.patientId))
+      .first(),
+    orm.Clinic.select("name").where((c) => c.id.eq(activation.clinicId)).first(),
+  ]);
+  if (!patient) return REFUSE_CODE;
+
+  const born = String(patient.dateOfBirth).slice(0, 10);
+  return {
+    ok: true,
+    preview: {
+      patientId: patient.id,
+      code,
+      name: [patient.firstName, patient.middleName, patient.lastName].filter(Boolean).join(" "),
+      born: new Intl.DateTimeFormat("en-PH", { timeZone: "UTC", day: "numeric", month: "long", year: "numeric" }).format(
+        new Date(`${born}T00:00:00Z`),
+      ),
+      clinicName: clinic?.name ?? "",
+      emailOnFile: patient.email ? maskEmail(patient.email) : null,
+      emailDiffers: Boolean(patient.email && email && !sameEmail(patient.email, email)),
+    },
+  };
+}
+
+// The code now opens a different chart from the one confirmed (reissued in
+// between, say): show it again rather than link what wasn't seen.
+const SHOWN_CHANGED = {
+  ok: false as const,
+  message: "That code no longer matches the record you confirmed. Enter it again.",
+  fieldErrors: { code: ["Enter it again"] },
+};
+
 export type LinkResult = { ok: true; clinicId: string; clinicName: string } | ({ ok: false } & FormState);
 
 /**
@@ -81,13 +159,19 @@ export type LinkResult = { ok: true; clinicId: string; clinicName: string } | ({
  * check, issued by a desk that identified the person — plus one: a login may
  * hold one chart per clinic, so a code from a clinic already linked is refused.
  */
-export async function linkPatientActivation(accountId: string, rawCode: unknown): Promise<LinkResult> {
+export async function linkPatientActivation(
+  accountId: string,
+  rawCode: unknown,
+  /** The chart the person confirmed was theirs (see `previewActivation`). Undefined only for older app builds. */
+  confirmedPatientId?: unknown,
+): Promise<LinkResult> {
   const code = typeof rawCode === "string" ? rawCode.trim() : "";
   if (code.length < 4) return { ok: false, message: "Enter the code the clinic gave you.", fieldErrors: { code: ["Required"] } };
   if (!(await hit(`code:account:${accountId}`, LIMITS.codeAttempts))) return { ok: false, message: TOO_MANY };
 
   const activation = await liveActivation(code);
   if (!activation) return REFUSE_CODE;
+  if (confirmedPatientId !== undefined && confirmedPatientId !== activation.patientId) return SHOWN_CHANGED;
 
   const already = await orm.Patient
     .select("id")
@@ -130,6 +214,7 @@ export async function activatePatient(input: Record<string, unknown>, address: s
   const { code, email, password } = parsed.data;
   const activation = await liveActivation(code);
   if (!activation) return REFUSE_CODE;
+  if (input.confirmedPatientId !== undefined && input.confirmedPatientId !== activation.patientId) return SHOWN_CHANGED;
 
   const taken = await orm.Account.select("id").where((a) => a.email.eq(email)).first();
   if (taken) {
