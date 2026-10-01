@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { PORTAL_CLINIC_COOKIE, PORTAL_PERSON_COOKIE, requirePatientAccount, requireViewer } from "@/lib/auth";
 import { linkPatientActivation, previewActivation, type ActivationPreview } from "@/lib/sign-in";
 import { grantCare, removeCare, stopCaring } from "@/lib/caregivers";
+import { addFamilyMember, removeFamilyMember } from "@/lib/family";
 import { revalidatePath } from "next/cache";
 import type { FormState } from "@/lib/validation";
 
@@ -99,4 +100,20 @@ export async function stopCaringAction() {
   const result = await stopCaring(me);
   if (result.ok) (await cookies()).delete(PORTAL_PERSON_COOKIE);
   redirect("/portal");
+}
+
+/** Add somebody to the family list: details only, on the patient's word. */
+export async function addFamilyAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const viewer = await requireViewer();
+  const result = await addFamilyMember(viewer.accountId, Object.fromEntries(formData));
+  if (!result.ok) return result;
+  revalidatePath("/portal/family");
+  return { ok: true, message: `${result.member.firstName} added.` };
+}
+
+export async function removeFamilyAction(formData: FormData) {
+  const viewer = await requireViewer();
+  await removeFamilyMember(viewer.accountId, String(formData.get("id") ?? ""));
+  revalidatePath("/portal/family");
+  redirect("/portal/family");
 }

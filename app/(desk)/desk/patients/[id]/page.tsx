@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { issuePatientActivation, revokeCareLink, revokePatientActivation } from "@/app/actions/access";
-import { startOwnHousehold } from "@/app/actions/patients";
+import { StartHousehold } from "@/components/start-household";
 import { requireStaff } from "@/lib/auth";
 import { orm } from "@/src/prisma/db";
 import { calendarDateFromDb, formatCalendarDate, formatDateTime, instantFromDb } from "@/lib/datetime";
@@ -310,30 +310,7 @@ export default async function DeskPatientPage({
                 Open household
               </Link>
             ) : null}
-            {patient.archivedAt || others.length === 0 ? null : (
-              // Starting a family of their own: a move, not a copy — one household per person.
-              <details className="group">
-                <summary className="cursor-pointer list-none text-sm font-medium text-ink-muted hover:text-ink">
-                  Start their own household…
-                </summary>
-                <form action={startOwnHousehold} className="mt-3 space-y-3">
-                  <input type="hidden" name="patientId" value={patient.id} />
-                  <p className="text-sm text-ink-muted">
-                    {patient.firstName} becomes head of a new {patient.lastName} household. Tick who moves with them.
-                  </p>
-                  <div className="space-y-1.5">
-                    {others.map((h) => (
-                      <label key={h.id} className="flex items-center gap-2 text-sm">
-                        <input type="checkbox" name="memberId" value={h.id} className="accent-[var(--accent)]" />
-                        {fullName(h)}
-                        <span className="text-ink-faint">· {RELATIONSHIP_LABELS[h.relationship]}</span>
-                      </label>
-                    ))}
-                  </div>
-                  <button className={buttonClass("secondary")}>Start household</button>
-                </form>
-              </details>
-            )}
+            {patient.archivedAt ? null : <StartHousehold patient={patient} others={others} back={`/desk/patients/${patient.id}`} />}
           </div>
         </Card>
 
