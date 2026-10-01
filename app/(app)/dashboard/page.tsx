@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { startConsultation } from "@/app/actions/appointments";
 import { requireDoctor } from "@/lib/auth";
-import { caredForIds, idsOrNone } from "@/lib/care";
 import { orm } from "@/src/prisma/db";
 import { followUpsDue } from "@/lib/queries";
 import { sweepNoShows } from "@/lib/no-show";
@@ -53,7 +52,6 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   // when somebody opens the clinic's own screens.
   await sendDueReminders(doctor.clinicId, now);
 
-  const mineIds = idsOrNone(await caredForIds(doctor));
   const [
     todaysRows,
     waitingRows,
@@ -61,8 +59,6 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
     draftRows,
     missedRows,
     upcomingCount,
-    householdCount,
-    patientCount,
   ] =
     await Promise.all([
       appointmentListQuery()
@@ -117,16 +113,6 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         .where((a) => a.doctorId.eq(doctor.id))
         .where((a) => a.scheduledAt.gte(instantToDb(today.end)))
         .where((a) => a.status.in(ACTIVE_STATUSES))
-        .aggregate((agg) => ({ n: agg.count() })),
-      // The doctor's own: households with a patient they care for, and those patients.
-      orm.Household
-        .where((h) => h.clinicId.eq(doctor.clinicId))
-        .where((h) => h.patients.some((p) => p.id.in(mineIds)))
-        .where((h) => h.archivedAt.isNull())
-        .aggregate((agg) => ({ n: agg.count() })),
-      orm.Patient
-        .where((p) => p.id.in(mineIds))
-        .where((p) => p.archivedAt.isNull())
         .aggregate((agg) => ({ n: agg.count() })),
     ]);
 
@@ -210,29 +196,29 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title={`Good day, ${firstName}`}
-        subtitle={formatDayHeading(now)}
-        actions={
-          <>
-            <Link
-              href="/appointments/new?source=WALK_IN"
-              className={buttonClass("primary")}
-            >
-              Register walk-in
-            </Link>
-            <Link href="/appointments/new" className={buttonClass("secondary")}>
-              Book appointment
-            </Link>
-            <Link href="/patients/new" className={buttonClass("secondary")}>
-              Add patient
-            </Link>
-          </>
-        }
-      />
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
         <div className="min-w-0 space-y-6">
+          <PageHeader
+            title={`Good day, ${firstName}`}
+            subtitle={formatDayHeading(now)}
+            actions={
+              <>
+                <Link
+                  href="/appointments/new?source=WALK_IN"
+                  className={buttonClass("primary")}
+                >
+                  Register walk-in
+                </Link>
+                <Link href="/appointments/new" className={buttonClass("secondary")}>
+                  Book appointment
+                </Link>
+                <Link href="/patients/new" className={buttonClass("secondary")}>
+                  Add patient
+                </Link>
+              </>
+            }
+          />
           <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
             <StatCard value={todays.length} label="Today" hint={remaining > 0 ? `${remaining} still to come` : "Nothing left today"} />
             <StatCard
@@ -437,8 +423,9 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           ) : null}
         </div>
 
-        {/* Rail: the day as a timeline, then standing context. */}
-        <div className="space-y-6">
+        {/* Rail: the day as a timeline, the window's height. It starts at the top of the
+            page (the greeting sits in the left column) and stays put while the left scrolls. */}
+        <div className="xl:sticky xl:top-3 xl:-mt-7 xl:h-[calc(100dvh-1.5rem)]">
           <ScheduleRail
             items={railItems}
             dayKey={railDay}
@@ -447,23 +434,6 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
             now={now}
             keep={typeof visit === "string" ? `visit=${encodeURIComponent(visit)}` : ""}
           />
-          <section>
-            <SectionTitle title="Practice" />
-            <Card className="divide-y divide-border">
-              <div className="flex items-baseline justify-between px-4 py-3">
-                <span className="text-sm text-ink-muted">Households</span>
-                <Link href="/households" className="nums text-[15px] font-semibold hover:underline">
-                  {householdCount.n}
-                </Link>
-              </div>
-              <div className="flex items-baseline justify-between px-4 py-3">
-                <span className="text-sm text-ink-muted">Patients</span>
-                <Link href="/patients" className="nums text-[15px] font-semibold hover:underline">
-                  {patientCount.n}
-                </Link>
-              </div>
-            </Card>
-          </section>
 
         </div>
       </div>

@@ -260,8 +260,8 @@ export function ScheduleRail({
   const label = (h: number) => `${((h + 11) % 12) + 1}:00 ${h < 12 ? "AM" : "PM"}`;
 
   return (
-    <section className={`${PANEL} flex flex-col overflow-hidden`}>
-      <div className="border-b border-border p-5">
+    <section className={`${PANEL} flex h-full flex-col overflow-hidden`}>
+      <div className="shrink-0 border-b border-border p-5">
         <div className="flex items-center justify-between gap-2">
           <h2 className="font-display text-lg font-semibold">{monthLabel}</h2>
           <div className="flex items-center gap-1">
@@ -295,7 +295,8 @@ export function ScheduleRail({
         </div>
       </div>
 
-      <div className="p-5 pb-6">
+      {/* The day scrolls inside the panel when it doesn't fit. */}
+      <div className="min-h-0 flex-1 overflow-y-auto p-5 pb-6">
         <div className="mb-4 flex items-baseline justify-between">
           <h3 className="font-semibold">
             {selected === todayKey
