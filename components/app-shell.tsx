@@ -26,8 +26,13 @@ export function AppShell({
   wide = false,
   settingsHref,
   back,
+  switchClinic,
+  addClinicHref,
   children,
 }: {
+  /** Switching clinic for real (patients, who can be at several), and adding one. */
+  switchClinic?: (formData: FormData) => void | Promise<void>;
+  addClinicHref?: string;
   home: string;
   links: readonly NavLink[];
   /** The clinic being worked in, and this person's role there. */
@@ -59,7 +64,7 @@ export function AppShell({
         <div className="px-2">
           <Brand href={home} />
         </div>
-        <ClinicSwitcher clinic={clinic} clinics={all} settingsHref={settingsHref} />
+        <ClinicSwitcher clinic={clinic} clinics={all} settingsHref={settingsHref} switchAction={switchClinic} addHref={addClinicHref} />
         {back ? <BackLink {...back} /> : <ViewSwitch views={views} current={view} />}
         <div className="-mx-1 flex-1 overflow-y-auto px-1 pt-1">
           <Nav orientation="sidebar" links={links} home={home} />
@@ -94,7 +99,7 @@ export function AppShell({
               compact
               top={
                 <>
-                  <ClinicSection clinic={clinic} clinics={all} settingsHref={settingsHref} />
+                  <ClinicSection clinic={clinic} clinics={all} settingsHref={settingsHref} switchAction={switchClinic} addHref={addClinicHref} />
                   {!back && views.length > 1 ? <ViewSwitch views={views} current={view} /> : null}
                   {back ? <BackLink {...back} /> : null}
                 </>
