@@ -9,7 +9,7 @@ export function ActivationConfirm({ preview, signedInAs }: { preview: Activation
   return (
     <div className="space-y-3">
       <div className="rounded-lg bg-surface-muted p-4">
-        <p className="text-sm text-ink-muted">This code is for</p>
+        <p className="text-sm text-ink-muted">{preview.forCaregiver ? "This code lets you look after" : "This code is for"}</p>
         <p className="mt-0.5 text-lg font-semibold">{preview.name}</p>
         <p className="text-sm text-ink-muted">
           Born {preview.born} · {preview.clinicName}
@@ -26,10 +26,17 @@ export function ActivationConfirm({ preview, signedInAs }: { preview: Activation
           . Only continue if this record is yours.
         </div>
       ) : null}
-      <p className="text-sm text-ink-muted">
-        Only continue if this is <strong>you</strong>. If it&rsquo;s a family member&rsquo;s record, or not yours,
-        cancel and ask the desk.
-      </p>
+      {preview.forCaregiver ? (
+        <p className="text-sm text-ink-muted">
+          The clinic issued this code to a parent or guardian. You&rsquo;ll see their visits and can ask for times for
+          them, beside your own records. Only continue if the clinic gave it to <strong>you</strong>.
+        </p>
+      ) : (
+        <p className="text-sm text-ink-muted">
+          Only continue if this is <strong>you</strong>. If it&rsquo;s a family member&rsquo;s record, or not yours,
+          cancel and ask the desk.
+        </p>
+      )}
     </div>
   );
 }

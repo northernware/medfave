@@ -20,6 +20,10 @@
       "model": "AppointmentRequest",
       "namespace": "public"
     },
+    "CareLink": {
+      "model": "CareLink",
+      "namespace": "public"
+    },
     "ChartAccess": {
       "model": "ChartAccess",
       "namespace": "public"
@@ -283,6 +287,36 @@
                 },
                 "to": {
                   "model": "Appointment",
+                  "namespace": "public"
+                }
+              },
+              "careGranted": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "grantedById"
+                  ]
+                },
+                "to": {
+                  "model": "CareLink",
+                  "namespace": "public"
+                }
+              },
+              "caresFor": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "accountId"
+                  ]
+                },
+                "to": {
+                  "model": "CareLink",
                   "namespace": "public"
                 }
               },
@@ -1421,6 +1455,174 @@
               "table": "AppointmentRequest"
             }
           },
+          "CareLink": {
+            "fields": {
+              "accountId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "caregiverName": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "clinicId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "grantedById": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "patientId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "revokedAt": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "revokedById": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "account": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "accountId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Account",
+                  "namespace": "public"
+                }
+              },
+              "clinic": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "clinicId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Clinic",
+                  "namespace": "public"
+                }
+              },
+              "grantedBy": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "grantedById"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Account",
+                  "namespace": "public"
+                }
+              },
+              "patient": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "patientId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Patient",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "accountId": {
+                  "column": "accountId"
+                },
+                "caregiverName": {
+                  "column": "caregiverName"
+                },
+                "clinicId": {
+                  "column": "clinicId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "grantedById": {
+                  "column": "grantedById"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "patientId": {
+                  "column": "patientId"
+                },
+                "revokedAt": {
+                  "column": "revokedAt"
+                },
+                "revokedById": {
+                  "column": "revokedById"
+                }
+              },
+              "namespaceId": "public",
+              "table": "CareLink"
+            }
+          },
           "ChartAccess": {
             "fields": {
               "accountId": {
@@ -1648,6 +1850,21 @@
                 },
                 "to": {
                   "model": "Appointment",
+                  "namespace": "public"
+                }
+              },
+              "careLinks": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "clinicId"
+                  ]
+                },
+                "to": {
+                  "model": "CareLink",
                   "namespace": "public"
                 }
               },
@@ -4408,6 +4625,21 @@
                   "namespace": "public"
                 }
               },
+              "caredForBy": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "patientId"
+                  ]
+                },
+                "to": {
+                  "model": "CareLink",
+                  "namespace": "public"
+                }
+              },
               "chartAccesses": {
                 "cardinality": "1:N",
                 "on": {
@@ -4616,6 +4848,13 @@
           },
           "PatientActivation": {
             "fields": {
+              "caregiverName": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "clinicId": {
                 "nullable": false,
                 "type": {
@@ -4641,6 +4880,13 @@
                   "typeParams": {
                     "precision": 3
                   }
+                }
+              },
+              "forCaregiver": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
                 }
               },
               "id": {
@@ -4758,6 +5004,9 @@
             },
             "storage": {
               "fields": {
+                "caregiverName": {
+                  "column": "caregiverName"
+                },
                 "clinicId": {
                   "column": "clinicId"
                 },
@@ -4766,6 +5015,9 @@
                 },
                 "expiresAt": {
                   "column": "expiresAt"
+                },
+                "forCaregiver": {
+                  "column": "forCaregiver"
                 },
                 "id": {
                   "column": "id"
@@ -6844,6 +7096,180 @@
                   "id"
                 ],
                 "name": "AppointmentRequest_pkey"
+              },
+              "uniques": []
+            },
+            "CareLink": {
+              "columns": {
+                "accountId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "caregiverName": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "clinicId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamp",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "grantedById": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "patientId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "revokedAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "nativeType": "timestamp",
+                  "nullable": true,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "revokedById": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                }
+              },
+              "foreignKeys": [
+                {
+                  "name": "CareLink_clinicId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "clinicId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "CareLink"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Clinic"
+                  }
+                },
+                {
+                  "name": "CareLink_patientId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "patientId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "CareLink"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Patient"
+                  }
+                },
+                {
+                  "name": "CareLink_accountId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "accountId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "CareLink"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Account"
+                  }
+                },
+                {
+                  "name": "CareLink_grantedById_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "grantedById"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "CareLink"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Account"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "accountId"
+                  ],
+                  "name": "CareLink_accountId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "clinicId"
+                  ],
+                  "name": "CareLink_clinicId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "grantedById"
+                  ],
+                  "name": "CareLink_grantedById_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "patientId"
+                  ],
+                  "name": "CareLink_patientId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ],
+                "name": "CareLink_pkey"
               },
               "uniques": []
             },
@@ -9265,6 +9691,11 @@
             },
             "PatientActivation": {
               "columns": {
+                "caregiverName": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "clinicId": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -9289,6 +9720,15 @@
                   "typeParams": {
                     "precision": 3
                   }
+                },
+                "forCaregiver": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": false
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
                 },
                 "id": {
                   "codecId": "pg/text@1",
@@ -10477,7 +10917,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "0b2b4b32fe5e85628f657cb59f235c4de2ed33e778bdea58eedf804597e24394"
+    "storageHash": "66cf85b74216c519d2a40d235978a83d10d2837f78589e79296b897a2ff93483"
   },
   "capabilities": {
     "postgres": {

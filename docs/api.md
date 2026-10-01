@@ -59,7 +59,8 @@ are `YYYY-MM-DD` and times of day `HH:MM`, both in clinic time (Asia/Manila).
 | `POST /auth/signup` | `{ firstName, middleName?, lastName, email, password, confirmPassword, role: "PATIENT" \| "DOCTOR", consent: true }` → `201 { token, expiresAt, viewer }`. The name is joined into `fullName` and tidied (all-lower or ALL-CAPS typing is title-cased; mixed case kept); `fullName` alone is still accepted. Open sign-up: the account is signed in at once, unverified, and linked to nothing (`role: "none"`) |
 | `POST /auth/resend-verification` | → `{ sent }`. A new verification link to the signed-in account's email |
 | `POST /auth/login` | `{ email, password }` → `{ token, expiresAt, viewer }` |
-| `POST /auth/activate` | `{ code, firstName, middleName?, lastName, email, password, confirmPassword }` → `201 { token, expiresAt, viewer }`. Turns the activation code the clinic gave a patient into their login. |
+| `POST /activation/preview` | `{ code }` → `{ preview: { patientId, code, name, born, clinicName, emailOnFile, emailDiffers, forCaregiver } }`. Whose record a code opens, without spending it: show it ("Is this you?") before activating or adding a clinic, and send `patientId` back as `confirmedPatientId`. Signed in or not; signed in, `emailDiffers` compares the clinic's email with the login's (`emailOnFile` is masked). `forCaregiver`: the desk issued it to a parent or guardian, so it lets the login look after this person rather than be them. |
+| `POST /auth/activate` | `{ code, confirmedPatientId, firstName, middleName?, lastName, email, password, confirmPassword }` → `201 { token, expiresAt, viewer }`. Turns the activation code the clinic gave a patient into their login (or, for a caregiver code, a login that looks after them). `confirmedPatientId` is from the preview; `422` if the code now opens a different chart. Optional for older app builds. |
 | `GET /auth/providers` | → `{ google }`. Whether "Continue with Google" is set up on this server; show the button only when `true` |
 | `POST /auth/google/exchange` | `{ code, verifier }` → `{ token, expiresAt, viewer }`. The end of a Google sign-in; see below |
 | `GET /me` | `{ viewer }` |
@@ -107,18 +108,24 @@ that account; there is never a second account for one email.
 
 ### Patient
 
-Everything is scoped to the signed-in patient's own chart **at one clinic**.
-A patient never sees the rest of their household, and a clinic's records are
-never mixed with another's. Other accounts get `403`.
+Everything is scoped to **one chart at one clinic**: the login's own, or one
+it looks after for somebody else (a child, a parent in their care) through a
+caregiver code the desk issued. Nobody else in the household shows, and a
+clinic's records are never mixed with another's. Other accounts get `403`.
 
 **Choosing the clinic:** pass `?clinic=<clinicId>` or an `X-Clinic-Id`
-header on any patient endpoint. Left out, it uses the first of `viewer.charts`.
-A clinic the login isn't linked to gets `404`.
+header on any patient endpoint. Left out, it uses the login's own chart, else
+the first of `viewer.charts`. A clinic the login isn't linked to gets `404`.
+
+**Choosing the person:** pass `?patient=<patientId>` or an `X-Patient-Id`
+header, one of `viewer.charts` (each has `self: true` for the login's own,
+`false` for somebody looked after, and the patient's `name`). Left out, it
+uses the login's own chart at the clinic. Any other chart gets `404`.
 
 | | |
 | --- | --- |
-| `GET /patient/clinics` | `{ clinics: [{ id, name, patientId }] }`: every clinic this login is linked to |
-| `POST /patient/clinics` | `{ code }` → `201 { clinic: { id, name } }`. **Add a clinic:** redeems another clinic's activation code and links that clinic's chart to this login. Open to any signed-in account. `422` for an invalid code or a clinic already linked |
+| `GET /patient/clinics` | `{ clinics: [{ id, name, patientId, self, personName }] }`: one row per chart this login may act on; a clinic shows twice when the login has its own chart there and looks after somebody else's |
+| `POST /patient/clinics` | `{ code, confirmedPatientId }` → `201 { clinic: { id, name }, patientId }`. **Add a clinic:** redeems an activation code (after `POST /activation/preview`) and links that chart to this login: as its own, or, for a caregiver code, as somebody it looks after. Open to any signed-in account. `422` for an invalid code, a clinic already linked (own codes only) or a code that now opens a different chart |
 | `GET /patient/appointments` | `{ upcoming[], past[], cancelHours }`, each `{ id, scheduledAt, durationMinutes, service, serviceLabel, reason, status, statusLabel, visitType, doctor, doctorId }`; upcoming ones also `{ canCancel, cancelBy, canMove, movePending }` |
 | `POST /patient/appointments/:id/cancel` | Cancels the patient's own visit, up to the clinic's cut-off (`cancelHours` before it) → `{ id, status: "CANCELLED" }`; `409` with what to do instead when it's too late |
 | `GET /patient/requests` | `{ requests[] }`, each `{ id, preferredDate, preferredTime, service, serviceLabel, reason, status, decisionNote, createdAt }` |

@@ -7,7 +7,9 @@ export async function GET(request: Request) {
   const me = await apiPatient(request);
   if (me instanceof Response) return me;
   return Response.json({
-    clinics: me.charts.map((c) => ({ id: c.clinicId, name: c.clinicName, patientId: c.id })),
+    // One row per chart: a clinic appears twice when this login has its own
+    // chart there and looks after somebody else's. `self` tells them apart.
+    clinics: me.charts.map((c) => ({ id: c.clinicId, name: c.clinicName, patientId: c.id, self: c.self, personName: c.name })),
   });
 }
 
@@ -27,5 +29,5 @@ export async function POST(request: Request) {
 
   const result = await linkPatientActivation(viewer.accountId, body.code, body.confirmedPatientId);
   if (!result.ok) return apiError(result.message === TOO_MANY ? 429 : 422, result.message ?? "That code can't be used.", result.fieldErrors);
-  return Response.json({ clinic: { id: result.clinicId, name: result.clinicName } }, { status: 201 });
+  return Response.json({ clinic: { id: result.clinicId, name: result.clinicName }, patientId: result.patientId }, { status: 201 });
 }

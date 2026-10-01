@@ -224,6 +224,7 @@ type PatientScalars = Omit<
   | "clinic"
   | "account"
   | "activations"
+  | "caredForBy"
   | "appointmentRequests"
 >;
 

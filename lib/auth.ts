@@ -46,7 +46,11 @@ export type Viewer = {
   platformAdmin: boolean;
 };
 
-export type PatientChart = { id: string; clinicId: string; clinicName: string };
+/**
+ * A chart this login may act on: its own (`self`), or one it looks after for
+ * somebody else through a `CareLink` — a child's, say. `name` is the patient's.
+ */
+export type PatientChart = { id: string; clinicId: string; clinicName: string; self: boolean; name: string };
 
 /** Cached per request, so a layout and its pages share one lookup. */
 export const getViewer = cache(async (): Promise<Viewer | null> => {
@@ -67,7 +71,16 @@ export async function viewerForSession(session: Session): Promise<Viewer | null>
       m.select("clinicId", "role").include("clinic", (c) => c.select("name")),
     )
     .include("doctorProfile", (d) => d.select("id", "verificationStatus", "declineReason"))
-    .include("patientProfiles", (p) => p.select("id", "clinicId").include("clinic", (c) => c.select("name")))
+    .include("patientProfiles", (p) =>
+      p.select("id", "clinicId", "firstName", "lastName").include("clinic", (c) => c.select("name")),
+    )
+    .include("caresFor", (l) =>
+      l
+        .select("patientId", "revokedAt")
+        .include("patient", (p) =>
+          p.select("id", "clinicId", "firstName", "lastName", "archivedAt").include("clinic", (c) => c.select("name")),
+        ),
+    )
     .where((a) => a.id.eq(session.accountId))
     .first();
   if (!account) return null;
@@ -106,9 +119,27 @@ export async function viewerForSession(session: Session): Promise<Viewer | null>
         }
       : null,
     doctorId: account.doctorProfile?.id ?? null,
-    charts: account.patientProfiles
-      .map((p) => ({ id: p.id, clinicId: p.clinicId, clinicName: p.clinic.name }))
-      .sort((a, b) => a.clinicName.localeCompare(b.clinicName)),
+    charts: [
+      ...account.patientProfiles.map((p) => ({
+        id: p.id,
+        clinicId: p.clinicId,
+        clinicName: p.clinic.name,
+        self: true,
+        name: `${p.firstName} ${p.lastName}`,
+      })),
+      // Somebody else's, looked after: only while the link stands and the chart is in use.
+      ...account.caresFor
+        .filter((l) => !l.revokedAt && !l.patient.archivedAt)
+        .map((l) => ({
+          id: l.patient.id,
+          clinicId: l.patient.clinicId,
+          clinicName: l.patient.clinic.name,
+          self: false,
+          name: `${l.patient.firstName} ${l.patient.lastName}`,
+        })),
+    ]
+      .filter((c, i, all) => all.findIndex((o) => o.id === c.id) === i)
+      .sort((a, b) => a.clinicName.localeCompare(b.clinicName) || Number(b.self) - Number(a.self) || a.name.localeCompare(b.name)),
     emailVerified: account.emailVerifiedAt !== null,
     signupRole: account.signupRole,
     verification: account.doctorProfile
@@ -290,12 +321,18 @@ export type CurrentPatient = {
   clinicName: string;
   fullName: string;
   email: string;
-  /** Every clinic this login is linked to, for a switcher. */
+  /** Whether the chart is this login's own, or somebody it looks after. */
+  self: boolean;
+  /** The patient's name — the login's own, or the person looked after. */
+  personName: string;
+  /** Every chart this login may act on, at every clinic, for the switchers. */
   charts: PatientChart[];
 };
 
 /** The cookie that remembers which of a patient's clinics the portal shows. */
 export const PORTAL_CLINIC_COOKIE = "portal_clinic";
+/** And which person there: their own chart, or one they look after. */
+export const PORTAL_PERSON_COOKIE = "portal_person";
 
 /**
  * One chart of a patient's, and the context around it.
@@ -305,8 +342,13 @@ export const PORTAL_CLINIC_COOKIE = "portal_clinic";
  * result is scoped to that one chart, so a patient at two clinics sees each
  * clinic's records separately and never together.
  */
-export function patientContext(viewer: Viewer, clinicId?: string | null): CurrentPatient | null {
-  const chart = viewer.charts.find((c) => c.clinicId === clinicId) ?? viewer.charts[0];
+export function patientContext(viewer: Viewer, clinicId?: string | null, chartId?: string | null): CurrentPatient | null {
+  // The person asked for, if this login may act on them; else their own chart
+  // at the clinic, else anyone's there, else the first.
+  const asked = chartId ? viewer.charts.find((c) => c.id === chartId) : undefined;
+  const atClinic = clinicId ? viewer.charts.filter((c) => c.clinicId === clinicId) : [];
+  const chart =
+    asked ?? atClinic.find((c) => c.self) ?? atClinic[0] ?? viewer.charts.find((c) => c.self) ?? viewer.charts[0];
   if (!chart) return null;
   return {
     accountId: viewer.accountId,
@@ -315,6 +357,8 @@ export function patientContext(viewer: Viewer, clinicId?: string | null): Curren
     clinicName: chart.clinicName,
     fullName: viewer.fullName,
     email: viewer.email,
+    self: chart.self,
+    personName: chart.name,
     charts: viewer.charts,
   };
 }
@@ -324,8 +368,11 @@ export async function requirePatientAccount(): Promise<CurrentPatient> {
   const viewer = await requireViewer();
   // A chart always has a clinic now — the database refuses one without — so
   // having a chart is the whole test.
-  const chosen = (await cookies()).get(PORTAL_CLINIC_COOKIE)?.value;
-  const patient = patientContext(viewer, chosen);
+  const jar = await cookies();
+  const chosen = jar.get(PORTAL_CLINIC_COOKIE)?.value;
+  // The person counts only at the clinic chosen; switching clinic starts from their own chart.
+  const person = viewer.charts.find((c) => c.id === jar.get(PORTAL_PERSON_COOKIE)?.value && c.clinicId === chosen);
+  const patient = patientContext(viewer, chosen, person?.id);
   if (!patient) redirect(homeFor(viewer));
   return patient;
 }

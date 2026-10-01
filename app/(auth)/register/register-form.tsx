@@ -51,7 +51,7 @@ export function RegisterForm({ code = "" }: { code?: string }) {
         <ActivationConfirm preview={p} />
         <div className="flex flex-wrap gap-2">
           <button type="button" className={buttonClass("primary")} onClick={() => setAnswer({ to: shown, mine: true })}>
-            This is me
+            {p.forCaregiver ? "Yes, I look after them" : "This is me"}
           </button>
           <button type="button" className={buttonClass("secondary")} onClick={() => setAnswer({ to: shown, mine: false })}>
             Cancel
@@ -67,8 +67,9 @@ export function RegisterForm({ code = "" }: { code?: string }) {
       <input type="hidden" name="code" value={p.code} />
       <input type="hidden" name="confirmedPatientId" value={p.patientId} />
       <p className="rounded-lg bg-surface-muted px-4 py-3 text-sm text-ink-muted">
-        Activating for <strong className="text-ink">{p.name}</strong> at {p.clinicName}.
-        {p.emailOnFile ? <> The clinic has {p.emailOnFile} on file.</> : null}
+        {p.forCaregiver ? "Your login, to look after " : "Activating for "}
+        <strong className="text-ink">{p.name}</strong> at {p.clinicName}.
+        {p.emailOnFile && !p.forCaregiver ? <> The clinic has {p.emailOnFile} on file.</> : null}
       </p>
 
       <NameFields error={err?.fullName} />

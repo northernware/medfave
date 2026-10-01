@@ -59,7 +59,7 @@ const REFUSE_CODE = {
 async function liveActivation(code: string) {
   const pin = asPin(code);
   const activation = await orm.PatientActivation
-    .select("id", "patientId", "clinicId", "expiresAt", "usedAt", "revokedAt", "pinExpiresAt")
+    .select("id", "patientId", "clinicId", "expiresAt", "usedAt", "revokedAt", "pinExpiresAt", "forCaregiver", "caregiverName", "issuedById")
     .include("patient", (p) => p.select("id", "accountId"))
     .where((a) => (pin ? a.pinHash.eq(hashPin(pin)) : a.tokenHash.eq(hashToken(code))))
     .orderBy((a) => a.createdAt.desc())
@@ -67,7 +67,9 @@ async function liveActivation(code: string) {
   if (!activation || activation.usedAt || activation.revokedAt) return null;
   if (hasPassed(activation.expiresAt)) return null;
   if (pin && (!activation.pinExpiresAt || hasPassed(activation.pinExpiresAt))) return null;
-  if (activation.patient.accountId) return null;
+  // A patient's own code is for a chart nobody has claimed; a caregiver's
+  // code can be for a chart whose patient has their own login.
+  if (!activation.forCaregiver && activation.patient.accountId) return null;
   return activation;
 }
 
@@ -91,6 +93,8 @@ export type ActivationPreview = {
   emailOnFile: string | null;
   /** The chart has an email and it isn't this login's. Warned about, not refused: it may be old, mistyped or shared. */
   emailDiffers: boolean;
+  /** Issued to a parent or guardian: redeeming it looks after this person, it doesn't make the login them. */
+  forCaregiver: boolean;
 };
 
 export type PreviewResult = { ok: true; preview: ActivationPreview } | ({ ok: false } & FormState);
@@ -136,7 +140,9 @@ export async function previewActivation(rawCode: unknown, key: string, email?: s
       ),
       clinicName: clinic?.name ?? "",
       emailOnFile: patient.email ? maskEmail(patient.email) : null,
-      emailDiffers: Boolean(patient.email && email && !sameEmail(patient.email, email)),
+      // A caregiver's email is theirs, not the patient's: nothing to compare.
+      emailDiffers: !activation.forCaregiver && Boolean(patient.email && email && !sameEmail(patient.email, email)),
+      forCaregiver: activation.forCaregiver,
     },
   };
 }
@@ -149,7 +155,7 @@ const SHOWN_CHANGED = {
   fieldErrors: { code: ["Enter it again"] },
 };
 
-export type LinkResult = { ok: true; clinicId: string; clinicName: string } | ({ ok: false } & FormState);
+export type LinkResult = { ok: true; clinicId: string; clinicName: string; patientId: string } | ({ ok: false } & FormState);
 
 /**
  * "Add a clinic": a signed-in patient redeems another clinic's activation
@@ -172,6 +178,7 @@ export async function linkPatientActivation(
   const activation = await liveActivation(code);
   if (!activation) return REFUSE_CODE;
   if (confirmedPatientId !== undefined && confirmedPatientId !== activation.patientId) return SHOWN_CHANGED;
+  if (activation.forCaregiver) return linkCaregiver(accountId, activation);
 
   const already = await orm.Patient
     .select("id")
@@ -194,8 +201,52 @@ export async function linkPatientActivation(
   });
 
   const clinic = await orm.Clinic.select("name").where((c) => c.id.eq(activation.clinicId)).first();
-  return { ok: true, clinicId: activation.clinicId, clinicName: clinic?.name ?? "" };
+  return { ok: true, clinicId: activation.clinicId, clinicName: clinic?.name ?? "", patientId: activation.patientId };
 }
+
+/**
+ * A caregiver's code: this login looks after the chart, as a `CareLink`. The
+ * login stays its own person, and keeps (or can still add) its own chart at
+ * the same clinic.
+ */
+async function linkCaregiver(
+  accountId: string,
+  activation: NonNullable<Awaited<ReturnType<typeof liveActivation>>>,
+): Promise<LinkResult> {
+  if (activation.patient.accountId === accountId) {
+    return { ok: false, message: "That's your own record — it's already on your account.", fieldErrors: { code: ["Already yours"] } };
+  }
+  const already = await orm.CareLink
+    .select("id")
+    .where((l) => l.accountId.eq(accountId))
+    .where((l) => l.patientId.eq(activation.patientId))
+    .where((l) => l.revokedAt.isNull())
+    .first();
+
+  const now = instantToDb(new Date());
+  await db.transaction(async (tx) => {
+    const t = tx.orm.public;
+    if (!already) await t.CareLink.create(careLinkFor(accountId, activation, now));
+    await t.PatientActivation.where((a) => a.id.eq(activation.id)).update({ usedAt: now });
+  });
+
+  const clinic = await orm.Clinic.select("name").where((c) => c.id.eq(activation.clinicId)).first();
+  return { ok: true, clinicId: activation.clinicId, clinicName: clinic?.name ?? "", patientId: activation.patientId };
+}
+
+const careLinkFor = (
+  accountId: string,
+  activation: { patientId: string; clinicId: string; issuedById: string; caregiverName: string | null },
+  now: ReturnType<typeof instantToDb>,
+) => ({
+  id: newId(),
+  clinicId: activation.clinicId,
+  patientId: activation.patientId,
+  accountId,
+  grantedById: activation.issuedById,
+  caregiverName: activation.caregiverName,
+  createdAt: now,
+});
 
 /**
  * Turns an activation code into a patient's own login.
@@ -242,11 +293,16 @@ export async function activatePatient(input: Record<string, unknown>, address: s
     });
 
     // The link, and the code spent. No clinic membership is created: being a
-    // patient of a clinic is not working there.
-    await t.Patient.where((p) => p.id.eq(activation.patientId)).update({
-      accountId: account.id,
-      updatedAt: now,
-    });
+    // patient of a clinic is not working there. A caregiver's code makes a
+    // login that looks after the chart, not one that is it.
+    if (activation.forCaregiver) {
+      await t.CareLink.create(careLinkFor(account.id, activation, now));
+    } else {
+      await t.Patient.where((p) => p.id.eq(activation.patientId)).update({
+        accountId: account.id,
+        updatedAt: now,
+      });
+    }
     await t.PatientActivation.where((a) => a.id.eq(activation.id)).update({ usedAt: now });
 
     return account.id;
