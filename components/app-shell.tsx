@@ -43,7 +43,9 @@ export function AppShell({
 
   return (
     <div className="lg:flex lg:min-h-dvh">
-      <aside className="hidden lg:sticky lg:top-0 lg:flex lg:h-dvh lg:w-[264px] lg:shrink-0 lg:flex-col lg:gap-4 lg:border-r lg:border-border lg:bg-surface lg:px-3 lg:py-5">
+      {/* A floating panel, inset from the window's edges, like the reference design. */}
+      <div className="hidden lg:sticky lg:top-0 lg:block lg:h-dvh lg:w-[280px] lg:shrink-0 lg:p-3 lg:pr-0">
+      <aside className="flex h-full flex-col gap-4 rounded-xl border border-border bg-surface px-3 py-5 shadow-card">
         <div className="px-2">
           <Brand href={home} />
         </div>
@@ -56,6 +58,7 @@ export function AppShell({
           <ProfileMenu person={person} theme={theme} />
         </div>
       </aside>
+      </div>
 
       <header className="sticky top-0 z-20 border-b border-border bg-surface/95 backdrop-blur lg:hidden">
         <div className="flex items-center justify-between gap-3 px-4 py-2.5">
