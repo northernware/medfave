@@ -237,7 +237,16 @@ export function ScheduleRail({
   now,
   keep,
   hrefFor,
+  itemHref = (id) => `/appointments/${id}`,
+  canStart = true,
+  calendarHref = (key) => `/calendar?day=${key}`,
 }: {
+  /** The full calendar for a day, if this person has one; null hides the icon. */
+  calendarHref?: ((key: string) => string) | null;
+  /** Where a visit card leads (the desk has its own appointment pages). */
+  itemHref?: (id: string) => string;
+  /** The doctor starts a consultation from here; the desk only checks people in. */
+  canStart?: boolean;
   /** Days this week with visits booked: a dot under each. */
   busyDays?: string[];
   /** The chosen day's visits. */
@@ -312,14 +321,16 @@ export function ScheduleRail({
           </h3>
           <span className="flex items-center gap-2 text-xs text-ink-faint">
             {todays.length} visit{todays.length === 1 ? "" : "s"}
+{calendarHref ? (
             <Link
-              href={`/calendar?day=${selected}`}
+              href={calendarHref(selected)}
               aria-label="Open in calendar"
               title="Open in calendar"
               className="grid size-8 place-items-center rounded-full text-accent-ink hover:bg-surface-muted"
             >
               <CalendarIcon className="size-[18px]" aria-hidden />
             </Link>
+            ) : null}
           </span>
       </div>
 
@@ -347,7 +358,7 @@ export function ScheduleRail({
                 style={{ top: top(start) + 2, height }}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <Link href={`/appointments/${a.id}`} className="min-w-0">
+                  <Link href={itemHref(a.id)} className="min-w-0">
                     <span className="block truncate text-sm font-semibold hover:underline">{fullName(a.patient)}</span>
                     <span className="block truncate text-xs text-ink-muted">
                       {formatTime(a.scheduledAt)} · {SERVICE_LABELS[a.service]}
@@ -359,7 +370,7 @@ export function ScheduleRail({
                       <input type="hidden" name="status" value="CHECKED_IN" />
                       <button className="rounded-full bg-surface px-2.5 py-1 text-xs font-semibold whitespace-nowrap hover:bg-accent-soft">Check in</button>
                     </form>
-                  ) : a.status === "CHECKED_IN" ? (
+                  ) : a.status === "CHECKED_IN" && canStart ? (
                     <form action={startConsultation}>
                       <input type="hidden" name="appointmentId" value={a.id} />
                       <button className="rounded-full bg-accent px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-on-accent">Start</button>
