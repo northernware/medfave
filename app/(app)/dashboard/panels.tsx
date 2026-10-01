@@ -3,10 +3,10 @@ import { Fragment } from "react";
 import { CalendarIcon } from "@solar-icons/react/linear/calendar";
 import { setAppointmentStatus, startConsultation } from "@/app/actions/appointments";
 import { CLINIC_TIME_ZONE, dayKey, formatCalendarDate, formatTime } from "@/lib/datetime";
-import { APPOINTMENT_STATUS_LABELS, APPOINTMENT_STATUS_TONE, fullName, SERVICE_LABELS } from "@/lib/domain";
+import { APPOINTMENT_STATUS_LABELS, fullName, SERVICE_LABELS } from "@/lib/domain";
 import type { AppointmentListItem } from "@/components/appointment-list";
 import { addDays, minuteOfDay, weekdayOf } from "@/lib/scheduling";
-import { Badge, buttonClass, EmptyState } from "@/components/ui";
+import { buttonClass, EmptyState } from "@/components/ui";
 
 /*
  * The doctor's Today, laid out like the reference design: stat tiles, the
@@ -260,6 +260,17 @@ type RailItem = Pick<AppointmentListItem, "id" | "scheduledAt" | "durationMinute
   doctor?: { fullName: string };
 };
 
+/** A dot per status, in the status colours. */
+const STATUS_DOT: Record<AppointmentListItem["status"], string> = {
+  PENDING: "bg-warn",
+  CONFIRMED: "bg-accent",
+  CHECKED_IN: "bg-warn",
+  IN_CONSULTATION: "bg-accent",
+  COMPLETED: "bg-ok",
+  NO_SHOW: "bg-danger",
+  CANCELLED: "bg-border-strong",
+};
+
 const HOUR = 160; // px per hour on the timeline: about five hours in view
 
 /** The week as a strip, then today as a timeline with a line at the current time. */
@@ -417,7 +428,11 @@ export function ScheduleRail({
               >
                 {/* Status, name, what for, time — nothing else. */}
                 <div className="flex items-center justify-between gap-2">
-                  <Badge tone={APPOINTMENT_STATUS_TONE[a.status]}>{APPOINTMENT_STATUS_LABELS[a.status]}</Badge>
+                  {/* The status as a quiet line with a coloured dot, like the rest of the card. */}
+                  <span className="flex items-center gap-1.5 text-[11px] leading-4 font-medium text-ink-muted">
+                    <span aria-hidden className={`size-1.5 rounded-full ${STATUS_DOT[a.status]}`} />
+                    {APPOINTMENT_STATUS_LABELS[a.status]}
+                  </span>
                   {action}
                 </div>
                 <Link href={itemHref(a.id)} className="min-w-0">
