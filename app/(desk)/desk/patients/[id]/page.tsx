@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { issuePatientActivation, revokePatientActivation } from "@/app/actions/access";
+import { issuePatientActivation, revokeCareLink, revokePatientActivation } from "@/app/actions/access";
 import { requireStaff } from "@/lib/auth";
 import { orm } from "@/src/prisma/db";
 import { calendarDateFromDb, formatCalendarDate, formatDateTime, instantFromDb } from "@/lib/datetime";
@@ -10,6 +10,7 @@ import { AppointmentList } from "@/components/appointment-list";
 import { ShareCode } from "@/components/share-code";
 import { activationLink, qrSvg } from "@/lib/activation-link";
 import { Badge, buttonClass, Card, CardHeader, Detail, SectionTitle } from "@/components/ui";
+import { TextInput } from "@/components/form";
 
 export const metadata: Metadata = { title: "Patient" };
 
@@ -24,12 +25,15 @@ async function ActivationHandover({
   patientName,
   clinicName,
   mail,
+  caregiver,
 }: {
   code: string;
   pin?: string;
   patientName: string;
   clinicName: string;
   mail?: string;
+  /** Set when the code is for a parent or guardian: their name, or "" when the desk didn't give one. */
+  caregiver?: string;
 }) {
   const link = await activationLink(code);
   const svg = await qrSvg(link);
@@ -47,7 +51,9 @@ async function ActivationHandover({
     <section className="overflow-hidden rounded-xl border border-accent/30 bg-surface shadow-card">
       <div className="flex items-baseline justify-between gap-4 bg-accent-tint px-5 py-3.5 sm:px-6">
         <h2 className="font-display text-lg font-semibold tracking-[-0.01em]">
-          Link {firstName}&rsquo;s Medfave account
+          {caregiver !== undefined
+            ? `${caregiver || "A parent or guardian"} — to look after ${firstName}`
+            : <>Link {firstName}&rsquo;s Medfave account</>}
         </h2>
         <p className="shrink-0 text-xs font-medium text-accent-ink">Shown once</p>
       </div>
@@ -101,7 +107,7 @@ export default async function DeskPatientPage({
 }: PageProps<"/desk/patients/[id]">) {
   const staff = await requireStaff();
   const { id } = await params;
-  const { code, pin, mail } = await searchParams;
+  const { code, pin, mail, for: forWho, to } = await searchParams;
 
   const patient = await orm.Patient
     .select(
@@ -146,6 +152,7 @@ export default async function DeskPatientPage({
   const activation = await orm.PatientActivation
     .select("id", "expiresAt", "usedAt", "revokedAt", "createdAt")
     .where((a) => a.patientId.eq(patient.id))
+    .where((a) => a.forCaregiver.eq(false))
     .where((a) => a.clinicId.eq(staff.clinicId))
     .orderBy((a) => a.createdAt.desc())
     .first();
@@ -153,6 +160,28 @@ export default async function DeskPatientPage({
     activation && !activation.usedAt && !activation.revokedAt
       ? instantToDbSafe(activation.expiresAt)
       : null;
+
+  // Logins that look after this chart for the patient, and any caregiver code still out.
+  const [carers, careCode] = await Promise.all([
+    orm.CareLink
+      .select("id", "caregiverName", "createdAt")
+      .include("account", (a) => a.select("fullName", "email"))
+      .where((l) => l.patientId.eq(patient.id))
+      .where((l) => l.clinicId.eq(staff.clinicId))
+      .where((l) => l.revokedAt.isNull())
+      .orderBy((l) => l.createdAt.asc())
+      .all(),
+    orm.PatientActivation
+      .select("id", "expiresAt", "caregiverName")
+      .where((a) => a.patientId.eq(patient.id))
+      .where((a) => a.clinicId.eq(staff.clinicId))
+      .where((a) => a.forCaregiver.eq(true))
+      .where((a) => a.usedAt.isNull())
+      .where((a) => a.revokedAt.isNull())
+      .orderBy((a) => a.createdAt.desc())
+      .first(),
+  ]);
+  const careCodeLive = careCode && instantToDbSafe(careCode.expiresAt) ? careCode : null;
 
   return (
     <div className="space-y-6">
@@ -209,6 +238,7 @@ export default async function DeskPatientPage({
           patientName={fullName(patient)}
           clinicName={staff.clinicName}
           mail={typeof mail === "string" ? mail : undefined}
+          caregiver={forWho === "caregiver" ? (typeof to === "string" ? to : "") : undefined}
         />
       ) : null}
 
@@ -254,6 +284,51 @@ export default async function DeskPatientPage({
                   <button className={buttonClass("primary")}>Link their account</button>
                 </form>
               </>
+            )}
+          </div>
+        </Card>
+
+        {/* A parent or guardian the desk has identified: their own login looks
+            after this chart, beside their own records, without becoming it. */}
+        <Card>
+          <CardHeader title="Looked after by" subtitle="Parents or guardians who see this chart and book for them." />
+          <div className="divide-y divide-border">
+            {carers.map((c) => (
+              <div key={c.id} className="flex items-center gap-3 px-5 py-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{c.caregiverName ?? c.account.fullName}</p>
+                  <p className="truncate text-xs text-ink-muted">{c.account.email}</p>
+                </div>
+                <form action={revokeCareLink}>
+                  <input type="hidden" name="linkId" value={c.id} />
+                  <button className={buttonClass("secondary")}>Remove</button>
+                </form>
+              </div>
+            ))}
+            {careCodeLive ? (
+              <div className="flex flex-wrap items-center gap-3 px-5 py-3">
+                <Badge dot tone="accent">
+                  Code issued{careCodeLive.caregiverName ? ` · ${careCodeLive.caregiverName}` : ""}
+                </Badge>
+                <span className="text-sm text-ink-muted">
+                  Expires {formatDateTime(instantFromDb(careCodeLive.expiresAt))}
+                </span>
+                <form action={revokePatientActivation}>
+                  <input type="hidden" name="patientId" value={patient.id} />
+                  <input type="hidden" name="for" value="caregiver" />
+                  <button className={buttonClass("secondary")}>Revoke</button>
+                </form>
+              </div>
+            ) : null}
+            {patient.archivedAt ? null : (
+              <form action={issuePatientActivation} className="flex flex-wrap items-center gap-2 px-5 py-4">
+                <input type="hidden" name="patientId" value={patient.id} />
+                <input type="hidden" name="for" value="caregiver" />
+                <div className="min-w-0 flex-1">
+                  <TextInput name="caregiverName" placeholder="Their name, e.g. Ana Santos (mother)" aria-label="Parent or guardian's name" />
+                </div>
+                <button className={buttonClass("secondary")}>Give access</button>
+              </form>
             )}
           </div>
         </Card>

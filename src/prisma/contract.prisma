@@ -151,6 +151,8 @@ namespace public {
     alerts            PatientAlert[]
     documentRequests  DocumentRequest[]
     activations       PatientActivation[]
+    /// Logins that look after this person (a parent, a guardian) — not theirs.
+    caredForBy        CareLink[]
     chartAccesses     ChartAccess[]
     appointmentRequests AppointmentRequest[]
     account           Account?                    @relation(fields: [accountId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "Patient_accountId_fkey")
@@ -625,6 +627,7 @@ namespace public {
     documentRequests DocumentRequest[]
     staffInvites  StaffInvite[]
     patientActivations PatientActivation[]
+    careLinks     CareLink[]
     appointmentRequests AppointmentRequest[]
     patients      Patient[]
     openingHours  ClinicOpeningHours[]
@@ -682,6 +685,9 @@ namespace public {
     invitesSent  StaffInvite[]       @relation(name: "StaffInvite_invitedById_fkey")
     invitesAccepted StaffInvite[]    @relation(name: "StaffInvite_acceptedById_fkey")
     activationsIssued PatientActivation[]
+    /// Charts this login looks after for somebody else (a child, a parent in their care).
+    caresFor     CareLink[]          @relation(name: "CareLink_accountId_fkey")
+    careGranted  CareLink[]          @relation(name: "CareLink_grantedById_fkey")
     bookingsMade Appointment[]       @relation(name: "Appointment_bookedById_fkey")
     requestsMade AppointmentRequest[] @relation(name: "AppointmentRequest_requestedById_fkey")
     requestsDecided AppointmentRequest[] @relation(name: "AppointmentRequest_decidedById_fkey")
@@ -765,6 +771,12 @@ namespace public {
     /// and short-lived: it stops working at `pinExpiresAt`, the long code does not.
     pinHash      String?
     pinExpiresAt TimestampString(3)?
+    /// Issued to a parent or guardian, not the patient: redeeming it lets a
+    /// login look after this chart (a `CareLink`) without becoming it. The
+    /// desk decides this when it issues the code, having identified them.
+    forCaregiver Boolean @default(false)
+    /// Who the desk gave it to, for the record ("Ana Santos, mother").
+    caregiverName String?
     issuedById   String
     expiresAt    TimestampString(3)
     usedAt       TimestampString(3)?
@@ -781,6 +793,38 @@ namespace public {
     @@index([issuedById], map: "PatientActivation_issuedById_idx")
 
     @@map("PatientActivation")
+  }
+
+  /// A login that looks after somebody else's chart: a parent for a child, a
+  /// child for an elderly parent. Not the patient's own login (that is
+  /// `Patient.accountId`), so a mother keeps her own chart and sees her
+  /// daughter's beside it, and never becomes her daughter.
+  ///
+  /// Made only by redeeming a code the desk issued "for a caregiver"; ended by
+  /// the desk (`revokedAt`), never deleted, so who could see a chart, and
+  /// when, stays answerable.
+  model CareLink {
+    id          String @id(map: "CareLink_pkey")
+    clinicId    String
+    patientId   String
+    accountId   String
+    /// The staff member who issued the code it came from.
+    grantedById String
+    caregiverName String?
+    createdAt   TimestampString(3) @default(now())
+    revokedAt   TimestampString(3)?
+    revokedById String?
+    clinic      Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "CareLink_clinicId_fkey")
+    patient     Patient @relation(fields: [patientId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "CareLink_patientId_fkey")
+    account     Account @relation(name: "CareLink_accountId_fkey", fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "CareLink_accountId_fkey")
+    grantedBy   Account @relation(name: "CareLink_grantedById_fkey", fields: [grantedById], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "CareLink_grantedById_fkey")
+
+    @@index([accountId], map: "CareLink_accountId_idx")
+    @@index([patientId], map: "CareLink_patientId_idx")
+    @@index([clinicId], map: "CareLink_clinicId_idx")
+    @@index([grantedById], map: "CareLink_grantedById_idx")
+
+    @@map("CareLink")
   }
 
   /// A patient asking for a time, which staff then accept or decline.

@@ -27,7 +27,7 @@ export function AddClinicForm({ code = "", email }: { code?: string; email: stri
         <input type="hidden" name="confirmedPatientId" value={confirming.patientId} />
         <ActivationConfirm preview={confirming} signedInAs={email} />
         <div className="flex flex-wrap gap-2">
-          <SubmitButton pendingLabel="Adding…">This is me — add clinic</SubmitButton>
+          <SubmitButton pendingLabel="Adding…">{confirming.forCaregiver ? "Yes, I look after them" : "This is me — add clinic"}</SubmitButton>
           <button
             type="button"
             className={buttonClass("secondary")}

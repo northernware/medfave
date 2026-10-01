@@ -31,6 +31,10 @@ export async function issuePatientActivation(formData: FormData) {
   const staff = await requireStaff();
   const patientId = String(formData.get("patientId") ?? "");
   if (!patientId) return;
+  // For a parent or guardian the desk has identified, not the patient: the
+  // code lets their login look after this chart (see `CareLink`).
+  const forCaregiver = formData.get("for") === "caregiver";
+  const caregiverName = forCaregiver ? String(formData.get("caregiverName") ?? "").trim().slice(0, 120) || null : null;
 
   const patient = await orm.Patient
     .select("id", "accountId", "firstName", "lastName", "email")
@@ -38,16 +42,17 @@ export async function issuePatientActivation(formData: FormData) {
     .where((p) => p.id.eq(patientId))
     .where((p) => p.clinicId.eq(staff.clinicId))
     .first();
-  if (!patient || patient.accountId) return;
+  if (!patient || (!forCaregiver && patient.accountId)) return;
 
   const now = instantToDb(new Date());
 
-  // Any code already out for this person stops working: one live code at a
-  // time means a reissue is a replacement, not an addition.
+  // Any code of the same kind already out for this person stops working: one
+  // live code at a time means a reissue is a replacement, not an addition.
   for (;;) {
     const live = await orm.PatientActivation
       .select("id")
       .where((a) => a.patientId.eq(patientId))
+      .where((a) => a.forCaregiver.eq(forCaregiver))
       .where((a) => a.usedAt.isNull())
       .where((a) => a.revokedAt.isNull())
       .first();
@@ -65,6 +70,8 @@ export async function issuePatientActivation(formData: FormData) {
     pinHash: pin.hash,
     pinExpiresAt: instantToDb(new Date(Date.now() + PIN_MINUTES * 60 * 1000)),
     issuedById: staff.accountId,
+    forCaregiver,
+    caregiverName,
     expiresAt: instantToDb(days(ACTIVATION_DAYS)),
     createdAt: now,
   });
@@ -73,8 +80,11 @@ export async function issuePatientActivation(formData: FormData) {
   // has mail configured. Never instead: the code is still shown on screen, so
   // a mistyped address or a provider having a bad afternoon does not send
   // somebody home empty-handed.
+  // A caregiver's code is never mailed to the patient's address: it is for somebody else.
   let mail: "sent" | "failed" | "no-address" | "off" = "off";
-  if (patient.email) {
+  if (forCaregiver) {
+    mail = "off";
+  } else if (patient.email) {
     const outcome = await sendPatientActivation({
       to: patient.email,
       patientName: `${patient.firstName} ${patient.lastName}`,
@@ -89,7 +99,8 @@ export async function issuePatientActivation(formData: FormData) {
 
   revalidatePath(`/desk/patients/${patientId}`);
   // The code travels in the URL exactly once, to be read off the screen.
-  redirect(`/desk/patients/${patientId}?code=${encodeURIComponent(token)}&pin=${pin.pin}&mail=${mail}`);
+  const who = forCaregiver ? `&for=caregiver${caregiverName ? `&to=${encodeURIComponent(caregiverName)}` : ""}` : "";
+  redirect(`/desk/patients/${patientId}?code=${encodeURIComponent(token)}&pin=${pin.pin}&mail=${mail}${who}`);
 }
 
 /** A 6-digit code no other activation is using right now, so one PIN names one chart. */
@@ -121,10 +132,12 @@ export async function revokePatientActivation(formData: FormData) {
   if (!owned) return;
 
   const now = instantToDb(new Date());
+  const forCaregiver = formData.get("for") === "caregiver";
   for (;;) {
     const live = await orm.PatientActivation
       .select("id")
       .where((a) => a.patientId.eq(patientId))
+      .where((a) => a.forCaregiver.eq(forCaregiver))
       .where((a) => a.usedAt.isNull())
       .where((a) => a.revokedAt.isNull())
       .first();
@@ -134,6 +147,26 @@ export async function revokePatientActivation(formData: FormData) {
 
   revalidatePath(`/desk/patients/${patientId}`);
   redirect(`/desk/patients/${patientId}`);
+}
+
+/**
+ * Ends a caregiver's access to a chart. Kept, not deleted, so who could see
+ * the chart and when stays answerable.
+ */
+export async function revokeCareLink(formData: FormData) {
+  const staff = await requireStaff();
+  const linkId = String(formData.get("linkId") ?? "");
+  const link = await orm.CareLink
+    .select("id", "patientId", "revokedAt")
+    .where((l) => l.id.eq(linkId))
+    .where((l) => l.clinicId.eq(staff.clinicId))
+    .first();
+  if (!link) return;
+  if (!link.revokedAt) {
+    await orm.CareLink.where((l) => l.id.eq(link.id)).update({ revokedAt: instantToDb(new Date()), revokedById: staff.accountId });
+  }
+  revalidatePath(`/desk/patients/${link.patientId}`);
+  redirect(`/desk/patients/${link.patientId}`);
 }
 
 /**

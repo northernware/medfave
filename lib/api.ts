@@ -59,11 +59,18 @@ export async function apiPatient(request: Request): Promise<CurrentPatient | Res
   if (viewer instanceof Response) return viewer;
   if (viewer.charts.length === 0) return apiError(403, "This is for patient accounts.");
 
-  const asked = new URL(request.url).searchParams.get("clinic") ?? request.headers.get("x-clinic-id");
+  const url = new URL(request.url);
+  const asked = url.searchParams.get("clinic") ?? request.headers.get("x-clinic-id");
   if (asked && !viewer.charts.some((c) => c.clinicId === asked)) {
     return apiError(404, "You are not linked to that clinic.");
   }
-  return patientContext(viewer, asked)!;
+  // Whose records: `?patient=` names one of the charts this login may act on —
+  // its own, or somebody it looks after. Without it, their own at the clinic.
+  const person = url.searchParams.get("patient") ?? request.headers.get("x-patient-id");
+  if (person && !viewer.charts.some((c) => c.id === person && (!asked || c.clinicId === asked))) {
+    return apiError(404, "You can't see that person's records.");
+  }
+  return patientContext(viewer, asked, person)!;
 }
 
 /** A clinician, with what `lib/booking` needs to act for them. */
@@ -161,12 +168,18 @@ export function viewerSummary(viewer: Viewer) {
           : "none",
     clinic: viewer.staff ? { id: viewer.staff.clinicId, name: viewer.staff.clinicName, role: viewer.staff.role } : null,
     /** Every clinic this patient login is linked to, each with its own chart. */
-    charts: viewer.charts.map((c) => ({ patientId: c.id, clinic: { id: c.clinicId, name: c.clinicName } })),
+    charts: viewer.charts.map((c) => ({
+      patientId: c.id,
+      clinic: { id: c.clinicId, name: c.clinicName },
+      /** False for somebody this login looks after (a child), true for its own chart. */
+      self: c.self,
+      name: c.name,
+    })),
     emailVerified: viewer.emailVerified,
     /** What they said they were at sign-up: picks the welcome for an account with no clinic yet. */
     signupRole: viewer.signupRole,
     /** The first chart's id. Kept for older app builds; use `charts`. */
-    patientId: viewer.charts[0]?.id ?? null,
+    patientId: (viewer.charts.find((c) => c.self) ?? viewer.charts[0])?.id ?? null,
     doctorId: viewer.doctorId,
     /** The license check, for a doctor: `{ status: "PENDING" | "VERIFIED" | "DECLINED", declineReason }`. */
     verification: viewer.verification,
