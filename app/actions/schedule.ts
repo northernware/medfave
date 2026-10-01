@@ -6,7 +6,14 @@ import { orm } from "@/src/prisma/db";
 import { requireClinicManager } from "@/lib/auth";
 import { pickDoctor } from "@/lib/clinic";
 import { writeClinicWeek, writeDoctorWeek } from "@/lib/hours";
-import { addBreakFor, addClosureFor, removeBreakFor, removeClosureFor, saveServiceLengthsFor } from "@/lib/schedule";
+import {
+  addBreakFor,
+  addClosureFor,
+  removeBreakFor,
+  removeClosureFor,
+  saveServiceLengthsFor,
+  setObserveHolidays,
+} from "@/lib/schedule";
 import { NOTICE_OPTIONS, SLOT_STEPS } from "@/lib/schedule-options";
 import type { FormState } from "@/lib/validation";
 
@@ -171,4 +178,13 @@ export async function saveClinicHours(_prev: FormState, formData: FormData): Pro
   revalidatePath("/manage/schedule");
   revalidatePath("/manage");
   redirect("/manage/schedule?saved=clinic");
+}
+
+// --- Philippine holidays -----------------------------------------------------
+
+export async function saveHolidays(forDoctor: string, formData: FormData) {
+  const { doctorId } = await scope(forDoctor);
+  if (!doctorId) return;
+  await setObserveHolidays(doctorId, formData.get("observe") === "on");
+  done("holidays", doctorId);
 }

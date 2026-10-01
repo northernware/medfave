@@ -177,3 +177,18 @@ export async function saveServiceLengthsFor(doctorId: string, formData: FormData
   });
   return null;
 }
+
+/** Whether this doctor is closed on Philippine holidays (on unless turned off). */
+export async function setObserveHolidays(doctorId: string, observe: boolean): Promise<void> {
+  const row = await orm.ScheduleSettings.select("doctorId").where((s) => s.doctorId.eq(doctorId)).first();
+  if (row) {
+    await orm.ScheduleSettings.where((s) => s.doctorId.eq(doctorId)).update({ observeHolidays: observe });
+  } else {
+    await orm.ScheduleSettings.create({ doctorId, observeHolidays: observe });
+  }
+}
+
+export async function observesHolidays(doctorId: string): Promise<boolean> {
+  const row = await orm.ScheduleSettings.select("observeHolidays").where((s) => s.doctorId.eq(doctorId)).first();
+  return row?.observeHolidays ?? true;
+}

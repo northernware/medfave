@@ -1,7 +1,16 @@
 import { apiDoctor, apiError, readJson } from "@/lib/api";
 import { dayKey } from "@/lib/datetime";
 import { SERVICES } from "@/lib/domain";
-import { addBreakFor, addClosureFor, removeBreakFor, removeClosureFor, saveServiceLengthsFor } from "@/lib/schedule";
+import { holidaysBetween } from "@/lib/holidays-ph";
+import {
+  addBreakFor,
+  addClosureFor,
+  observesHolidays,
+  removeBreakFor,
+  removeClosureFor,
+  saveServiceLengthsFor,
+  setObserveHolidays,
+} from "@/lib/schedule";
 import { or } from "@prisma/orm-postgres/orm-client";
 import { orm } from "@/src/prisma/db";
 
@@ -10,13 +19,13 @@ import { orm } from "@/src/prisma/db";
  * still to come, and how long each kind of visit takes. The same rules as the
  * web's schedule page (lib/schedule.ts). A doctor manages only their own.
  *
- * GET → `{ breaks, closures, lengths }`
+ * GET → `{ breaks, closures, observeHolidays, holidays, lengths }`
  */
 export async function GET(request: Request) {
   const doctor = await apiDoctor(request);
   if (doctor instanceof Response) return doctor;
   const today = dayKey(new Date());
-  const [breaks, closures, overrides] = await Promise.all([
+  const [breaks, closures, overrides, observeHolidays] = await Promise.all([
     orm.ClinicBreak
       .select("id", "weekday", "startMinute", "endMinute", "label")
       .where((b) => b.doctorId.eq(doctor.doctorId))
@@ -29,10 +38,13 @@ export async function GET(request: Request) {
       .orderBy((c) => c.startsOn.asc())
       .all(),
     orm.ServiceDuration.select("service", "minutes").where((d) => d.doctorId.eq(doctor.doctorId)).all(),
+    observesHolidays(doctor.doctorId),
   ]);
   return Response.json({
     breaks: breaks.sort((a, b) => (a.weekday ?? -1) - (b.weekday ?? -1) || a.startMinute - b.startMinute),
     closures: closures.map((c) => ({ ...c, startsOn: c.startsOn.slice(0, 10), endsOn: c.endsOn.slice(0, 10) })),
+    observeHolidays,
+    holidays: holidaysBetween(today, 365),
     lengths: SERVICES.map((s) => ({
       service: s.value,
       label: s.label,
@@ -47,6 +59,7 @@ export async function GET(request: Request) {
  * - `{ kind: "break", weekday: 0-6 | null (every day), from: "HH:MM", to: "HH:MM", label }`
  * - `{ kind: "closure", startsOn: "YYYY-MM-DD", endsOn?, from?, to?, reason, repeat?: "NONE" | "WEEKLY" | "MONTHLY" | "YEARLY" }` (no times = whole days)
  * - `{ kind: "lengths", minutes: { [service]: number | null } }` (null = the built-in length)
+ * - `{ kind: "holidays", observe: boolean }` (closed on Philippine holidays, or not)
  * → the same as GET.
  */
 export async function POST(request: Request) {
@@ -73,12 +86,15 @@ export async function POST(request: Request) {
     put("reason", body.reason);
     put("repeat", body.repeat ?? "NONE");
     problem = await addClosureFor(doctor.doctorId, form);
+  } else if (body.kind === "holidays") {
+    await setObserveHolidays(doctor.doctorId, body.observe !== false);
+    return GET(request);
   } else if (body.kind === "lengths") {
     const minutes = (body.minutes ?? {}) as Record<string, unknown>;
     for (const s of SERVICES) put(`minutes-${s.value}`, minutes[s.value]);
     problem = await saveServiceLengthsFor(doctor.doctorId, form);
   } else {
-    return apiError(400, 'Say what to add: kind "break", "closure" or "lengths".');
+    return apiError(400, 'Say what to change: kind "break", "closure", "lengths" or "holidays".');
   }
   if (problem) return apiError(422, problem.message ?? "Check the details.", problem.fieldErrors);
   return GET(request);

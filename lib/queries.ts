@@ -9,6 +9,7 @@ import {
   startOfClinicDay,
 } from "./datetime";
 import { and, or } from "@prisma/orm-postgres/orm-client";
+import { holidaysBetween } from "@/lib/holidays-ph";
 import { fullName, SERVICE_LABELS } from "./domain";
 import type { DuplicateMatch } from "./validation";
 import { DEFAULT_SCHEDULE, type Schedule } from "./availability";
@@ -288,7 +289,7 @@ export function withinClinicHours(doctorDays: DayHours[], clinicDays: DayHours[]
 export async function loadSchedule(doctorId: string): Promise<Schedule> {
   const [settings, hours, breaks, closures, durations] = await Promise.all([
     orm.ScheduleSettings
-      .select("slotStepMinutes", "minLeadMinutes", "maxLeadDays", "defaultDurationMinutes")
+      .select("slotStepMinutes", "minLeadMinutes", "maxLeadDays", "defaultDurationMinutes", "observeHolidays")
       .where((s) => s.doctorId.eq(doctorId))
       .first(),
     orm.ClinicHours
@@ -320,7 +321,16 @@ export async function loadSchedule(doctorId: string): Promise<Schedule> {
     // An unconfigured week means the defaults, not a clinic that never opens.
     hours: withinClinicHours(own, clinicWeek),
     breaks,
-    closures,
+    // Philippine holidays count as whole days off unless the doctor works them.
+    closures:
+      settings?.observeHolidays === false
+        ? closures
+        : [
+            ...closures,
+            ...holidaysBetween(addDays(dayKey(new Date()), -1), (settings?.maxLeadDays ?? DEFAULT_SCHEDULE.maxLeadDays) + 31).map(
+              (h) => ({ startsOn: h.date, endsOn: h.date, startMinute: null, endMinute: null, reason: `${h.name} (holiday)`, repeat: "NONE" }),
+            ),
+          ],
     slotStepMinutes: settings?.slotStepMinutes ?? DEFAULT_SCHEDULE.slotStepMinutes,
     minLeadMinutes: settings?.minLeadMinutes ?? DEFAULT_SCHEDULE.minLeadMinutes,
     maxLeadDays: settings?.maxLeadDays ?? DEFAULT_SCHEDULE.maxLeadDays,

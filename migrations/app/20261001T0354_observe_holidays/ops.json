@@ -1,0 +1,44 @@
+[
+  {
+    "id": "column.public.ScheduleSettings.observeHolidays",
+    "label": "Add column \"observeHolidays\" to \"ScheduleSettings\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "observeHolidays",
+        "table": "ScheduleSettings"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"observeHolidays\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "ScheduleSettings",
+          "observeHolidays"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"observeHolidays\"",
+        "sql": "ALTER TABLE \"public\".\"ScheduleSettings\" ADD COLUMN \"observeHolidays\" bool DEFAULT true NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"observeHolidays\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "ScheduleSettings",
+          "observeHolidays"
+        ]
+      }
+    ]
+  }
+]

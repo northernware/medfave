@@ -5324,6 +5324,13 @@
                   "kind": "scalar"
                 }
               },
+              "observeHolidays": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/bool@1",
+                  "kind": "scalar"
+                }
+              },
               "slotStepMinutes": {
                 "nullable": false,
                 "type": {
@@ -5362,6 +5369,9 @@
                 },
                 "minLeadMinutes": {
                   "column": "minLeadMinutes"
+                },
+                "observeHolidays": {
+                  "column": "observeHolidays"
                 },
                 "slotStepMinutes": {
                   "column": "slotStepMinutes"
@@ -9892,6 +9902,15 @@
                   "nativeType": "int4",
                   "nullable": false
                 },
+                "observeHolidays": {
+                  "codecId": "pg/bool@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": true
+                  },
+                  "nativeType": "bool",
+                  "nullable": false
+                },
                 "slotStepMinutes": {
                   "codecId": "pg/int4@1",
                   "default": {
@@ -10379,7 +10398,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "b82f2892320cb0910011428e977d7aecc097880eb015f000423c0b0883280030"
+    "storageHash": "c1f6462a5eb3779d1b24f6bbcd0e4aa2b459c249c12e570f260a825d0ef9378b"
   },
   "capabilities": {
     "postgres": {
