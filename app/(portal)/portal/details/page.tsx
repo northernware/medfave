@@ -7,6 +7,9 @@ import { calendarDateFromDb, formatCalendarDate } from "@/lib/datetime";
 import { fullName, SEX_LABELS } from "@/lib/domain";
 import { buttonClass, Card, CardHeader, Detail, PageHeader } from "@/components/ui";
 import { ContactForm } from "./contact-form";
+import { CareForm } from "./care-form";
+import { removeCareAction, stopCaringAction } from "@/app/actions/portal";
+import { carersOf } from "@/lib/caregivers";
 
 export const metadata: Metadata = { title: "Your details" };
 
@@ -38,6 +41,7 @@ export default async function PortalDetailsPage({ searchParams }: PageProps<"/po
     .where((p) => p.id.eq(me.patientId))
     .first();
   if (!profile) return null;
+  const care = await carersOf(me);
 
   return (
     <div className="space-y-6">
@@ -58,6 +62,19 @@ export default async function PortalDetailsPage({ searchParams }: PageProps<"/po
             the visits already in your diary follow your reminder choice.
           </p>
         </div>
+      ) : null}
+
+      {/* Somebody else's records, looked after: a way to step back. */}
+      {!me.self ? (
+        <Card>
+          <CardHeader
+            title={`You look after ${me.personName}`}
+            subtitle="You see their visits here and can ask for times for them."
+          />
+          <form action={stopCaringAction} className="px-5 py-4">
+            <button className={buttonClass("secondary")}>Stop looking after them</button>
+          </form>
+        </Card>
       ) : null}
 
       <Card>
@@ -105,6 +122,40 @@ export default async function PortalDetailsPage({ searchParams }: PageProps<"/po
           </Link>
         </div>
       </Card>
+      {care ? (
+        <Card>
+          <CardHeader
+            title="Who can see my records"
+            subtitle={
+              care.canManage
+                ? "People who look after you here: they see your visits and can ask for times for you."
+                : "Set by the clinic while you're under 18. Ask the desk to change it."
+            }
+          />
+          <div className="divide-y divide-border">
+            {care.carers.length === 0 ? <p className="px-5 py-4 text-sm text-ink-muted">Only you.</p> : null}
+            {care.carers.map((c) => (
+              <div key={c.id} className="flex items-center gap-3 px-5 py-3">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium">{c.name}</p>
+                  <p className="truncate text-xs text-ink-muted">{c.email}</p>
+                </div>
+                {care.canManage ? (
+                  <form action={removeCareAction}>
+                    <input type="hidden" name="linkId" value={c.id} />
+                    <button className={buttonClass("secondary")}>Remove</button>
+                  </form>
+                ) : null}
+              </div>
+            ))}
+            {care.canManage ? (
+              <div className="px-5 py-4">
+                <CareForm />
+              </div>
+            ) : null}
+          </div>
+        </Card>
+      ) : null}
     </div>
   );
 }

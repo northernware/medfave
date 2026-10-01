@@ -124,6 +124,10 @@ uses the login's own chart at the clinic. Any other chart gets `404`.
 
 | | |
 | --- | --- |
+| `GET /patient/carers` | `{ carers: [{ id, name, email, since }], canManage }` — who can see this patient's **own** records here. `canManage` is false under 18 (the desk manages a child's). `404` when viewing somebody looked after |
+| `POST /patient/carers` | `{ email }` → `201` (same shape). "Let someone look after me": an adult adds a Medfave login by its email. `422` when no account uses it |
+| `DELETE /patient/carers/:id` | `204`. An adult removes somebody's access |
+| `DELETE /patient/care` | `204`. A caregiver stops looking after the person chosen with `?patient=` |
 | `GET /patient/clinics` | `{ clinics: [{ id, name, patientId, self, personName }] }`: one row per chart this login may act on; a clinic shows twice when the login has its own chart there and looks after somebody else's |
 | `POST /patient/clinics` | `{ code, confirmedPatientId }` → `201 { clinic: { id, name }, patientId }`. **Add a clinic:** redeems an activation code (after `POST /activation/preview`) and links that chart to this login: as its own, or, for a caregiver code, as somebody it looks after. Open to any signed-in account. `422` for an invalid code, a clinic already linked (own codes only) or a code that now opens a different chart |
 | `GET /patient/appointments` | `{ upcoming[], past[], cancelHours }`, each `{ id, scheduledAt, durationMinutes, service, serviceLabel, reason, status, statusLabel, visitType, doctor, doctorId }`; upcoming ones also `{ canCancel, cancelBy, canMove, movePending }` |
