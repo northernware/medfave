@@ -93,23 +93,23 @@ export function PatientsList({
                   scroll={false}
                   className={[
                     "flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors",
-                    on ? "bg-ink text-canvas" : "bg-surface-muted/70 hover:bg-surface-muted",
+                    on ? "bg-accent text-on-accent" : "bg-surface-muted/70 hover:bg-surface-muted",
                   ].join(" ")}
                 >
                   <span
-                    className={`grid size-10 shrink-0 place-items-center rounded-full font-display text-xs font-semibold ${on ? "bg-canvas/15 text-canvas" : "bg-accent-soft text-accent-ink"}`}
+                    className={`grid size-10 shrink-0 place-items-center rounded-full font-display text-xs font-semibold ${on ? "bg-on-accent/15 text-on-accent" : "bg-accent-soft text-accent-ink"}`}
                   >
                     {initials(a.patient)}
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold">{fullName(a.patient)}</span>
-                    <span className={`block truncate text-xs ${on ? "text-canvas/70" : "text-ink-muted"}`}>
+                    <span className={`block truncate text-xs ${on ? "text-on-accent/75" : "text-ink-muted"}`}>
                       {SERVICE_LABELS[a.service]}
                     </span>
                   </span>
                   <span className="tabular shrink-0 text-right text-sm leading-tight font-medium">
                     {sameDay ? "Today" : shortDay(a.scheduledAt)}
-                    <span className={`block text-xs font-normal ${on ? "text-canvas/70" : "text-ink-faint"}`}>
+                    <span className={`block text-xs font-normal ${on ? "text-on-accent/75" : "text-ink-faint"}`}>
                       {formatTime(a.scheduledAt)}
                     </span>
                   </span>
@@ -278,7 +278,7 @@ export function ScheduleRail({
               <Link key={key} href={href(key)} scroll={false} aria-current={on ? "date" : undefined} className="group space-y-2">
                 <span className="block text-xs text-ink-faint">{weekdayLabel(key)}</span>
                 <span
-                  className={`mx-auto grid size-9 place-items-center rounded-full text-sm font-semibold transition-colors ${on ? "bg-ink text-canvas" : today ? "text-accent-ink ring-1 ring-accent/50" : "group-hover:bg-surface-muted"}`}
+                  className={`mx-auto grid size-9 place-items-center rounded-full text-sm font-semibold transition-colors ${on ? "bg-accent text-on-accent" : today ? "text-accent-ink ring-1 ring-accent/50" : "group-hover:bg-surface-muted"}`}
                 >
                   {Number(key.slice(8))}
                 </span>
