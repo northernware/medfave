@@ -4,6 +4,8 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { PORTAL_CLINIC_COOKIE, PORTAL_PERSON_COOKIE, requirePatientAccount, requireViewer } from "@/lib/auth";
 import { linkPatientActivation, previewActivation, type ActivationPreview } from "@/lib/sign-in";
+import { grantCare, removeCare, stopCaring } from "@/lib/caregivers";
+import { revalidatePath } from "next/cache";
 import type { FormState } from "@/lib/validation";
 
 const remember = async (clinicId: string) =>
@@ -72,4 +74,29 @@ export async function addClinic(_prev: FormState, formData: FormData): Promise<F
     maxAge: 60 * 60 * 24 * 365,
   });
   redirect("/portal?added=1");
+}
+
+/** "Let someone look after my records": an adult adds a Medfave login by its email. */
+export async function grantCareAction(_prev: FormState, formData: FormData): Promise<FormState> {
+  const me = await requirePatientAccount();
+  const result = await grantCare(me, formData.get("email"));
+  if (!result.ok) return result;
+  revalidatePath("/portal/details");
+  return { ok: true, message: "Added. They can now see your visits at this clinic." };
+}
+
+/** An adult ends somebody's access to their records. */
+export async function removeCareAction(formData: FormData) {
+  const me = await requirePatientAccount();
+  await removeCare(me, String(formData.get("linkId") ?? ""));
+  revalidatePath("/portal/details");
+  redirect("/portal/details");
+}
+
+/** A caregiver stepping back from the records they look after; back to their own. */
+export async function stopCaringAction() {
+  const me = await requirePatientAccount();
+  const result = await stopCaring(me);
+  if (result.ok) (await cookies()).delete(PORTAL_PERSON_COOKIE);
+  redirect("/portal");
 }
