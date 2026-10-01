@@ -18,7 +18,7 @@ export async function GET(request: Request) {
   const [upcoming, past] = await Promise.all([
     orm.Appointment
       .select("id", "scheduledAt", "durationMinutes", "service", "reason", "status", "visitType")
-      .include("doctor", (d) => d.select("fullName"))
+      .include("doctor", (d) => d.select("id", "fullName"))
       .where((a) => a.patientId.eq(me.patientId))
       .where((a) => a.scheduledAt.gte(now))
       .orderBy((a) => a.scheduledAt.asc())
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
       .all(),
     orm.Appointment
       .select("id", "scheduledAt", "durationMinutes", "service", "reason", "status", "visitType")
-      .include("doctor", (d) => d.select("fullName"))
+      .include("doctor", (d) => d.select("id", "fullName"))
       .where((a) => a.patientId.eq(me.patientId))
       .where((a) => a.scheduledAt.lt(now))
       .orderBy((a) => a.scheduledAt.desc())
@@ -55,6 +55,7 @@ export async function GET(request: Request) {
     statusLabel: APPOINTMENT_STATUS_LABELS[a.status],
     visitType: a.visitType,
     doctor: a.doctor.fullName,
+    doctorId: a.doctor.id,
   });
   // What the patient may still do with a visit to come.
   const upcomingShape = (a: (typeof upcoming)[number]) => {
