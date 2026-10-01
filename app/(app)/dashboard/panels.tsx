@@ -67,8 +67,11 @@ export function PatientsList({
   selectedId,
   todayKey,
   day,
+  moreFor = {},
 }: {
   upcoming: AppointmentListItem[];
+  /** Other visits each patient has booked after the one shown. */
+  moreFor?: Record<string, number>;
   selectedId: string | null;
   todayKey: string;
   /** The schedule panel's day, kept when another patient is picked. */
@@ -78,7 +81,7 @@ export function PatientsList({
     <section className={`${PANEL} flex flex-col p-5`}>
       <div className="mb-4 flex items-baseline justify-between gap-2">
         <h2 className="font-display text-lg font-semibold">Patients list</h2>
-        <span className="text-xs text-ink-faint">By upcoming</span>
+        <span className="text-xs text-ink-faint">By next visit</span>
       </div>
       {upcoming.length === 0 ? (
         <EmptyState title="Nobody booked" description="Upcoming visits appear here." />
@@ -103,7 +106,17 @@ export function PatientsList({
                     {initials(a.patient)}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold">{fullName(a.patient)}</span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="truncate text-sm font-semibold">{fullName(a.patient)}</span>
+                      {moreFor[a.patient.id] ? (
+                        <span
+                          title={`${moreFor[a.patient.id]} more visit${moreFor[a.patient.id] === 1 ? "" : "s"} booked`}
+                          className={`shrink-0 rounded-full px-1.5 text-[11px] leading-[18px] font-semibold ${on ? "bg-on-accent/15 text-on-accent" : "bg-accent-soft text-accent-ink"}`}
+                        >
+                          +{moreFor[a.patient.id]}
+                        </span>
+                      ) : null}
+                    </span>
                     <span className={`block truncate text-xs ${on ? "text-on-accent/75" : "text-ink-muted"}`}>
                       {SERVICE_LABELS[a.service]}
                     </span>
