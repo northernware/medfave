@@ -84,7 +84,8 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
   ).length;
 
   return (
-    <div className="space-y-3 xl:pr-[352px]">
+    // On wide screens the month fills the window down to the bottom edge.
+    <div className="space-y-3 xl:flex xl:h-[calc(100dvh-1.5rem)] xl:flex-col xl:space-y-0 xl:gap-3 xl:pr-[352px]">
       <PageHeader
         title="Calendar"
         subtitle={`${appointments.length} booked across ${bookedDays} ${bookedDays === 1 ? "day" : "days"} this month`}
@@ -98,8 +99,8 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
         }
       />
 
-      <div className="grid grid-cols-1 gap-3">
-        <Card>
+      <div className="grid grid-cols-1 gap-3 xl:min-h-0 xl:flex-1">
+        <Card className="overflow-hidden xl:flex xl:min-h-0 xl:flex-col">
           <div className="flex items-center justify-between gap-4 border-b border-border px-4 py-3">
             <Link
               href={`/calendar?month=${shiftMonth(year, monthNumber, -1)}`}
@@ -137,7 +138,10 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
             ))}
           </div>
 
-          <div className="grid grid-cols-7">
+          <div
+            className="grid grid-cols-7 xl:min-h-0 xl:flex-1"
+            style={{ gridTemplateRows: `repeat(${weeks.length}, minmax(0, 1fr))` }}
+          >
             {weeks.flat().map((cell) => {
               const items = byDay.get(cell.key) ?? [];
               const isToday = cell.key === todayKey;
@@ -152,8 +156,9 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
                   href={`/calendar?month=${cell.inMonth ? monthPrefix : cell.key.slice(0, 7)}&day=${cell.key}`}
                   aria-current={isSelected ? "date" : undefined}
                   className={[
-                    "min-h-22 border-r border-b border-border p-2 text-left transition-colors sm:min-h-34",
-                    "[&:nth-child(7n)]:border-r-0 hover:bg-surface-muted",
+                    "min-h-22 overflow-hidden border-r border-b border-border p-2 text-left transition-colors sm:min-h-34 xl:min-h-0",
+                    // No double line where the last week meets the card's own border.
+                    "[&:nth-child(7n)]:border-r-0 [&:nth-last-child(-n+7)]:border-b-0 hover:bg-surface-muted",
                     cell.inMonth ? "" : "bg-surface-muted/40 text-ink-faint",
                     isSelected ? "ring-2 ring-accent ring-inset" : "",
                   ].join(" ")}
