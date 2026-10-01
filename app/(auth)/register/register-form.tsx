@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { activatePatientAccount } from "@/app/actions/auth";
 import { Field, FormError, SubmitButton, TextInput } from "@/components/form";
+import { CodeInput } from "@/components/code-input";
 import { EMPTY_FORM_STATE } from "@/lib/validation";
 
 export function RegisterForm({ code = "" }: { code?: string }) {
@@ -20,15 +21,7 @@ export function RegisterForm({ code = "" }: { code?: string }) {
         hint="Given to you by the clinic. It is what ties this login to your records."
         required
       >
-        <TextInput
-          id="code"
-          name="code"
-          defaultValue={code}
-          required
-          placeholder="6-digit code"
-          className="tabular"
-          invalid={Boolean(err?.code)}
-        />
+        <CodeInput id="code" defaultValue={code} invalid={Boolean(err?.code)} />
       </Field>
 
       <Field label="Full name" htmlFor="fullName" error={err?.fullName} required>
