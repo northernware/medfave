@@ -63,3 +63,17 @@ export async function setSharedCharts(formData: FormData) {
   revalidatePath("/manage/clinic");
   redirect("/manage/clinic?saved=sharing");
 }
+
+/** How long before a visit patients may still cancel it themselves in the app (0–72 hours). */
+export async function setCancelHours(formData: FormData) {
+  const manager = await requireClinicManager();
+  const hours = Number(formData.get("hours"));
+  if (Number.isInteger(hours) && hours >= 0 && hours <= 72) {
+    await orm.Clinic.where((c) => c.id.eq(manager.clinicId)).update({
+      patientCancelHours: hours,
+      updatedAt: instantToDb(new Date()),
+    });
+  }
+  revalidatePath("/manage/clinic");
+  redirect("/manage/clinic?saved=cancel");
+}

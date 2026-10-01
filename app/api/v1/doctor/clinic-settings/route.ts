@@ -15,7 +15,7 @@ export async function GET(request: Request) {
   const doctor = await apiDoctor(request);
   if (doctor instanceof Response) return doctor;
   const [clinic, members, invites] = await Promise.all([
-    orm.Clinic.select("name", "address", "contactNumber", "sharedCharts", "listed").where((c) => c.id.eq(doctor.clinicId)).first(),
+    orm.Clinic.select("name", "address", "contactNumber", "sharedCharts", "listed", "patientCancelHours").where((c) => c.id.eq(doctor.clinicId)).first(),
     orm.ClinicMember
       .select("role")
       .include("account", (a) => a.select("fullName", "email"))
@@ -38,7 +38,7 @@ export async function GET(request: Request) {
   });
 }
 
-/** Body: any of `{ name, address, contactNumber }` (all three together), `{ sharedCharts: boolean }`, `{ listed: boolean }`. */
+/** Body: any of `{ name, address, contactNumber }` (all three together), `{ sharedCharts: boolean }`, `{ listed: boolean }`, `{ patientCancelHours: 0-72 }`. */
 export async function PUT(request: Request) {
   const doctor = await apiDoctor(request);
   if (doctor instanceof Response) return doctor;
@@ -56,6 +56,8 @@ export async function PUT(request: Request) {
   }
   if (typeof body.sharedCharts === "boolean") update.sharedCharts = body.sharedCharts;
   if (typeof body.listed === "boolean") update.listed = body.listed;
+  const hours = body.patientCancelHours;
+  if (typeof hours === "number" && Number.isInteger(hours) && hours >= 0 && hours <= 72) update.patientCancelHours = hours;
   if (Object.keys(update).length === 0) return apiError(400, "Nothing to change.");
 
   await orm.Clinic.where((c) => c.id.eq(doctor.clinicId)).update({ ...update, updatedAt: instantToDb(new Date()) });

@@ -3,6 +3,7 @@ import { calendarDateFromDb, instantFromDb, toDateInputValue } from "@/lib/datet
 import { fullName, SERVICE_LABELS } from "@/lib/domain";
 import { findPossibleDuplicates } from "@/lib/queries";
 import { orm } from "@/src/prisma/db";
+import { visitTimes } from "@/lib/patient-visits";
 
 /** Requests for this doctor still waiting for an answer, oldest first. The desk sees every doctor's. */
 export async function GET(request: Request) {
@@ -11,7 +12,7 @@ export async function GET(request: Request) {
 
   const requests = await orm.AppointmentRequest
     .select(
-      "id", "preferredDate", "preferredTime", "service", "reason", "createdAt",
+      "id", "preferredDate", "preferredTime", "service", "reason", "createdAt", "rescheduleOfId",
       "newFirstName", "newMiddleName", "newLastName", "newDateOfBirth", "newContactNumber", "newEmail",
     )
     .include("patient", (p) => p.select("id", "firstName", "middleName", "lastName"))
@@ -39,6 +40,8 @@ export async function GET(request: Request) {
     ),
   );
 
+  const moving = await visitTimes(requests.map((r) => r.rescheduleOfId));
+
   return Response.json({
     requests: requests.map((r) => ({
       id: r.id,
@@ -48,6 +51,8 @@ export async function GET(request: Request) {
       serviceLabel: SERVICE_LABELS[r.service],
       reason: r.reason,
       createdAt: instantFromDb(r.createdAt).toISOString(),
+      /** A move: when the visit being moved is now. Accepting books the new time and cancels that one. */
+      moveFrom: r.rescheduleOfId ? (moving.get(r.rescheduleOfId)?.toISOString() ?? null) : null,
       patient: r.patient
         ? { id: r.patient.id, fullName: fullName(r.patient) }
         : { id: null, fullName: fullName({ firstName: r.newFirstName ?? "", middleName: r.newMiddleName, lastName: r.newLastName ?? "" }) },

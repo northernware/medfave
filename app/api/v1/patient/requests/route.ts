@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   if (me instanceof Response) return me;
 
   const requests = await orm.AppointmentRequest
-    .select("id", "preferredDate", "preferredTime", "service", "reason", "status", "decisionNote", "createdAt")
+    .select("id", "preferredDate", "preferredTime", "service", "reason", "status", "decisionNote", "createdAt", "rescheduleOfId")
     .where((r) => r.patientId.eq(me.patientId))
     .orderBy((r) => r.createdAt.desc())
     .limit(50)
@@ -27,6 +27,8 @@ export async function GET(request: Request) {
       status: r.status,
       decisionNote: r.decisionNote,
       createdAt: instantFromDb(r.createdAt).toISOString(),
+      /** Set when this asks to move an existing visit. */
+      rescheduleOf: r.rescheduleOfId,
     })),
   });
 }
@@ -35,7 +37,9 @@ export async function GET(request: Request) {
  * Ask for a visit. A request is not a booking: it holds no slot, and the
  * doctor or front desk accepts or declines it.
  *
- * Body: `{ service, preferredDate: "YYYY-MM-DD", preferredTime?: "HH:MM", reason }`.
+ * Body: `{ service, preferredDate: "YYYY-MM-DD", preferredTime?: "HH:MM", reason, rescheduleOf? }`.
+ * `rescheduleOf` (an upcoming visit's id) asks to move that visit: same doctor,
+ * and the old time is freed when the clinic accepts.
  */
 export async function POST(request: Request) {
   const me = await apiPatient(request);
@@ -51,6 +55,7 @@ export async function POST(request: Request) {
     preferredTime: text(body.preferredTime),
     reason: text(body.reason),
     doctorId: text(body.doctorId) || undefined,
+    rescheduleOf: text(body.rescheduleOf) || undefined,
   });
   if (!result.ok) return apiError(422, result.message ?? "Check the details of your request.", result.fieldErrors);
 

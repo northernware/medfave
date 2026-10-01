@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { setListed, setSharedCharts, updateClinicDetails } from "@/app/actions/clinic";
+import { setCancelHours, setListed, setSharedCharts, updateClinicDetails } from "@/app/actions/clinic";
 import { ensureSlug } from "@/lib/clinic-link";
 import { appUrl } from "@/lib/email";
 import { sharesCharts } from "@/lib/care";
@@ -25,7 +25,7 @@ export default async function ClinicDetailsPage({ searchParams }: PageProps<"/ma
   const slug = await ensureSlug(manager.clinicId);
   const link = appUrl(`/c/${slug}`);
   const [listing] = await Promise.all([
-    orm.Clinic.select("listed").where((c) => c.id.eq(manager.clinicId)).first(),
+    orm.Clinic.select("listed", "patientCancelHours").where((c) => c.id.eq(manager.clinicId)).first(),
   ]);
   const [shared, doctorCount] = await Promise.all([
     sharesCharts(manager.clinicId),
@@ -51,6 +51,8 @@ export default async function ClinicDetailsPage({ searchParams }: PageProps<"/ma
               ? listing?.listed
                 ? "Your clinic now appears in Find a doctor."
                 : "Your clinic is no longer listed. Its link still works."
+              : saved === "cancel"
+              ? `Patients can cancel up to ${listing?.patientCancelHours ?? 2} hour${listing?.patientCancelHours === 1 ? "" : "s"} before a visit.`
               : saved === "sharing"
               ? shared
                 ? "Charts are now shared between this clinic's doctors."
@@ -94,6 +96,26 @@ export default async function ClinicDetailsPage({ searchParams }: PageProps<"/ma
             </span>
           </label>
           <button className={buttonClass("secondary")}>Save listing</button>
+        </form>
+      </Card>
+
+      <Card>
+        <CardHeader title="Cancelling" subtitle="Patients can cancel a visit themselves in the app until this many hours before it." />
+        <form action={setCancelHours} className="flex flex-wrap items-center gap-3 px-5 py-4 text-sm">
+          <select
+            name="hours"
+            defaultValue={String(listing?.patientCancelHours ?? 2)}
+            className="rounded-md border border-border-strong bg-surface px-3 py-2"
+            aria-label="Hours before the visit"
+          >
+            {[0, 1, 2, 3, 4, 6, 12, 24, 48].map((h) => (
+              <option key={h} value={h}>
+                {h === 0 ? "Right up to the visit" : `${h} hour${h === 1 ? "" : "s"} before`}
+              </option>
+            ))}
+          </select>
+          <button className={buttonClass("secondary")}>Save</button>
+          <span className="basis-full text-ink-muted">After that they call you. Moving a visit is always a request you accept.</span>
         </form>
       </Card>
 

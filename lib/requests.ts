@@ -8,9 +8,12 @@ import { allocatePatientNumber } from "@/lib/patient-number";
 import {
   calendarDateToDb,
   fromDateInputValue,
+  formatDateTime,
   fromDateTimeLocalValue,
+  instantFromDb,
   instantToDb,
 } from "@/lib/datetime";
+import { CHANGEABLE } from "@/lib/patient-visits";
 import { newId } from "@/lib/ids";
 import { ServiceType } from "@/lib/enums";
 import { SERVICE_MINUTES } from "@/lib/domain";
@@ -34,6 +37,8 @@ export type RequestInput = {
   reason: string;
   /** Which doctor it is for. Left out: the one the patient saw last, or the only one. */
   doctorId?: string;
+  /** Moving a visit the patient already has: its id. Same doctor; on acceptance the old visit is cancelled. */
+  rescheduleOf?: string;
 };
 
 export type CreateRequestResult = { ok: true; id: string } | ({ ok: false } & FormState);
@@ -84,6 +89,29 @@ export async function createAppointmentRequest(
   if (reason.length > 500) fieldErrors.reason = ["Keep it under 500 characters"];
   if (Object.keys(fieldErrors).length > 0) {
     return { ok: false, message: "Check the details of your request.", fieldErrors };
+  }
+
+  // Moving a visit: it has to be theirs and still to come, and it stays with
+  // the same doctor. One move asked for at a time.
+  let rescheduleOfId: string | null = null;
+  if (input.rescheduleOf) {
+    if (!patient.patientId) return { ok: false, message: "Visit not found." };
+    const visit = await orm.Appointment
+      .select("id", "status", "doctorId", "scheduledAt")
+      .where((a) => a.id.eq(input.rescheduleOf!))
+      .where((a) => a.patientId.eq(patient.patientId!))
+      .first();
+    if (!visit || !(CHANGEABLE as readonly string[]).includes(visit.status) || instantFromDb(visit.scheduledAt) < new Date()) {
+      return { ok: false, message: "That visit can't be moved here. Please call the clinic." };
+    }
+    const pending = await orm.AppointmentRequest
+      .select("id")
+      .where((r) => r.rescheduleOfId.eq(visit.id))
+      .where((r) => r.status.eq("PENDING"))
+      .first();
+    if (pending) return { ok: false, message: "You've already asked to move this visit. The clinic will answer soon." };
+    rescheduleOfId = visit.id;
+    input = { ...input, doctorId: visit.doctorId };
   }
 
   // A request goes to the doctor it names. Every doctor at a clinic is equal:
@@ -152,6 +180,7 @@ export async function createAppointmentRequest(
     service,
     reason,
     status: "PENDING",
+    rescheduleOfId,
     createdAt: now,
     updatedAt: now,
   });
@@ -222,7 +251,7 @@ export async function acceptAppointmentRequest(
 
   const request = await orm.AppointmentRequest
     .select(
-      "id", "status", "patientId", "doctorId", "preferredDate", "preferredTime", "service", "reason", "requestedById",
+      "id", "status", "patientId", "doctorId", "preferredDate", "preferredTime", "service", "reason", "requestedById", "rescheduleOfId",
       "newFirstName", "newMiddleName", "newLastName", "newDateOfBirth", "newSex", "newContactNumber", "newEmail", "newAddress",
     )
     .include("patient", (p) => p.select("reminderPreference"))
@@ -262,7 +291,10 @@ export async function acceptAppointmentRequest(
   // The same lock and overlap check every other booking goes through.
   const outcome = await db.transaction(async (tx) => {
     await lockDoctorSchedule(tx, request.doctorId);
-    if (await findClash(tx, request.doctorId, at, duration)) return { taken: true as const, created: null };
+    // A move may overlap the visit it replaces, which is about to be freed.
+    if (await findClash(tx, request.doctorId, at, duration, request.rescheduleOfId ?? undefined)) {
+      return { taken: true as const, created: null };
+    }
 
     // A new patient's record: the one chosen, or a new one from their details.
     // Either way their login is linked to it, so the visit shows in their app.
@@ -327,6 +359,22 @@ export async function acceptAppointmentRequest(
       createdAt: now,
       updatedAt: now,
     });
+
+    // A move: the old visit is cancelled now the new one is booked.
+    if (request.rescheduleOfId) {
+      const old = await tx.orm.public.Appointment
+        .select("id", "status", "internalNotes")
+        .where((a) => a.id.eq(request.rescheduleOfId!))
+        .first();
+      if (old && (CHANGEABLE as readonly string[]).includes(old.status)) {
+        const note = `Moved at the patient's request to ${formatDateTime(at)}.`;
+        await tx.orm.public.Appointment.where((a) => a.id.eq(old.id)).update({
+          status: "CANCELLED",
+          internalNotes: old.internalNotes ? `${old.internalNotes}\n${note}` : note,
+          updatedAt: now,
+        });
+      }
+    }
 
     await tx.orm.public.AppointmentRequest.where((r) => r.id.eq(requestId)).update({
       status: "ACCEPTED",

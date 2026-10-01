@@ -1,6 +1,7 @@
 import { apiPatient } from "@/lib/api";
 import { instantFromDb, instantToDb } from "@/lib/datetime";
 import { APPOINTMENT_STATUS_LABELS, SERVICE_LABELS } from "@/lib/domain";
+import { cancelBy, cancelCutoffHours, CHANGEABLE } from "@/lib/patient-visits";
 import { orm } from "@/src/prisma/db";
 
 /**
@@ -32,6 +33,16 @@ export async function GET(request: Request) {
       .limit(50)
       .all(),
   ]);
+  const [hours, moves] = await Promise.all([
+    cancelCutoffHours(me.clinicId),
+    orm.AppointmentRequest
+      .select("rescheduleOfId")
+      .where((r) => r.patientId.eq(me.patientId))
+      .where((r) => r.status.eq("PENDING"))
+      .all(),
+  ]);
+  const moving = new Set(moves.map((m) => m.rescheduleOfId).filter(Boolean));
+  const changeable = (a: (typeof upcoming)[number]) => (CHANGEABLE as readonly string[]).includes(a.status);
 
   const shape = (a: (typeof upcoming)[number]) => ({
     id: a.id,
@@ -45,6 +56,17 @@ export async function GET(request: Request) {
     visitType: a.visitType,
     doctor: a.doctor.fullName,
   });
+  // What the patient may still do with a visit to come.
+  const upcomingShape = (a: (typeof upcoming)[number]) => {
+    const by = cancelBy(instantFromDb(a.scheduledAt), hours);
+    return {
+      ...shape(a),
+      canCancel: changeable(a) && Date.now() <= by.getTime(),
+      cancelBy: by.toISOString(),
+      canMove: changeable(a) && !moving.has(a.id),
+      movePending: moving.has(a.id),
+    };
+  };
 
-  return Response.json({ upcoming: upcoming.map(shape), past: past.map(shape) });
+  return Response.json({ upcoming: upcoming.map(upcomingShape), past: past.map(shape), cancelHours: hours });
 }
