@@ -15,7 +15,7 @@ import {
 } from "@/lib/datetime";
 import { CHANGEABLE } from "@/lib/patient-visits";
 import { newId } from "@/lib/ids";
-import { ServiceType } from "@/lib/enums";
+import { type Relationship, ServiceType } from "@/lib/enums";
 import { SERVICE_MINUTES } from "@/lib/domain";
 import { checkAvailability, durationFor } from "@/lib/availability";
 import { minuteOfDay } from "@/lib/scheduling";
@@ -73,6 +73,8 @@ export async function createAppointmentRequest(
   patient: Pick<CurrentPatient, "clinicId" | "accountId"> & { patientId: string | null },
   input: RequestInput,
   newPatient?: NewPatientDetails,
+  /** Asked for somebody else (a child, a parent): accepting makes the requester their caregiver. */
+  forOther?: { relationship: Relationship; familyMemberId: string | null },
 ): Promise<CreateRequestResult> {
   const rawService = input.service;
   const preferredDate = input.preferredDate.trim();
@@ -173,6 +175,7 @@ export async function createAppointmentRequest(
           newAddress: newPatient.address,
         }
       : {}),
+    ...(forOther ? { forOther: true, newRelationship: forOther.relationship, familyMemberId: forOther.familyMemberId } : {}),
     doctorId,
     requestedById: patient.accountId,
     preferredDate: calendarDateToDb(day),
@@ -253,6 +256,7 @@ export async function acceptAppointmentRequest(
     .select(
       "id", "status", "patientId", "doctorId", "preferredDate", "preferredTime", "service", "reason", "requestedById", "rescheduleOfId",
       "newFirstName", "newMiddleName", "newLastName", "newDateOfBirth", "newSex", "newContactNumber", "newEmail", "newAddress",
+      "forOther", "newRelationship",
     )
     .include("patient", (p) => p.select("reminderPreference"))
     .where((r) => r.id.eq(requestId))
@@ -270,7 +274,12 @@ export async function acceptAppointmentRequest(
       .where((p) => p.clinicId.eq(actor.clinicId))
       .first();
     if (!target) return { ok: false, reason: "refused", message: "That record isn't at this clinic." };
-    if (target.accountId && target.accountId !== request.requestedById) {
+    // For somebody else, the record may well have its own login (a teenager's):
+    // the requester looks after it rather than owning it. It can't be their own.
+    if (request.forOther && target.accountId === request.requestedById) {
+      return { ok: false, reason: "refused", message: "That's the requester's own record, not the person they asked for." };
+    }
+    if (!request.forOther && target.accountId && target.accountId !== request.requestedById) {
       return { ok: false, reason: "refused", message: "That record already belongs to another login. Create a new record instead." };
     }
   }
@@ -304,16 +313,26 @@ export async function acceptAppointmentRequest(
       if (record && "linkTo" in record) {
         patientId = record.linkTo;
       } else {
-        const household = await t.Household.select("id").create({
-          id: newId(),
-          clinicId: actor.clinicId,
-          doctorId: request.doctorId,
-          name: request.newLastName ?? "New patient",
-          address: request.newAddress,
-          contactNumber: request.newContactNumber,
-          createdAt: now,
-          updatedAt: now,
-        } as Parameters<typeof t.Household.create>[0]);
+        // Somebody's child or parent joins the requester's household here, when
+        // the clinic has one for them; otherwise a household of their own.
+        const requesterChart = request.forOther
+          ? await t.Patient.select("householdId")
+              .where((p) => p.accountId.eq(request.requestedById))
+              .where((p) => p.clinicId.eq(actor.clinicId))
+              .first()
+          : null;
+        const household = requesterChart
+          ? { id: requesterChart.householdId }
+          : await t.Household.select("id").create({
+              id: newId(),
+              clinicId: actor.clinicId,
+              doctorId: request.doctorId,
+              name: request.newLastName ?? "New patient",
+              address: request.newAddress,
+              contactNumber: request.newContactNumber,
+              createdAt: now,
+              updatedAt: now,
+            } as Parameters<typeof t.Household.create>[0]);
         const created = await t.Patient.select("id").create({
           id: newId(),
           clinicId: actor.clinicId,
@@ -324,7 +343,7 @@ export async function acceptAppointmentRequest(
           lastName: request.newLastName ?? "",
           dateOfBirth: request.newDateOfBirth!,
           sex: request.newSex!,
-          relationship: "HEAD",
+          relationship: requesterChart ? (request.newRelationship ?? "OTHER") : "HEAD",
           contactNumber: request.newContactNumber,
           email: request.newEmail,
           allergyStatus: "UNKNOWN",
@@ -335,7 +354,26 @@ export async function acceptAppointmentRequest(
         } as Parameters<typeof t.Patient.create>[0]);
         patientId = created.id;
       }
-      await t.Patient.where((p) => p.id.eq(patientId!)).update({ accountId: request.requestedById, updatedAt: now });
+      if (request.forOther) {
+        // The requester looks after this person's chart; it doesn't become theirs.
+        const linked = await t.CareLink.select("id")
+          .where((l) => l.accountId.eq(request.requestedById))
+          .where((l) => l.patientId.eq(patientId!))
+          .where((l) => l.revokedAt.isNull())
+          .first();
+        if (!linked) {
+          await t.CareLink.create({
+            id: newId(),
+            clinicId: actor.clinicId,
+            patientId: patientId!,
+            accountId: request.requestedById,
+            grantedById: actor.accountId,
+            createdAt: now,
+          });
+        }
+      } else {
+        await t.Patient.where((p) => p.id.eq(patientId!)).update({ accountId: request.requestedById, updatedAt: now });
+      }
       await t.AppointmentRequest.where((r) => r.id.eq(requestId)).update({ patientId });
     }
 

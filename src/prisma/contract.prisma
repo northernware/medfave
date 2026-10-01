@@ -688,6 +688,8 @@ namespace public {
     /// Charts this login looks after for somebody else (a child, a parent in their care).
     caresFor     CareLink[]          @relation(name: "CareLink_accountId_fkey")
     careGranted  CareLink[]          @relation(name: "CareLink_grantedById_fkey")
+    /// The people they book for — kept on the account, not at any clinic.
+    family       FamilyMember[]
     bookingsMade Appointment[]       @relation(name: "Appointment_bookedById_fkey")
     requestsMade AppointmentRequest[] @relation(name: "AppointmentRequest_requestedById_fkey")
     requestsDecided AppointmentRequest[] @relation(name: "AppointmentRequest_decidedById_fkey")
@@ -827,6 +829,32 @@ namespace public {
     @@map("CareLink")
   }
 
+  /// Somebody a patient books for — a child, a parent — written down once on
+  /// their own account so a request for them is a tap, not a form.
+  ///
+  /// Only details, and only the account holder's word for them: this grants
+  /// nothing at any clinic. A clinic's chart for the person, and the right to
+  /// see it (`CareLink`), come only when the clinic accepts a request for them.
+  model FamilyMember {
+    id           String @id(map: "FamilyMember_pkey")
+    accountId    String
+    firstName    String
+    middleName   String?
+    lastName     String
+    dateOfBirth  DateString
+    sex          pg.enum(Sex)
+    /// Who they are to the account holder.
+    relationship pg.enum(Relationship)
+    createdAt    TimestampString(3) @default(now())
+    updatedAt    TimestampString(3)
+    account      Account @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "FamilyMember_accountId_fkey")
+    requests     AppointmentRequest[]
+
+    @@index([accountId], map: "FamilyMember_accountId_idx")
+
+    @@map("FamilyMember")
+  }
+
   /// A patient asking for a time, which staff then accept or decline.
   ///
   /// Deliberately not an Appointment. A request holds no slot: it is a wish,
@@ -851,6 +879,13 @@ namespace public {
     newContactNumber  String?
     newEmail          String?
     newAddress        String?
+    /// Asked for somebody else (a child, a parent): accepting makes the
+    /// requester their caregiver (`CareLink`), never the chart's own login.
+    forOther          Boolean @default(false)
+    /// Who that person is to the requester.
+    newRelationship   pg.enum(Relationship)?
+    /// The person from the requester's family list, when picked from it.
+    familyMemberId    String?
     preferredDate     DateString
     /// "HH:MM" in clinic time, or null for "any time that day".
     preferredTime     String?
@@ -870,6 +905,7 @@ namespace public {
     clinic            Clinic  @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "AppointmentRequest_clinicId_fkey", index: false)
     patient           Patient? @relation(fields: [patientId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "AppointmentRequest_patientId_fkey")
     doctor            Doctor  @relation(fields: [doctorId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "AppointmentRequest_doctorId_fkey")
+    familyMember      FamilyMember? @relation(fields: [familyMemberId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "AppointmentRequest_familyMemberId_fkey")
     requestedBy       Account @relation(name: "AppointmentRequest_requestedById_fkey", fields: [requestedById], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "AppointmentRequest_requestedById_fkey")
     decidedBy         Account? @relation(name: "AppointmentRequest_decidedById_fkey", fields: [decidedById], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "AppointmentRequest_decidedById_fkey")
     appointment       Appointment? @relation(fields: [appointmentId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "AppointmentRequest_appointmentId_fkey")

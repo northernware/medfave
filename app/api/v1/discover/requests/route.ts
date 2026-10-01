@@ -1,5 +1,6 @@
 import { apiError, apiViewer, readJson } from "@/lib/api";
 import { findDoctor, readNewPatient } from "@/lib/discovery";
+import { familyMember } from "@/lib/family";
 import { hit, TOO_MANY } from "@/lib/rate-limit";
 import { createAppointmentRequest } from "@/lib/requests";
 import { orm } from "@/src/prisma/db";
@@ -12,6 +13,13 @@ import { orm } from "@/src/prisma/db";
  * dateOfBirth, sex, contactNumber, address, email? }`) and the request is a
  * **new patient**'s: the clinic links or creates their record on accepting.
  * A request holds no slot; the clinic confirms a time.
+ *
+ * **For somebody else:** add `familyMemberId` (one of `GET /family`). Their
+ * name, birthday and sex come from the family list; `details` still gives the
+ * mobile and address to reach them by (the requester's, usually). If this login
+ * already looks after their chart at the clinic it's used; otherwise they're a
+ * new patient, and accepting makes the requester their caregiver — never the
+ * chart's own login.
  */
 export async function POST(request: Request) {
   const viewer = await apiViewer(request);
@@ -25,11 +33,19 @@ export async function POST(request: Request) {
   const doctor = await findDoctor(String(body.doctorId ?? ""));
   if (!doctor) return apiError(404, "No doctor with that id.");
 
-  const chart = await orm.Patient
-    .select("id")
-    .where((p) => p.clinicId.eq(doctor.clinic.id))
-    .where((p) => p.accountId.eq(viewer.accountId))
-    .first();
+  // Who the visit is for: this login, or somebody on its family list.
+  const member = body.familyMemberId ? await familyMember(viewer.accountId, String(body.familyMemberId)) : null;
+  if (body.familyMemberId && !member) return apiError(404, "That person isn't on your family list.");
+
+  // Their chart here, if there is one this login may act on. For a family
+  // member: one it already looks after with the same name and birthday.
+  const chart = member
+    ? (viewer.charts.find((c) => c.clinicId === doctor.clinic.id && !c.self && sameMember(c.name, member)) ?? null)
+    : await orm.Patient
+        .select("id")
+        .where((p) => p.clinicId.eq(doctor.clinic.id))
+        .where((p) => p.accountId.eq(viewer.accountId))
+        .first();
   let details;
   if (!chart) {
     if (!body.details || typeof body.details !== "object") {
@@ -37,7 +53,19 @@ export async function POST(request: Request) {
         details: ["Required for a new patient"],
       });
     }
-    const read = readNewPatient(body.details);
+    const given = body.details as Record<string, unknown>;
+    const read = readNewPatient(
+      member
+        ? {
+            ...given,
+            firstName: member.firstName,
+            middleName: member.middleName ?? undefined,
+            lastName: member.lastName,
+            dateOfBirth: member.dateOfBirth,
+            sex: member.sex,
+          }
+        : given,
+    );
     if (!read.ok) return apiError(422, read.message ?? "Check your details.", read.fieldErrors);
     details = read.details;
   }
@@ -53,6 +81,7 @@ export async function POST(request: Request) {
       doctorId: doctor.id,
     },
     details,
+    member ? { relationship: member.relationship, familyMemberId: member.id } : undefined,
   );
   if (!result.ok) return apiError(422, result.message ?? "Check your request.", result.fieldErrors);
   return Response.json({ id: result.id, status: "PENDING", newPatient: !chart }, { status: 201 });
@@ -87,4 +116,9 @@ export async function GET(request: Request) {
       clinic: { name: r.clinic.name },
     })),
   });
+}
+
+/** A looked-after chart's name ("First Last") against a family list entry. */
+function sameMember(chartName: string, m: { firstName: string; lastName: string }) {
+  return chartName.trim().toLowerCase() === `${m.firstName} ${m.lastName}`.trim().toLowerCase();
 }

@@ -1,0 +1,329 @@
+[
+  {
+    "id": "table.FamilyMember",
+    "label": "Create table \"FamilyMember\"",
+    "summary": "Creates table \"FamilyMember\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "FamilyMember"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"FamilyMember\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"FamilyMember\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"FamilyMember\"",
+        "sql": "CREATE TABLE \"public\".\"FamilyMember\" (\n  \"accountId\" text NOT NULL,\n  \"createdAt\" timestamp(3) DEFAULT (now()) NOT NULL,\n  \"dateOfBirth\" date NOT NULL,\n  \"firstName\" text NOT NULL,\n  \"id\" text NOT NULL,\n  \"lastName\" text NOT NULL,\n  \"middleName\" text,\n  \"relationship\" \"Relationship\" NOT NULL,\n  \"sex\" \"Sex\" NOT NULL,\n  \"updatedAt\" timestamp(3) NOT NULL,\n  CONSTRAINT \"FamilyMember_pkey\" PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"FamilyMember\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"FamilyMember\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.AppointmentRequest.familyMemberId",
+    "label": "Add column \"familyMemberId\" to \"AppointmentRequest\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "familyMemberId",
+        "table": "AppointmentRequest"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"familyMemberId\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AppointmentRequest",
+          "familyMemberId"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"familyMemberId\"",
+        "sql": "ALTER TABLE \"public\".\"AppointmentRequest\" ADD COLUMN \"familyMemberId\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"familyMemberId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AppointmentRequest",
+          "familyMemberId"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.AppointmentRequest.forOther",
+    "label": "Add column \"forOther\" to \"AppointmentRequest\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "forOther",
+        "table": "AppointmentRequest"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"forOther\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AppointmentRequest",
+          "forOther"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"forOther\"",
+        "sql": "ALTER TABLE \"public\".\"AppointmentRequest\" ADD COLUMN \"forOther\" bool DEFAULT false NOT NULL"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"forOther\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AppointmentRequest",
+          "forOther"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.AppointmentRequest.newRelationship",
+    "label": "Add column \"newRelationship\" to \"AppointmentRequest\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "newRelationship",
+        "table": "AppointmentRequest"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"newRelationship\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AppointmentRequest",
+          "newRelationship"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"newRelationship\"",
+        "sql": "ALTER TABLE \"public\".\"AppointmentRequest\" ADD COLUMN \"newRelationship\" \"Relationship\""
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"newRelationship\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "AppointmentRequest",
+          "newRelationship"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.AppointmentRequest.AppointmentRequest_familyMemberId_idx_ddb6e46b",
+    "label": "Create index \"AppointmentRequest_familyMemberId_idx_ddb6e46b\" on \"AppointmentRequest\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "AppointmentRequest_familyMemberId_idx_ddb6e46b",
+        "table": "AppointmentRequest"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"AppointmentRequest_familyMemberId_idx_ddb6e46b\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AppointmentRequest_familyMemberId_idx_ddb6e46b\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"AppointmentRequest_familyMemberId_idx_ddb6e46b\"",
+        "sql": "CREATE INDEX \"AppointmentRequest_familyMemberId_idx_ddb6e46b\" ON \"public\".\"AppointmentRequest\" (\"familyMemberId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"AppointmentRequest_familyMemberId_idx_ddb6e46b\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"AppointmentRequest_familyMemberId_idx_ddb6e46b\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.FamilyMember.FamilyMember_accountId_idx",
+    "label": "Create index \"FamilyMember_accountId_idx\" on \"FamilyMember\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "FamilyMember_accountId_idx",
+        "table": "FamilyMember"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"FamilyMember_accountId_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"FamilyMember_accountId_idx\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"FamilyMember_accountId_idx\"",
+        "sql": "CREATE INDEX \"FamilyMember_accountId_idx\" ON \"public\".\"FamilyMember\" (\"accountId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"FamilyMember_accountId_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"FamilyMember_accountId_idx\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.FamilyMember.FamilyMember_accountId_fkey",
+    "label": "Add foreign key \"FamilyMember_accountId_fkey\" on \"FamilyMember\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "FamilyMember_accountId_fkey",
+        "table": "FamilyMember"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"FamilyMember_accountId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "FamilyMember_accountId_fkey",
+          "public",
+          "\"public\".\"FamilyMember\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"FamilyMember_accountId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"FamilyMember\"\nADD CONSTRAINT \"FamilyMember_accountId_fkey\"\nFOREIGN KEY (\"accountId\")\nREFERENCES \"public\".\"Account\" (\"id\")\nON DELETE CASCADE\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"FamilyMember_accountId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "FamilyMember_accountId_fkey",
+          "public",
+          "\"public\".\"FamilyMember\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.AppointmentRequest.AppointmentRequest_familyMemberId_fkey",
+    "label": "Add foreign key \"AppointmentRequest_familyMemberId_fkey\" on \"AppointmentRequest\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "AppointmentRequest_familyMemberId_fkey",
+        "table": "AppointmentRequest"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"AppointmentRequest_familyMemberId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AppointmentRequest_familyMemberId_fkey",
+          "public",
+          "\"public\".\"AppointmentRequest\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"AppointmentRequest_familyMemberId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"AppointmentRequest\"\nADD CONSTRAINT \"AppointmentRequest_familyMemberId_fkey\"\nFOREIGN KEY (\"familyMemberId\")\nREFERENCES \"public\".\"FamilyMember\" (\"id\")\nON DELETE SET NULL\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"AppointmentRequest_familyMemberId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "AppointmentRequest_familyMemberId_fkey",
+          "public",
+          "\"public\".\"AppointmentRequest\""
+        ]
+      }
+    ]
+  }
+]
