@@ -142,7 +142,9 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <header className="flex flex-wrap items-end justify-between gap-4">
+    // Room above and below on wide screens: the title lines up with the sidebar's
+    // logo, and the cards (12px apart) start a little below it.
+    <header className="flex flex-wrap items-end justify-between gap-4 lg:px-1 lg:pt-5 lg:pb-2">
       <div className="min-w-0">
         <h1 className="text-[32px] leading-10 font-semibold tracking-[-0.015em] text-balance">{title}</h1>
         {subtitle ? <p className="mt-1 text-[15px] leading-6 text-ink-muted">{subtitle}</p> : null}
