@@ -67,7 +67,7 @@ export default async function WelcomePage({ searchParams }: PageProps<"/welcome"
               <span className="text-ink-muted group-open:hidden">Enter it here</span>
             </summary>
             <p className="px-5 text-sm text-ink-muted">It links this account to the records the clinic already keeps for you.</p>
-            <AddClinicForm code={initialCode} />
+            <AddClinicForm code={initialCode} email={viewer.email} />
           </details>
         </>
       )}

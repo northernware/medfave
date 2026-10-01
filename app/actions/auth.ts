@@ -11,7 +11,7 @@ import { appUrl, sendPasswordReset } from "@/lib/email";
 import { createSession, destroySession } from "@/lib/session";
 import { getViewer, homeFor } from "@/lib/auth";
 import { clientAddress, hit, LIMITS, TOO_MANY } from "@/lib/rate-limit";
-import { activatePatient, checkCredentials } from "@/lib/sign-in";
+import { activatePatient, checkCredentials, previewActivation, type ActivationPreview } from "@/lib/sign-in";
 import {
   forgotPasswordSchema,
   inviteAcceptSchema,
@@ -32,12 +32,24 @@ export async function login(_prev: FormState, formData: FormData): Promise<FormS
   redirect(viewer ? homeFor(viewer) : "/login");
 }
 
+/** Activating, step one: whose chart the code opens, for the person to confirm it's theirs. */
+export async function previewActivationCode(
+  _prev: FormState & { preview?: ActivationPreview },
+  formData: FormData,
+): Promise<FormState & { preview?: ActivationPreview }> {
+  const result = await previewActivation(formData.get("code"), `code:address:${await clientAddress()}`);
+  return result.ok ? { preview: result.preview } : result;
+}
+
 /** A patient's own login, from the code the clinic gave them. See `activatePatient`. */
 export async function activatePatientAccount(
   _prev: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const result = await activatePatient(Object.fromEntries(formData), await clientAddress());
+  const result = await activatePatient(
+    { ...Object.fromEntries(formData), confirmedPatientId: String(formData.get("confirmedPatientId") ?? "") },
+    await clientAddress(),
+  );
   if (!result.ok) return result;
 
   await createSession(result.accountId);

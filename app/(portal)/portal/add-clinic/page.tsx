@@ -33,7 +33,7 @@ export default async function AddClinicPage({ searchParams }: PageProps<"/portal
           </p>
           <p>Each clinic keeps its own records. One clinic never sees another&rsquo;s.</p>
         </div>
-        <AddClinicForm code={typeof code === "string" ? code : ""} />
+        <AddClinicForm code={typeof code === "string" ? code : ""} email={me.email} />
       </Card>
     </div>
   );
