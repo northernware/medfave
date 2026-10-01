@@ -257,7 +257,7 @@ type RailItem = Pick<AppointmentListItem, "id" | "scheduledAt" | "durationMinute
   patient: { firstName: string; middleName: string | null; lastName: string };
 };
 
-const HOUR = 72; // px per hour on the timeline
+const HOUR = 96; // px per hour on the timeline
 
 /** The week as a strip, then today as a timeline with a line at the current time. */
 export function ScheduleRail({
