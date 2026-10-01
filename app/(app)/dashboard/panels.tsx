@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Fragment } from "react";
 import { CalendarIcon } from "@solar-icons/react/linear/calendar";
 import { setAppointmentStatus, startConsultation } from "@/app/actions/appointments";
 import { CLINIC_TIME_ZONE, dayKey, formatCalendarDate, formatTime } from "@/lib/datetime";
@@ -68,8 +69,11 @@ export function PatientsList({
   todayKey,
   day,
   moreFor = {},
+  recent = [],
 }: {
   upcoming: AppointmentListItem[];
+  /** Patients seen lately (their last visit), filling the list when few are booked. */
+  recent?: AppointmentListItem[];
   /** Other visits each patient has booked after the one shown. */
   moreFor?: Record<string, number>;
   selectedId: string | null;
@@ -83,15 +87,19 @@ export function PatientsList({
         <h2 className="font-display text-lg font-semibold">Patients list</h2>
         <span className="text-xs text-ink-faint">By next visit</span>
       </div>
-      {upcoming.length === 0 ? (
-        <EmptyState title="Nobody booked" description="Upcoming visits appear here." />
+      {upcoming.length === 0 && recent.length === 0 ? (
+        <EmptyState title="Nobody yet" description="Upcoming visits appear here." />
       ) : (
         <ul className="space-y-2">
-          {upcoming.map((a) => {
+          {[...upcoming.map((a) => ({ a, past: false })), ...recent.map((a) => ({ a, past: true }))].map(({ a, past }, i) => {
             const on = a.id === selectedId;
             const sameDay = dayKey(a.scheduledAt) === todayKey;
             return (
-              <li key={a.id}>
+              <Fragment key={a.id}>
+              {past && i === upcoming.length ? (
+                <li className="px-1 pt-2 text-[11px] font-semibold tracking-[0.08em] text-ink-faint uppercase">Recent</li>
+              ) : null}
+              <li>
                 <Link
                   href={`/dashboard?visit=${a.id}${day ? `&day=${day}` : ""}`}
                   scroll={false}
@@ -122,13 +130,23 @@ export function PatientsList({
                     </span>
                   </span>
                   <span className="tabular shrink-0 text-right text-sm leading-tight font-medium">
-                    {sameDay ? "Today" : shortDay(a.scheduledAt)}
-                    <span className={`block text-xs font-normal ${on ? "text-on-accent/75" : "text-ink-faint"}`}>
-                      {formatTime(a.scheduledAt)}
-                    </span>
+                    {past ? (
+                      <>
+                        <span className={`block text-xs font-normal ${on ? "text-on-accent/75" : "text-ink-faint"}`}>Seen</span>
+                        {shortDay(a.scheduledAt)}
+                      </>
+                    ) : (
+                      <>
+                        {sameDay ? "Today" : shortDay(a.scheduledAt)}
+                        <span className={`block text-xs font-normal ${on ? "text-on-accent/75" : "text-ink-faint"}`}>
+                          {formatTime(a.scheduledAt)}
+                        </span>
+                      </>
+                    )}
                   </span>
                 </Link>
               </li>
+              </Fragment>
             );
           })}
         </ul>
