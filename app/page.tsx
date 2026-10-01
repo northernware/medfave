@@ -1,5 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CalendarIcon } from "@solar-icons/react/linear/calendar";
+import { ClockCircleIcon } from "@solar-icons/react/linear/clock-circle";
+import { DocumentTextIcon } from "@solar-icons/react/linear/document-text";
+import { LetterIcon } from "@solar-icons/react/linear/letter";
+import { ShieldCheckIcon } from "@solar-icons/react/linear/shield-check";
+import { UsersGroupTwoRoundedIcon } from "@solar-icons/react/linear/users-group-two-rounded";
 import { redirect } from "next/navigation";
 import { getViewer, homeFor } from "@/lib/auth";
 import { Brand, HeartMark } from "@/components/brand";
@@ -168,32 +174,32 @@ const FEATURES = [
   {
     title: "Households",
     body: "Group relatives, record how they relate, and keep one shared address and number — without merging anyone's chart.",
-    icon: "M4 20v-2a4 4 0 014-4h1m7 6v-2a4 4 0 00-3-3.9M9 7a3 3 0 106 0 3 3 0 10-6 0m8 3a2.5 2.5 0 100-5",
+    icon: UsersGroupTwoRoundedIcon,
   },
   {
     title: "Appointments & calendar",
     body: "Book against fifteen services, from general consults to family checkups, and see the month at a glance.",
-    icon: "M8 3v4M16 3v4M4 9h16M5 5h14v16H5z",
+    icon: CalendarIcon,
   },
   {
     title: "Visit records",
     body: "Document each visit with vitals, assessment, plan and prescriptions — and print the prescription on the spot.",
-    icon: "M8 4h8l4 4v12H4V4h4zm8 0v4h4M8 13h8M8 17h5",
+    icon: DocumentTextIcon,
   },
   {
     title: "Follow-ups that don't slip",
     body: "A patient due back stays in the queue until a visit actually happens — a cancelled or missed booking doesn't count.",
-    icon: "M12 7v5l3 2M21 12a9 9 0 11-18 0 9 9 0 0118 0z",
+    icon: ClockCircleIcon,
   },
   {
     title: "Reminders",
     body: "Patients who ask for it get an email the day before their visit. Nobody else does.",
-    icon: "M4 6h16v12H4zM4 7l8 6 8-6",
+    icon: LetterIcon,
   },
   {
     title: "Records requests",
     body: "Certificates, abstracts, insurance forms and record copies, requested by patients and tracked to done.",
-    icon: "M9 12l2 2 4-4M12 3l7 3v6c0 4-3 7.5-7 9-4-1.5-7-5-7-9V6z",
+    icon: ShieldCheckIcon,
   },
 ] as const;
 
@@ -212,18 +218,7 @@ function Features() {
           {FEATURES.map((f) => (
             <li key={f.title}>
               <span className="flex size-11 items-center justify-center rounded-md bg-accent-soft text-accent-ink">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                  className="size-5"
-                >
-                  <path d={f.icon} />
-                </svg>
+                <f.icon className="size-5" aria-hidden />
               </span>
               <h3 className="mt-4 text-lg font-semibold">{f.title}</h3>
               <p className="mt-1.5 text-base leading-6 text-pretty text-ink-muted">{f.body}</p>

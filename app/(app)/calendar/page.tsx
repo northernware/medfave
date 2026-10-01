@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AltArrowLeftIcon } from "@solar-icons/react/linear/alt-arrow-left";
+import { AltArrowRightIcon } from "@solar-icons/react/linear/alt-arrow-right";
 import type { AppointmentStatus } from "@/lib/enums";
 import { requireDoctor } from "@/lib/auth";
 import { ScheduleRail } from "@/app/(app)/dashboard/panels";
@@ -111,7 +113,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
               aria-label="Previous month"
               className={buttonClass("ghost", "px-2.5")}
             >
-              ‹
+              <AltArrowLeftIcon className="size-4" aria-hidden />
             </Link>
             <div className="flex items-baseline gap-3">
               <h2 className="text-sm font-semibold">{formatMonthHeading(year, monthNumber)}</h2>
@@ -126,7 +128,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
               aria-label="Next month"
               className={buttonClass("ghost", "px-2.5")}
             >
-              ›
+              <AltArrowRightIcon className="size-4" aria-hidden />
             </Link>
           </div>
 
