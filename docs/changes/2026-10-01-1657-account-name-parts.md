@@ -10,6 +10,6 @@ Opened: 2026-10-01 16:57 PHT
 
 **Why:** the user asked to finish the name split, including editing.
 
-**Tested:** see the PR's later notes.
+**Tested:** `tsc`, eslint; migration applied to dev and verified; backfill filled 55 accounts; the account page shows Dr. Ana Reyes's parts as First "Ana", Middle empty, Last "Reyes". Saving the form wasn't exercised (to leave the demo names alone).
 
 **Heads-up:** migration `account_name_parts` (additive, three nullable columns); then `npm run db:backfill-names` once on the shared database.
