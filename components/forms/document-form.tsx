@@ -64,7 +64,7 @@ export function DocumentForm({
       <FormError message={state.message} />
 
       <section className="space-y-4">
-        <h2 className="text-sm font-semibold">Who and what</h2>
+        <h2 className="flex items-center gap-2 font-display text-lg leading-6 font-semibold tracking-[-0.01em] before:h-5 before:w-1 before:rounded-full before:bg-accent">Who and what</h2>
 
         <FieldGrid>
           <Field label="Patient" htmlFor="patientId" error={err?.patientId} required>
@@ -151,7 +151,7 @@ export function DocumentForm({
 
       <section className="space-y-4 border-t border-border pt-6">
         <div>
-          <h2 className="text-sm font-semibold">Who is asking</h2>
+          <h2 className="flex items-center gap-2 font-display text-lg leading-6 font-semibold tracking-[-0.01em] before:h-5 before:w-1 before:rounded-full before:bg-accent">Who is asking</h2>
           <p className="text-sm text-ink-muted">
             Every one of these releases clinical information to somebody. Who asked and what for is
             part of the record.
@@ -200,7 +200,7 @@ export function DocumentForm({
 
       <section className="space-y-4 border-t border-border pt-6">
         <div>
-          <h2 className="text-sm font-semibold">{DOCUMENT_TYPE_LABELS[type]}</h2>
+          <h2 className="flex items-center gap-2 font-display text-lg leading-6 font-semibold tracking-[-0.01em] before:h-5 before:w-1 before:rounded-full before:bg-accent">{DOCUMENT_TYPE_LABELS[type]}</h2>
           <p className="text-sm text-ink-muted">What this document has to state.</p>
         </div>
 

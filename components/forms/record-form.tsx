@@ -216,7 +216,7 @@ export function RecordForm({
 
       {remote ? (
         <section className="border-t border-border pt-6">
-          <h2 className="text-sm font-semibold">Examination and vitals</h2>
+          <h2 className="flex items-center gap-2 font-display text-lg leading-6 font-semibold tracking-[-0.01em] before:h-5 before:w-1 before:rounded-full before:bg-accent">Examination and vitals</h2>
           <p className="mt-1 text-sm text-ink-muted">
             Not recorded for a teleconsultation — nobody was there to take them. Anything the
             patient reported themselves belongs in the history above, where it reads as what it
@@ -226,7 +226,7 @@ export function RecordForm({
       ) : (
         <section className="space-y-4 border-t border-border pt-6">
           <div>
-            <h2 className="text-sm font-semibold">Vitals</h2>
+            <h2 className="flex items-center gap-2 font-display text-lg leading-6 font-semibold tracking-[-0.01em] before:h-5 before:w-1 before:rounded-full before:bg-accent">Vitals</h2>
             <p className="text-sm text-ink-muted">Leave blank anything you did not take.</p>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -250,7 +250,7 @@ export function RecordForm({
       )}
 
       <section className="space-y-4 border-t border-border pt-6">
-        <h2 className="text-sm font-semibold">Assessment and plan</h2>
+        <h2 className="flex items-center gap-2 font-display text-lg leading-6 font-semibold tracking-[-0.01em] before:h-5 before:w-1 before:rounded-full before:bg-accent">Assessment and plan</h2>
         <Field label="Assessment / diagnosis" htmlFor="assessment" error={err?.assessment}>
           <TextArea id="assessment" name="assessment" rows={3} defaultValue={defaults.assessment} />
         </Field>
@@ -273,7 +273,7 @@ export function RecordForm({
       <section className="space-y-3 border-t border-border pt-6">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h2 className="text-sm font-semibold">Prescriptions</h2>
+            <h2 className="flex items-center gap-2 font-display text-lg leading-6 font-semibold tracking-[-0.01em] before:h-5 before:w-1 before:rounded-full before:bg-accent">Prescriptions</h2>
             <p className="text-sm text-ink-muted">
               {rx.length === 0 ? "None yet." : `${rx.length} item${rx.length === 1 ? "" : "s"}.`}
             </p>

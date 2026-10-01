@@ -387,7 +387,7 @@ export default async function DashboardPage() {
                     const overdue = r.followUpDate! < today.start;
                     return (
                       <li key={r.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5">
-                        <span className="tabular w-28 shrink-0 text-sm">
+                        <span className="tabular w-40 shrink-0 text-sm">
                           <span className={overdue ? "font-medium text-danger-ink" : "text-ink-muted"}>
                             <span className="whitespace-nowrap">{formatCalendarDate(r.followUpDate!)}</span>
                           </span>

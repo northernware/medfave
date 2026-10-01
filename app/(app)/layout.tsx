@@ -1,6 +1,6 @@
 import { requireDoctor } from "@/lib/auth";
 import { AppShell } from "@/components/app-shell";
-import { DOCTOR_LINKS } from "@/components/nav";
+import { DOCTOR_LINKS } from "@/components/nav-links";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   // A convenience gate for the whole section. Every query and action re-checks

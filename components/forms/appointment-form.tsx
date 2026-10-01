@@ -140,7 +140,7 @@ export function AppointmentForm({
       ) : null}
 
       <section className="space-y-4">
-        <h2 className="text-sm font-semibold">Visit</h2>
+        <h2 className="flex items-center gap-2 font-display text-lg leading-6 font-semibold tracking-[-0.01em] before:h-5 before:w-1 before:rounded-full before:bg-accent">Visit</h2>
 
         <Field
           label="Patient"
@@ -217,7 +217,7 @@ export function AppointmentForm({
 
       <section className="space-y-4 border-t border-border pt-6">
         <div>
-          <h2 className="text-sm font-semibold">Schedule</h2>
+          <h2 className="flex items-center gap-2 font-display text-lg leading-6 font-semibold tracking-[-0.01em] before:h-5 before:w-1 before:rounded-full before:bg-accent">Schedule</h2>
           <p className="text-sm text-ink-muted">
             {describeWeek(schedule)}.{" "}
             {isWalkIn
@@ -315,7 +315,7 @@ export function AppointmentForm({
       </section>
 
       <section className="space-y-4 border-t border-border pt-6">
-        <h2 className="text-sm font-semibold">Details</h2>
+        <h2 className="flex items-center gap-2 font-display text-lg leading-6 font-semibold tracking-[-0.01em] before:h-5 before:w-1 before:rounded-full before:bg-accent">Details</h2>
 
         <FieldGrid>
           <Field label="Appointment type" htmlFor="type" error={err?.type}>
@@ -397,7 +397,7 @@ export function AppointmentForm({
       {staffFields ? (
         <section className="space-y-4 border-t border-border pt-6">
           <div>
-            <h2 className="text-sm font-semibold">Clinic use</h2>
+            <h2 className="flex items-center gap-2 font-display text-lg leading-6 font-semibold tracking-[-0.01em] before:h-5 before:w-1 before:rounded-full before:bg-accent">Clinic use</h2>
             <p className="text-sm text-ink-muted">Never shown to the patient.</p>
           </div>
 

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { requireStaff } from "@/lib/auth";
 import { AppShell } from "@/components/app-shell";
-import { CLINICAL_VIEW, DESK_LINKS } from "@/components/nav";
+import { CLINICAL_VIEW, DESK_LINKS } from "@/components/nav-links";
 
 /**
  * The front of the clinic.

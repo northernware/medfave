@@ -227,7 +227,7 @@ export function PatientForm({
         {clinical ? (
           <>
           <div>
-            <h2 className="text-sm font-semibold">Standing clinical notes</h2>
+            <h2 className="flex items-center gap-2 font-display text-lg leading-6 font-semibold tracking-[-0.01em] before:h-5 before:w-1 before:rounded-full before:bg-accent">Standing clinical notes</h2>
             <p className="text-sm text-ink-muted">
               Allergies show at the top of this patient&rsquo;s chart on every visit.
             </p>
@@ -309,7 +309,7 @@ export function PatientForm({
 
       <section className="space-y-4 border-t border-border pt-5">
         <div>
-          <h2 className="text-sm font-semibold">Emergency contact</h2>
+          <h2 className="flex items-center gap-2 font-display text-lg leading-6 font-semibold tracking-[-0.01em] before:h-5 before:w-1 before:rounded-full before:bg-accent">Emergency contact</h2>
           <p className="text-sm text-ink-muted">
             Who to ring about this patient. Often someone outside the practice.
           </p>

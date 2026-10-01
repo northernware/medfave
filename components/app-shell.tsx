@@ -2,7 +2,8 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { logout } from "@/app/actions/auth";
 import { Brand } from "@/components/brand";
-import { Nav, type NavLink } from "@/components/nav";
+import { Nav } from "@/components/nav";
+import type { NavLink } from "@/components/nav-links";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 /**
@@ -15,6 +16,7 @@ export function AppShell({
   links,
   context,
   person,
+  narrow = false,
   children,
 }: {
   home: string;
@@ -22,6 +24,8 @@ export function AppShell({
   /** A line under the logo: which clinic, which side of it. */
   context?: string;
   person: { name: string; detail: string };
+  /** Settings-style pages read better at a form's width. */
+  narrow?: boolean;
   children: ReactNode;
 }) {
   const initials = person.name
@@ -62,7 +66,7 @@ export function AppShell({
       </header>
 
       <main className="min-w-0 flex-1">
-        <div className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 lg:px-10 lg:py-10">{children}</div>
+        <div className={`mx-auto w-full ${narrow ? "max-w-4xl" : "max-w-6xl"} px-4 py-6 sm:px-6 lg:px-10 lg:py-10`}>{children}</div>
       </main>
     </div>
   );
