@@ -240,7 +240,10 @@ export function ScheduleRail({
   itemHref = (id) => `/appointments/${id}`,
   canStart = true,
   calendarHref = (key) => `/calendar?day=${key}`,
+  openingHours,
 }: {
+  /** The opening hours by weekday (0 = Sunday) that set the timeline's span; left out, 8–5. A day missing is closed. */
+  openingHours?: { weekday: number; openMinute: number; closeMinute: number }[];
   /** The full calendar for a day, if this person has one; null hides the icon. */
   calendarHref?: ((key: string) => string) | null;
   /** Where a visit card leads (the desk has its own appointment pages). */
@@ -270,8 +273,11 @@ export function ScheduleRail({
 
   const starts = todays.map((a) => minuteOfDay(a.scheduledAt));
   const ends = todays.map((a) => minuteOfDay(a.scheduledAt) + a.durationMinutes);
-  const firstHour = Math.min(8, ...starts.map((s) => Math.floor(s / 60)));
-  const lastHour = Math.max(18, ...ends.map((e) => Math.ceil(e / 60)));
+  // The day's opening hours set the span; a visit outside them widens it. Closed and empty: no timeline.
+  const open = openingHours ? openingHours.find((h) => h.weekday === weekdayOf(selected)) ?? null : { openMinute: 8 * 60, closeMinute: 17 * 60 };
+  const closed = open === null;
+  const firstHour = Math.min(open ? Math.floor(open.openMinute / 60) : 24, ...starts.map((s) => Math.floor(s / 60)));
+  const lastHour = Math.max(open ? Math.ceil(open.closeMinute / 60) : 0, ...ends.map((e) => Math.ceil(e / 60)));
   const hours = Array.from({ length: lastHour - firstHour + 1 }, (_, i) => firstHour + i);
   const nowMinute = minuteOfDay(now);
   const top = (minute: number) => ((minute - firstHour * 60) / 60) * HOUR;
@@ -336,6 +342,9 @@ export function ScheduleRail({
 
       {/* Only the hours scroll; no scrollbar showing. */}
       <div className="min-h-0 flex-1 overflow-y-auto px-5 pt-2 pb-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {closed && todays.length === 0 ? (
+          <p className="py-10 text-center text-sm text-ink-muted">Closed this day.</p>
+        ) : (
         <div className="relative" style={{ height: (hours.length - 1) * HOUR + 8 }}>
           {/* The time column: one vertical line through every hour, the labels sitting on it. */}
           <span aria-hidden className="absolute top-0 bottom-0 left-8 w-px -translate-x-1/2 bg-border-strong" />
@@ -392,7 +401,8 @@ export function ScheduleRail({
             </div>
           ) : null}
         </div>
-        {todays.length === 0 ? <p className="mt-4 text-center text-sm text-ink-muted">Nothing booked.</p> : null}
+        )}
+        {todays.length === 0 && !closed ? <p className="mt-4 text-center text-sm text-ink-muted">Nothing booked.</p> : null}
       </div>
     </section>
   );

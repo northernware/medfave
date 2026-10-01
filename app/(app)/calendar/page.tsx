@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { AppointmentStatus } from "@/lib/enums";
 import { requireDoctor } from "@/lib/auth";
 import { ScheduleRail } from "@/app/(app)/dashboard/panels";
+import { loadClinicHours, loadSchedule } from "@/lib/queries";
 import { orm } from "@/src/prisma/db";
 import {
   clinicMonthRange,
@@ -79,6 +80,9 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
     [...byDay.keys()].sort()[0];
 
   const selected = selectedDay ? (byDay.get(selectedDay) ?? []) : [];
+  const clinicWeek = await loadClinicHours(doctor.clinicId);
+  const railWeek = clinicWeek.length > 0 ? clinicWeek : (await loadSchedule(doctor.id)).hours;
+
   const bookedDays = [...byDay.values()].filter((list) =>
     list.some((a) => occupiesSlot(a.status)),
   ).length;
@@ -215,6 +219,7 @@ export default async function CalendarPage({ searchParams }: PageProps<"/calenda
           <ScheduleRail
             items={selected}
             dayKey={selectedDay ?? todayKey}
+            openingHours={railWeek}
             busyDays={[...byDay.entries()].filter(([, list]) => list.some((x) => occupiesSlot(x.status))).map(([k]) => k)}
             todayKey={todayKey}
             now={now}

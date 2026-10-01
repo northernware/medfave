@@ -30,7 +30,7 @@ import {
   SEX_LABELS,
   ageFrom,
 } from "@/lib/domain";
-import { appointmentListQuery, toAppointmentListItem } from "@/lib/queries";
+import { appointmentListQuery, loadClinicHours, loadSchedule, toAppointmentListItem } from "@/lib/queries";
 import { Badge, Card, EmptyState, PageHeader, SectionTitle, buttonClass } from "@/components/ui";
 import { LastVisitDetails, PatientsList, ScheduleRail, StatCard, type LastVisit } from "./panels";
 
@@ -194,6 +194,9 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   ).length;
 
 
+  // The timeline spans the clinic's hours; a clinic that hasn't set them, the doctor's own week.
+  const clinicWeek = await loadClinicHours(doctor.clinicId);
+  const railWeek = clinicWeek.length > 0 ? clinicWeek : (await loadSchedule(doctor.id)).hours;
   const me = await orm.Account.select("firstName").where((a) => a.id.eq(doctor.accountId)).first();
 
   return (
@@ -434,6 +437,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
             items={railItems}
             dayKey={railDay}
             busyDays={busyDays}
+            openingHours={railWeek}
             todayKey={todayKey}
             now={now}
             keep={typeof visit === "string" ? `visit=${encodeURIComponent(visit)}` : ""}

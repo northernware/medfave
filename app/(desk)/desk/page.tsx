@@ -27,6 +27,7 @@ import {
 } from "@/lib/domain";
 import { addDays, weekdayOf } from "@/lib/scheduling";
 import { greetingFor } from "@/lib/greeting";
+import { loadClinicHours } from "@/lib/queries";
 import { Badge, buttonClass, EmptyState, PageHeader } from "@/components/ui";
 import { PANEL, ScheduleRail, StatCard } from "@/app/(app)/dashboard/panels";
 
@@ -120,6 +121,7 @@ export default async function DeskPage({ searchParams }: PageProps<"/desk">) {
   const requestName = (r: (typeof requestRows)[number]) =>
     r.patient ? fullName(r.patient) : fullName({ firstName: r.newFirstName ?? "", middleName: r.newMiddleName, lastName: r.newLastName ?? "" });
 
+  const clinicWeek = await loadClinicHours(staff.clinicId);
   const me = await orm.Account.select("firstName").where((a) => a.id.eq(staff.accountId)).first();
 
   return (
@@ -268,6 +270,7 @@ export default async function DeskPage({ searchParams }: PageProps<"/desk">) {
           items={railItems}
           dayKey={railDay}
           busyDays={busyDays}
+          openingHours={clinicWeek.length > 0 ? clinicWeek : undefined}
           todayKey={todayKey}
           now={now}
           keep=""
