@@ -393,7 +393,7 @@ export function ScheduleRail({
           {todays.map((a) => {
             const start = minuteOfDay(a.scheduledAt);
             // Tall enough for its details even when short; a long visit grows with its length.
-            const height = Math.max(96, (a.durationMinutes / 60) * HOUR - 4);
+            const height = Math.max(90, (a.durationMinutes / 60) * HOUR - 4);
             const done = a.status === "COMPLETED" || a.status === "CANCELLED" || a.status === "NO_SHOW";
             const end = new Date(a.scheduledAt.getTime() + a.durationMinutes * 60_000);
             const action =
@@ -401,12 +401,12 @@ export function ScheduleRail({
                 <form action={setAppointmentStatus}>
                   <input type="hidden" name="appointmentId" value={a.id} />
                   <input type="hidden" name="status" value="CHECKED_IN" />
-                  <button className="rounded-full bg-surface px-2.5 py-1 text-xs font-semibold whitespace-nowrap hover:bg-accent-soft">Check in</button>
+                  <button className="rounded-full bg-surface px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap hover:bg-accent-soft">Check in</button>
                 </form>
               ) : selected === todayKey && a.status === "CHECKED_IN" && canStart ? (
                 <form action={startConsultation}>
                   <input type="hidden" name="appointmentId" value={a.id} />
-                  <button className="rounded-full bg-accent px-2.5 py-1 text-xs font-semibold whitespace-nowrap text-on-accent">Start</button>
+                  <button className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-semibold whitespace-nowrap text-on-accent">Start</button>
                 </form>
               ) : (
                 <Badge tone={APPOINTMENT_STATUS_TONE[a.status]}>{APPOINTMENT_STATUS_LABELS[a.status]}</Badge>
@@ -418,12 +418,12 @@ export function ScheduleRail({
                 style={{ top: top(start) + 2, height }}
               >
                 <Link href={itemHref(a.id)} className="min-w-0">
-                  <span className="block truncate text-sm font-semibold hover:underline">{fullName(a.patient)}</span>
-                  <span className="tabular block truncate text-xs text-ink-muted">
+                  <span className="block truncate text-[13px] leading-5 font-semibold hover:underline">{fullName(a.patient)}</span>
+                  <span className="tabular block truncate text-[11px] leading-4 text-ink-muted">
                     {formatTime(a.scheduledAt)} – {formatTime(end)} · {SERVICE_LABELS[a.service]}
                   </span>
-                  {a.reason ? <span className="block truncate text-xs text-ink-faint">{a.reason}</span> : null}
-                  {a.doctor ? <span className="block truncate text-xs text-ink-faint">{a.doctor.fullName}</span> : null}
+                  {a.reason ? <span className="block truncate text-[11px] leading-4 text-ink-faint">{a.reason}</span> : null}
+                  {a.doctor ? <span className="block truncate text-[11px] leading-4 text-ink-faint">{a.doctor.fullName}</span> : null}
                 </Link>
                 <div className="mt-auto flex">{action}</div>
               </div>
