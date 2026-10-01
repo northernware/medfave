@@ -11,7 +11,7 @@ import { RecordForm } from "@/components/forms/record-form";
 import { blankRecord } from "@/lib/form-defaults";
 import { AlertBanner, AllergyBanner } from "@/components/allergy-banner";
 import { buttonClass, Card, PageHeader } from "@/components/ui";
-import { sharesCharts } from "@/lib/care";
+import { carryOverFor } from "@/lib/carry-over";
 
 export const metadata: Metadata = { title: "Document visit" };
 
@@ -57,37 +57,14 @@ export default async function NewRecordPage({ searchParams }: PageProps<"/record
   const defaults = blankRecord(toDateTimeLocalValue(new Date()));
   if (locked) defaults.appointmentId = locked.id;
 
-  // A return visit picks up where the last one left off: the working
-  // diagnosis, the plan and the medicines, for the doctor to keep, edit or
-  // clear; and the height, which rarely changes. Nothing measured today is
-  // copied — a carried-over blood pressure would look like today's reading.
-  // Only a note this doctor may read (their own, or any in a shared-chart clinic).
-  const shared = await sharesCharts(doctor.clinicId);
-  const last =
-    fresh === "1"
-      ? null
-      : await orm.MedicalRecord
-          .select("id", "visitDate", "heightCm", "assessment", "treatmentPlan")
-          .include("prescriptions", (rx) => rx.select("drugName", "dosage", "frequency", "duration", "instructions"))
-          .where((r) => r.patientId.eq(patient.id))
-          .where((r) => r.clinicId.eq(doctor.clinicId))
-          .where((r) => r.status.eq("FINALIZED"))
-          .where((r) => r.archivedAt.isNull())
-          .where((r) => (shared ? r.id.isNotNull() : r.doctorId.eq(doctor.id)))
-          .orderBy((r) => r.visitDate.desc())
-          .first();
-  const carriedFrom = last ? formatDateTime(instantFromDb(last.visitDate)) : null;
+  // A return visit picks up where the last one left off (lib/carry-over.ts).
+  const last = fresh === "1" ? null : await carryOverFor(doctor, patient.id);
+  const carriedFrom = last?.from ?? null;
   if (last) {
-    if (last.heightCm != null) defaults.heightCm = String(last.heightCm);
-    defaults.assessment = last.assessment ?? "";
-    defaults.treatmentPlan = last.treatmentPlan ?? "";
-    defaults.prescriptions = last.prescriptions.map((rx) => ({
-      drugName: rx.drugName,
-      dosage: rx.dosage,
-      frequency: rx.frequency,
-      duration: rx.duration ?? "",
-      instructions: rx.instructions ?? "",
-    }));
+    if (last.heightCm) defaults.heightCm = last.heightCm;
+    defaults.assessment = last.assessment;
+    defaults.treatmentPlan = last.treatmentPlan;
+    defaults.prescriptions = last.prescriptions;
   }
 
   return (
