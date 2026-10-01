@@ -82,12 +82,12 @@ export function ClinicSwitcher({
           compact ? "rounded-lg p-1" : "rounded-xl border border-border bg-surface-muted/60 p-2 hover:bg-surface-muted",
         ].join(" ")}
       >
-        <span className="squircle grid size-9 shrink-0 place-items-center rounded-lg bg-brand font-display text-xs font-bold text-white">
+        <span className="squircle grid size-8 shrink-0 place-items-center rounded-lg bg-brand font-display text-[11px] font-bold text-white">
           {initialsOf(clinic.name)}
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-semibold">{clinic.name}</span>
-          <span className="block truncate text-xs text-ink-faint">{clinic.role}</span>
+          <span className="block truncate text-[13px] leading-5 font-semibold">{clinic.name}</span>
+          <span className="block truncate text-[11px] leading-4 text-ink-faint">{clinic.role}</span>
         </span>
         <AltArrowDownIcon className={`size-4 shrink-0 text-ink-faint transition-transform ${open ? "rotate-180" : ""}`} aria-hidden />
       </button>
