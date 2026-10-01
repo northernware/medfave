@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { finishGoogleSignUp } from "@/app/actions/sign-up";
-import { Field, FormError, SubmitButton, TextInput } from "@/components/form";
+import { FormError, SubmitButton } from "@/components/form";
+import { NameFields } from "@/components/name-fields";
 import { EMPTY_FORM_STATE } from "@/lib/validation";
 import { ROLES } from "../sign-up-form";
 
@@ -36,9 +37,7 @@ export function GoogleSignUpForm({ name, role }: { name: string; role: "PATIENT"
         {err?.role ? <p className="mt-1.5 text-sm text-danger-ink">{err.role[0]}</p> : null}
       </fieldset>
 
-      <Field label="Full name" htmlFor="fullName" error={err?.fullName} hint="As it should appear to your clinic." required>
-        <TextInput id="fullName" name="fullName" autoComplete="name" defaultValue={name} required invalid={Boolean(err?.fullName)} />
-      </Field>
+      <NameFields error={err?.fullName} defaultName={name} />
 
       <div>
         <label className="flex gap-3 text-sm">

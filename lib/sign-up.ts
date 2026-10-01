@@ -1,6 +1,7 @@
 import "server-only";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { withFullName } from "@/lib/names";
 import { orm } from "@/src/prisma/db";
 import { hasPassed, instantToDb } from "@/lib/datetime";
 import { appUrl, sendEmailVerification } from "@/lib/email";
@@ -23,9 +24,9 @@ export const PRIVACY_NOTICE_VERSION = "2026-09-30";
 
 const VERIFY_DAYS = 3;
 
-export const signUpSchema = z
+export const signUpSchema = z.preprocess(withFullName, z
   .object({
-    fullName: z.string().trim().min(2, "Enter your full name").max(120),
+    fullName: z.string().trim().min(2, "Enter your first and last name").max(120),
     email: z.string().trim().toLowerCase().pipe(z.email("Enter a valid email address")),
     password: z.string().min(10, "Use at least 10 characters").max(200),
     confirmPassword: z.string(),
@@ -36,7 +37,7 @@ export const signUpSchema = z
   .refine((v) => v.password === v.confirmPassword, {
     message: "Passwords do not match",
     path: ["confirmPassword"],
-  });
+  }));
 
 export type SignUpResult = { ok: true; accountId: string } | ({ ok: false } & FormState);
 

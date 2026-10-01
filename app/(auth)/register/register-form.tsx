@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { activatePatientAccount } from "@/app/actions/auth";
 import { Field, FormError, SubmitButton, TextInput } from "@/components/form";
+import { NameFields } from "@/components/name-fields";
 import { CodeInput } from "@/components/code-input";
 import { EMPTY_FORM_STATE } from "@/lib/validation";
 
@@ -24,15 +25,7 @@ export function RegisterForm({ code = "" }: { code?: string }) {
         <CodeInput id="code" defaultValue={code} invalid={Boolean(err?.code)} />
       </Field>
 
-      <Field label="Full name" htmlFor="fullName" error={err?.fullName} required>
-        <TextInput
-          id="fullName"
-          name="fullName"
-          required
-          placeholder="Ramon Dela Cruz"
-          invalid={Boolean(err?.fullName)}
-        />
-      </Field>
+      <NameFields error={err?.fullName} />
 
       <Field label="Email" htmlFor="email" error={err?.email} required>
         <TextInput

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { signUp } from "@/app/actions/sign-up";
 import { Field, FormError, SubmitButton, TextInput } from "@/components/form";
+import { NameFields } from "@/components/name-fields";
 import { EMPTY_FORM_STATE } from "@/lib/validation";
 
 export const ROLES = [
@@ -40,9 +41,7 @@ export function SignUpForm({ role }: { role: "PATIENT" | "DOCTOR" }) {
         {err?.role ? <p className="mt-1.5 text-sm text-danger-ink">{err.role[0]}</p> : null}
       </fieldset>
 
-      <Field label="Full name" htmlFor="fullName" error={err?.fullName} required>
-        <TextInput id="fullName" name="fullName" autoComplete="name" required invalid={Boolean(err?.fullName)} />
-      </Field>
+      <NameFields error={err?.fullName} />
       <Field label="Email" htmlFor="email" error={err?.email} required>
         <TextInput id="email" name="email" type="email" autoComplete="email" required invalid={Boolean(err?.email)} />
       </Field>
