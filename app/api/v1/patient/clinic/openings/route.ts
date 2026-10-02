@@ -8,7 +8,8 @@ import { openingsFor } from "@/lib/openings";
  *
  * `?doctor=<id>` (left out: the doctor they saw last, else the only one),
  * `?service=<ServiceType>` (left out: a general consultation), and `?date=YYYY-MM-DD`
- * for every free time that day instead of the next few.
+ * for every free time that day instead of the next few. `?limit=&perDay=` shape
+ * the next few: `perDay=1&limit=14` is the next 14 days with anything free.
  */
 export async function GET(request: Request) {
   const me = await apiPatient(request);
@@ -24,6 +25,14 @@ export async function GET(request: Request) {
   }
   if (!picked.doctorId) return Response.json({ doctorId: null, service, minutes: null, openings: [] });
 
-  const { minutes, openings } = await openingsFor(picked.doctorId, service, { date: date ?? undefined });
+  const count = (name: string, max: number) => {
+    const n = Number(params.get(name));
+    return Number.isInteger(n) && n > 0 ? Math.min(n, max) : undefined;
+  };
+  const { minutes, openings } = await openingsFor(picked.doctorId, service, {
+    date: date ?? undefined,
+    limit: count("limit", 60),
+    perDay: count("perDay", 20),
+  });
   return Response.json({ doctorId: picked.doctorId, service, minutes, openings });
 }
