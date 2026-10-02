@@ -140,11 +140,13 @@ uses the login's own chart at the clinic. Any other chart gets `404`.
 | `GET /patient/documents` | `{ documents[] }`, each `{ id, type, typeLabel, purpose, sharedAt }` |
 | `GET /patient/documents/:id` | `{ document }`, with `fields[]` of `{ name, label, value }` in the clinic's order |
 | `GET /patient/clinic?doctor=` | `{ clinic, doctors[], doctorId, takingRequests, services[], schedule }` — what the request form needs. `doctors` are the clinic's bookable doctors `{ id, fullName, specialty }`; `doctorId` is whose hours and services follow: `?doctor=` if given, else the patient's last doctor, else the only one (`null`: ask them to choose). `schedule` has the week's hours, closures ahead, and `earliestDay` / `latestDay` |
+| `GET /patient/clinic/openings?doctor=&service=&date=` | `{ doctorId, service, minutes, openings: [{ date, time }] }`: start times that are really free for that doctor and service: inside the hours and booking window, clear of breaks, closures, booked visits and times other patients have already asked for. Times only, never whose. `doctor` as for `/patient/clinic`; `service` defaults to `GENERAL_CONSULTATION`. Without `date`: the next 6, at most 2 a day, spread through it (Home's quick times). With `date=YYYY-MM-DD`: every free time that day (the request form's chips); `400` for a malformed date |
 
 A request is **not** a booking. It holds no slot, and the doctor or front desk
 accepts or declines it. The app should say so. The server checks each request
 against the clinic's hours, closures and booking window; `/patient/clinic` lets
-the app warn before sending.
+the app warn before sending, and `/patient/clinic/openings` offers only times
+nobody holds or has asked for.
 
 ### Doctor
 
