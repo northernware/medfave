@@ -1,7 +1,7 @@
 import "server-only";
 import { orm } from "@/src/prisma/db";
 import type { PatientChart } from "@/lib/auth";
-import { formatDateTime, instantFromDb } from "@/lib/datetime";
+import { formatDateTime, instantFromDb, instantToDb } from "@/lib/datetime";
 import { BLOOD_TYPE_LABELS } from "@/lib/domain";
 import { listFamily } from "@/lib/family";
 
@@ -23,8 +23,23 @@ export type Medication = { label: string; dosage: string | null; frequency: stri
 export type Contact = { name: string; relationship: string | null; number: string | null };
 type ListStatus = "RECORDED" | "NONE_KNOWN" | "UNKNOWN";
 
-/** Their usual doctor at a clinic: whoever saw them last, else their household's. */
-export type Physician = { name: string; specialty: string | null; phone: string | null; clinicName: string };
+/**
+ * Their regular doctor at a clinic: the one they chose, else the one who saw
+ * them most in the past year (the more recent on a tie), else their
+ * household's. A single visit to a specialist doesn't make them it.
+ */
+export type Physician = {
+  doctorId: string;
+  name: string;
+  specialty: string | null;
+  phone: string | null;
+  clinicName: string;
+  /** The patient (or their caregiver) picked this doctor. */
+  chosen: boolean;
+  /** Visits with them in the past year. */
+  visits: number;
+  lastVisit: string;
+};
 
 export type ClinicRecord = {
   clinicId: string;
@@ -35,6 +50,7 @@ export type ClinicRecord = {
   /** First and second, in that order; either may be missing. */
   contacts: Contact[];
   physician: Physician | null;
+  doctorsSeen: { id: string; name: string; specialty: string | null }[];
   bloodType: string | null;
   allergyStatus: ListStatus;
   allergies: Allergy[];
@@ -76,7 +92,7 @@ const RANK = { SEVERE: 3, MODERATE: 2, MILD: 1 } as const;
 async function recordsFor(charts: PatientChart[]): Promise<ClinicRecord[]> {
   return Promise.all(
     charts.map(async (c) => {
-      const [p, allergies, medications, conditions, lastSeen] = await Promise.all([
+      const [p, allergies, medications, conditions, seen] = await Promise.all([
         orm.Patient
           .select(
             "updatedAt", "bloodType", "allergyStatus", "medicationStatus", "conditionStatus",
@@ -84,24 +100,35 @@ async function recordsFor(charts: PatientChart[]): Promise<ClinicRecord[]> {
             "emergencyContact2Name", "emergencyContact2Relationship", "emergencyContact2Number",
           )
           .include("household", (h) =>
-            h.select("address").include("doctor", (d) => d.select("fullName", "specialty")),
+            h.select("address").include("doctor", (d) => d.select("id", "fullName", "specialty")),
           )
           .include("clinic", (k) => k.select("contactNumber"))
+          .include("primaryDoctor", (d) => d.select("id", "fullName", "specialty"))
           .where((x) => x.id.eq(c.id))
           .first(),
         orm.PatientAllergy.select("label", "reaction", "severity").where((x) => x.patientId.eq(c.id)).all(),
         orm.PatientMedication.select("label", "dosage", "frequency").where((x) => x.patientId.eq(c.id)).all(),
         orm.PatientCondition.select("label").where((x) => x.patientId.eq(c.id)).all(),
-        // Whoever saw them last there.
+        // Who has seen them there: the year's visits, newest first.
         orm.Appointment
-          .select("scheduledAt")
-          .include("doctor", (d) => d.select("fullName", "specialty"))
+          .select("scheduledAt", "doctorId")
+          .include("doctor", (d) => d.select("id", "fullName", "specialty"))
           .where((a) => a.patientId.eq(c.id))
           .where((a) => a.status.in(["COMPLETED", "IN_CONSULTATION", "CHECKED_IN"]))
+          .where((a) => a.scheduledAt.gte(instantToDb(new Date(Date.now() - 365 * 24 * 60 * 60 * 1000))))
           .orderBy((a) => a.scheduledAt.desc())
-          .first(),
+          .all(),
       ]);
-      const doc = lastSeen?.doctor ?? p?.household.doctor ?? null;
+      // Seen most this year, the more recent on a tie (the list is newest first).
+      const tally = new Map<string, { doctor: { id: string; fullName: string; specialty: string | null }; visits: number; last: string }>();
+      for (const v of seen) {
+        const t = tally.get(v.doctor.id);
+        if (t) t.visits++;
+        else tally.set(v.doctor.id, { doctor: v.doctor, visits: 1, last: String(v.scheduledAt) });
+      }
+      const regular = [...tally.values()].sort((a, b) => b.visits - a.visits || b.last.localeCompare(a.last))[0];
+      const picked = p?.primaryDoctor ?? null;
+      const doc = picked ?? regular?.doctor ?? p?.household.doctor ?? null;
       const contact = (name: string | null | undefined, relationship: string | null | undefined, number: string | null | undefined) =>
         name ? { name, relationship: relationship ?? null, number: number ?? null } : null;
       return {
@@ -123,9 +150,19 @@ async function recordsFor(charts: PatientChart[]): Promise<ClinicRecord[]> {
           contact(p?.emergencyContact2Name, p?.emergencyContact2Relationship, p?.emergencyContact2Number),
         ].filter((x): x is Contact => x !== null),
         physician: doc
-          ? { name: doc.fullName, specialty: doc.specialty, phone: p?.clinic.contactNumber ?? null, clinicName: c.clinicName }
+          ? {
+              doctorId: doc.id,
+              name: doc.fullName,
+              specialty: doc.specialty,
+              phone: p?.clinic.contactNumber ?? null,
+              clinicName: c.clinicName,
+              chosen: Boolean(picked),
+              visits: tally.get(doc.id)?.visits ?? 0,
+              lastVisit: tally.get(doc.id)?.last ?? "",
+            }
           : null,
-        lastSeenAt: lastSeen ? String(lastSeen.scheduledAt) : "",
+        doctorsSeen: [...tally.values()].map((t) => ({ id: t.doctor.id, name: t.doctor.fullName, specialty: t.doctor.specialty })),
+        lastSeenAt: seen[0] ? String(seen[0].scheduledAt) : "",
       };
     }),
   );
@@ -163,7 +200,14 @@ function combine(records: ClinicRecord[]): EmergencyCard["general"] {
     conditions: merge(records, (r) => r.conditions.map((label) => ({ label })), (c) => c.label),
     contacts: merge(records, (r) => r.contacts, (c) => `${c.name} ${c.number ?? ""}`),
     address: records.find((r) => r.address)?.address ?? null,
-    physician: [...records].sort((a, b) => b.lastSeenAt.localeCompare(a.lastSeenAt)).find((r) => r.physician)?.physician ?? null,
+    // Their choice wins; otherwise whoever, at any clinic, saw them most this year.
+    physician:
+      records.find((r) => r.physician?.chosen)?.physician ??
+      records
+        .map((r) => r.physician)
+        .filter((x): x is Physician => x !== null)
+        .sort((a, b) => b.visits - a.visits || b.lastVisit.localeCompare(a.lastVisit))[0] ??
+      null,
   };
 }
 
@@ -197,4 +241,27 @@ export async function emergencyCards(viewer: { accountId: string; fullName: stri
     }
   }
   return cards;
+}
+
+/**
+ * The patient (or their caregiver) choosing the primary care physician on a
+ * card: a doctor at one of that person's clinics. Set on that clinic's chart,
+ * cleared on their others, so a card has one. `doctorId` null: back to the
+ * card working it out.
+ */
+export async function choosePhysician(
+  viewer: { accountId: string; fullName: string; charts: PatientChart[] },
+  cardKey: string,
+  doctorId: string | null,
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const card = (await emergencyCards(viewer)).find((c) => c.key === cardKey);
+  if (!card) return { ok: false, message: "Not found." };
+  const at = doctorId ? card.clinics.find((r) => r.doctorsSeen.some((d) => d.id === doctorId)) : null;
+  if (doctorId && !at) return { ok: false, message: "Choose a doctor who has seen them." };
+  for (const r of card.clinics) {
+    await orm.Patient.where((p) => p.id.eq(r.patientId)).update({
+      primaryDoctorId: at && r.patientId === at.patientId ? doctorId : null,
+    } as never);
+  }
+  return { ok: true };
 }

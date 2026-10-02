@@ -413,18 +413,18 @@ export default async function DeskPatientPage({
             <Detail label="Reminders" value={REMINDER_LABELS[patient.reminderPreference]} />
             <Detail label="Household address" value={patient.household.address} />
             <Detail label="Household number" value={patient.household.contactNumber} />
-            <Detail label="Emergency contact" value={patient.emergencyContactName} />
+            <Detail label="Primary contact" value={patient.emergencyContactName} />
             <Detail
-              label="Emergency number"
+              label="Primary contact number"
               value={
                 patient.emergencyContactNumber
                   ? `${patient.emergencyContactNumber}${patient.emergencyContactRelationship ? ` (${patient.emergencyContactRelationship})` : ""}`
                   : null
               }
             />
-            <Detail label="Second contact" value={patient.emergencyContact2Name} />
+            <Detail label="Secondary contact" value={patient.emergencyContact2Name} />
             <Detail
-              label="Second contact number"
+              label="Secondary contact number"
               value={
                 patient.emergencyContact2Number
                   ? `${patient.emergencyContact2Number}${patient.emergencyContact2Relationship ? ` (${patient.emergencyContact2Relationship})` : ""}`

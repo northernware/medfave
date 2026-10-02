@@ -378,7 +378,7 @@ export default async function PatientPage({
           <Detail label="Contact" value={patient.contactNumber ?? patient.household.contactNumber} />
           <Detail label="Email" value={patient.email} />
           <Detail
-            label="Emergency contact"
+            label="Primary contact"
             value={
               patient.emergencyContactName ? (
                 <>
@@ -393,7 +393,7 @@ export default async function PatientPage({
             }
           />
           <Detail
-            label="Second contact"
+            label="Secondary contact"
             value={
               patient.emergencyContact2Name ? (
                 <>

@@ -6,6 +6,7 @@ import { PORTAL_CLINIC_COOKIE, PORTAL_PERSON_COOKIE, requirePatientAccount, requ
 import { linkPatientActivation, previewActivation, type ActivationPreview } from "@/lib/sign-in";
 import { grantCare, removeCare, stopCaring, stopCaringFor } from "@/lib/caregivers";
 import { addFamilyMember, removeFamilyMember } from "@/lib/family";
+import { choosePhysician } from "@/lib/emergency";
 import { revalidatePath } from "next/cache";
 import type { FormState } from "@/lib/validation";
 
@@ -125,4 +126,13 @@ export async function stopCaringForAction(formData: FormData) {
   (await cookies()).delete(PORTAL_PERSON_COOKIE);
   revalidatePath("/portal/family");
   redirect("/portal/family");
+}
+
+/** Choose the primary care physician on an emergency card (lib/emergency.ts). */
+export async function choosePhysicianAction(formData: FormData) {
+  const viewer = await requireViewer();
+  const cardKey = String(formData.get("cardKey") ?? "");
+  await choosePhysician(viewer, cardKey, String(formData.get("doctorId") ?? "") || null);
+  revalidatePath("/portal/emergency");
+  redirect(`/portal/emergency?person=${encodeURIComponent(cardKey)}`);
 }

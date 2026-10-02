@@ -41,6 +41,8 @@ namespace public {
     account        Account?        @relation(name: "Doctor_accountId_fkey", fields: [accountId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "Doctor_accountId_fkey")
     verifiedBy     Account?        @relation(name: "Doctor_verifiedById_fkey", fields: [verifiedById], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "Doctor_verifiedById_fkey")
     appointmentRequests AppointmentRequest[]
+    /// Patients who chose this doctor as their primary care physician.
+    primaryFor     Patient[]       @relation(name: "Patient_primaryDoctorId_fkey")
     scheduleSettings ScheduleSettings?
     clinicHours      ClinicHours[]
     clinicBreaks     ClinicBreak[]
@@ -147,6 +149,9 @@ namespace public {
     emergencyContact2Name         String?
     emergencyContact2Relationship String?
     emergencyContact2Number       String?
+    /// The patient's own choice of their regular doctor here, for their
+    /// emergency card. Null: the card works it out (most seen in a year).
+    primaryDoctorId               String?
     appointments      Appointment[]
     medicalRecords    MedicalRecord[]
     allergies         PatientAllergy[]
@@ -163,6 +168,7 @@ namespace public {
     clinic            Clinic                      @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "Patient_clinicId_fkey")
     primaryContactFor Household[]                 @relation("HouseholdPrimaryContact")
     household         Household                   @relation(fields: [householdId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "Patient_householdId_fkey")
+    primaryDoctor     Doctor?                     @relation(name: "Patient_primaryDoctorId_fkey", fields: [primaryDoctorId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "Patient_primaryDoctorId_fkey")
 
     @@index([patientNumber], map: "Patient_patientNumber_key", unique: true)
     @@unique([accountId, clinicId], map: "Patient_accountId_clinicId_key")

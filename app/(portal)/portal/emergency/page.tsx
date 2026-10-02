@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { requirePatientAccount } from "@/lib/auth";
 import { emergencyCards, type ClinicRecord, type EmergencyCard } from "@/lib/emergency";
 import { Card, PageHeader } from "@/components/ui";
+import { choosePhysicianAction } from "@/app/actions/portal";
 
 export const metadata: Metadata = { title: "Emergency card" };
 
@@ -119,8 +120,9 @@ function GeneralView({ card }: { card: EmergencyCard }) {
       </Section>
       <Section title="Emergency contacts">
         {g.contacts.length === 0 ? <p className="text-ink-muted">Not recorded</p> : null}
-        {g.contacts.map((c) => (
+        {g.contacts.map((c, i) => (
           <p key={`${c.name}${c.number}`}>
+            <span className="mr-2 text-xs font-semibold text-ink-muted uppercase">{i === 0 ? "Primary" : "Secondary"}</span>
             <span className="font-medium">{c.name}</span>
             {c.relationship ? <span className="text-ink-muted"> ({c.relationship})</span> : null}
             {c.number ? (
@@ -131,10 +133,33 @@ function GeneralView({ card }: { card: EmergencyCard }) {
           </p>
         ))}
       </Section>
-      <Section title="Primary care">
+      <Section title="Primary care physician">
         {g.physician ? <Physician p={g.physician} /> : <p className="text-ink-muted">Not recorded</p>}
+        <PhysicianChooser card={card} />
       </Section>
     </>
+  );
+}
+
+/** Their choice of regular doctor, among those who have seen them; or let the card work it out. */
+function PhysicianChooser({ card }: { card: EmergencyCard }) {
+  const seen = card.clinics.flatMap((r) => r.doctorsSeen.map((d) => ({ ...d, clinicName: r.clinicName })));
+  if (seen.length === 0) return null;
+  const chosen = card.general.physician?.chosen ? card.general.physician.doctorId : "";
+  return (
+    <form action={choosePhysicianAction} className="flex flex-wrap items-center gap-2 pt-1">
+      <input type="hidden" name="cardKey" value={card.key} />
+      <select name="doctorId" defaultValue={chosen} className="rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm">
+        <option value="">Work it out (seen most this year)</option>
+        {seen.map((d) => (
+          <option key={`${d.id}${d.clinicName}`} value={d.id}>
+            {d.name}
+            {d.specialty ? ` · ${d.specialty}` : ""} · {d.clinicName}
+          </option>
+        ))}
+      </select>
+      <button className="rounded-md px-2.5 py-1.5 text-sm font-medium text-accent-ink hover:underline">Save</button>
+    </form>
   );
 }
 
@@ -148,7 +173,11 @@ function Physician({ p }: { p: NonNullable<EmergencyCard["general"]["physician"]
           {p.phone}
         </a>
       ) : null}
-      <span className="text-xs text-ink-faint"> · {p.clinicName}</span>
+      <span className="text-xs text-ink-faint">
+        {" "}
+        · {p.clinicName}
+        {p.chosen ? " · your choice" : p.visits ? ` · seen ${p.visits}× this year` : ""}
+      </span>
     </p>
   );
 }
@@ -186,19 +215,19 @@ function ClinicView({ r }: { r: ClinicRecord }) {
           <p key={c}>{c}</p>
         ))}
       </Section>
-      <Section title="Primary care">
+      <Section title="Primary care physician">
         {r.physician ? <Physician p={r.physician} /> : <p className="text-ink-muted">Not recorded</p>}
       </Section>
-      <Section title="Emergency contact">
-        {r.emergencyContact ? (
-          <p>
-            <span className="font-medium">{r.emergencyContact.name}</span>
-            {r.emergencyContact.relationship ? <span className="text-ink-muted"> ({r.emergencyContact.relationship})</span> : null}
-            {r.emergencyContact.number ? <span className="ml-2">{r.emergencyContact.number}</span> : null}
+      <Section title="Emergency contacts">
+        {r.contacts.length === 0 ? <p className="text-ink-muted">Not recorded</p> : null}
+        {r.contacts.map((c, i) => (
+          <p key={`${c.name}${c.number}`}>
+            <span className="mr-2 text-xs font-semibold text-ink-muted uppercase">{i === 0 ? "Primary" : "Secondary"}</span>
+            <span className="font-medium">{c.name}</span>
+            {c.relationship ? <span className="text-ink-muted"> ({c.relationship})</span> : null}
+            {c.number ? <span className="ml-2">{c.number}</span> : null}
           </p>
-        ) : (
-          <p className="text-ink-muted">Not recorded</p>
-        )}
+        ))}
       </Section>
     </>
   );
