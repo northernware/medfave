@@ -12,7 +12,8 @@ The user pointed out that a one-off visit to a specialist shouldn't become someo
 
 ## Tested
 - `tsc` and `eslint` are clean.
-- Results of the dev-DB check are below.
+- On the dev DB, all of Ramon's cards (his own, Lia, Joaquin, Sofia) resolve to Dr. Ana Reyes, Family Medicine, (074) 555 0101, with primary and secondary contacts.
+- Dev data: the Dela Cruz family's charts were filled in (blood types, allergies, conditions, medicines, both contacts) where empty, and Sofia was linked to Ramon as his child.
 
 ## Heads-up
 Migration `primary_doctor`: run `npm run db:migrate` after pulling.
