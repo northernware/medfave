@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { requirePatientAccount } from "@/lib/auth";
 import { emergencyCards, type ClinicRecord, type EmergencyCard } from "@/lib/emergency";
 import { Card, PageHeader } from "@/components/ui";
+import { EmergencyCardFace, faceOf } from "@/components/emergency-card-face";
+import { CardActions } from "./card-actions";
 import { choosePhysicianAction } from "@/app/actions/portal";
 
 export const metadata: Metadata = { title: "Emergency card" };
@@ -34,26 +36,31 @@ export default async function EmergencyPage({ searchParams }: PageProps<"/portal
 
   return (
     <div className="space-y-3">
-      <PageHeader title="Emergency card" subtitle="What a medic needs to know. From your clinics' records." />
+      <div className="print:hidden">
+        <PageHeader title="Emergency card" subtitle="What a medic needs to know. From your clinics' records." />
+      </div>
       {cards.length > 1 ? (
-        <nav aria-label="Whose card" className="flex flex-wrap gap-2">
+        <nav aria-label="Whose card" className="flex flex-wrap gap-2 print:hidden">
           {cards.map((c) => tab(`/portal/emergency?person=${c.key}`, c.self ? "Me" : c.name.split(" ")[0], c.key === card.key))}
         </nav>
       ) : null}
-      <nav aria-label="Which record" className="flex flex-wrap gap-2">
+      <nav aria-label="Which record" className="flex flex-wrap gap-2 print:hidden">
         {tab(`/portal/emergency?person=${card.key}`, "General", !one)}
         {card.clinics.length > 1 || one
           ? card.clinics.map((r) => tab(`/portal/emergency?person=${card.key}&clinic=${r.clinicId}`, r.clinicName, r.clinicId === one?.clinicId))
           : null}
       </nav>
-      <Card className="space-y-5 p-5 sm:p-6">
-        <div>
-          <p className="font-display text-2xl font-semibold">{card.name}</p>
-          <p className="text-sm text-ink-muted">Born {card.dateOfBirth}</p>
-        </div>
+      {/* The card itself, as it is in the app. Printing gives a card to carry. */}
+      <div className="max-w-xl print:max-w-none">
+        <EmergencyCardFace face={faceOf(card, one?.clinicId)} />
+      </div>
+      <CardActions name={card.name} />
+
+      <Card className="space-y-5 p-5 sm:p-6 print:hidden">
+        <h2 className="font-display text-lg font-semibold">Full details</h2>
         {one ? <ClinicView r={one} /> : <GeneralView card={card} />}
       </Card>
-      <p className="text-sm text-ink-muted">Something wrong? Ask the clinic to correct it. This card shows exactly what they recorded.</p>
+      <p className="text-sm text-ink-muted print:hidden">Something wrong? Ask the clinic to correct it. This card shows exactly what they recorded.</p>
     </div>
   );
 }

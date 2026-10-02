@@ -50,15 +50,20 @@ export function HeartMark({
   );
 }
 
-/** Heart + wordmark, as one piece of artwork. Size it by height; width follows. */
-export function Lockup({ className = "h-7 w-auto" }: { className?: string }) {
+/**
+ * Heart + wordmark, as one piece of artwork. Size it by height; width follows.
+ * `white` is the approved single-colour version, for a dark or coloured ground.
+ */
+export function Lockup({ className = "h-7 w-auto", tone = "logo" }: { className?: string; tone?: "logo" | "white" }) {
+  const heart = tone === "white" ? "#ffffff" : "var(--logo-heart)";
+  const word = tone === "white" ? "#ffffff" : "var(--logo-word)";
   return (
     <svg viewBox={LOCKUP_VIEWBOX} className={className} aria-hidden="true">
       <g transform={LOCKUP_HEART_TRANSFORM}>
-        <Capsules fill="var(--logo-heart)" />
+        <Capsules fill={heart} />
       </g>
       <g transform={LOCKUP_WORDMARK_TRANSFORM}>
-        <path d={WORDMARK} fill="var(--logo-word)" fillRule="evenodd" />
+        <path d={WORDMARK} fill={word} fillRule="evenodd" />
       </g>
     </svg>
   );
