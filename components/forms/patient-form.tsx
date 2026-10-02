@@ -309,13 +309,13 @@ export function PatientForm({
 
       <section className="space-y-4 border-t border-border pt-5">
         <div>
-          <h2 className="flex items-center gap-2 font-display text-lg leading-6 font-semibold tracking-[-0.01em] before:h-5 before:w-1 before:rounded-full before:bg-accent">Emergency contact</h2>
+          <h2 className="flex items-center gap-2 font-display text-lg leading-6 font-semibold tracking-[-0.01em] before:h-5 before:w-1 before:rounded-full before:bg-accent">Emergency contacts</h2>
           <p className="text-sm text-ink-muted">
-            Who to ring about this patient. Often someone outside the practice.
+            Who to ring about this patient, first and second. On their emergency card in the app.
           </p>
         </div>
         <FieldGrid className="sm:grid-cols-3">
-          <Field label="Name" htmlFor="emergencyContactName" error={err?.emergencyContactName}>
+          <Field label="First contact" htmlFor="emergencyContactName" error={err?.emergencyContactName}>
             <TextInput
               id="emergencyContactName"
               name="emergencyContactName"
@@ -344,6 +344,40 @@ export function PatientForm({
               id="emergencyContactNumber"
               name="emergencyContactNumber"
               defaultValue={defaults.emergencyContactNumber}
+              placeholder="0917 000 0000"
+            />
+          </Field>
+        </FieldGrid>
+        <FieldGrid className="sm:grid-cols-3">
+          <Field label="Second contact (optional)" htmlFor="emergencyContact2Name" error={err?.emergencyContact2Name}>
+            <TextInput
+              id="emergencyContact2Name"
+              name="emergencyContact2Name"
+              defaultValue={defaults.emergencyContact2Name}
+              placeholder="Corazon Dela Cruz"
+            />
+          </Field>
+          <Field
+            label="Relationship"
+            htmlFor="emergencyContact2Relationship"
+            error={err?.emergencyContact2Relationship}
+          >
+            <TextInput
+              id="emergencyContact2Relationship"
+              name="emergencyContact2Relationship"
+              defaultValue={defaults.emergencyContact2Relationship}
+              placeholder="Mother"
+            />
+          </Field>
+          <Field
+            label="Contact number"
+            htmlFor="emergencyContact2Number"
+            error={err?.emergencyContact2Number}
+          >
+            <TextInput
+              id="emergencyContact2Number"
+              name="emergencyContact2Number"
+              defaultValue={defaults.emergencyContact2Number}
               placeholder="0917 000 0000"
             />
           </Field>

@@ -143,6 +143,10 @@ namespace public {
     emergencyContactName         String?
     emergencyContactRelationship String?
     emergencyContactNumber       String?
+    /// A second person to ring, when the first can't be reached.
+    emergencyContact2Name         String?
+    emergencyContact2Relationship String?
+    emergencyContact2Number       String?
     appointments      Appointment[]
     medicalRecords    MedicalRecord[]
     allergies         PatientAllergy[]

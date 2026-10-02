@@ -96,6 +96,9 @@ export default async function EditPatientPage({ params }: PageProps<"/patients/[
             emergencyContactName: patient.emergencyContactName ?? "",
             emergencyContactRelationship: patient.emergencyContactRelationship ?? "",
             emergencyContactNumber: patient.emergencyContactNumber ?? "",
+            emergencyContact2Name: patient.emergencyContact2Name ?? "",
+            emergencyContact2Relationship: patient.emergencyContact2Relationship ?? "",
+            emergencyContact2Number: patient.emergencyContact2Number ?? "",
           }}
           submitLabel="Save changes"
           cancelHref={`/patients/${patient.id}`}

@@ -1,0 +1,128 @@
+[
+  {
+    "id": "column.public.Patient.emergencyContact2Name",
+    "label": "Add column \"emergencyContact2Name\" to \"Patient\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "emergencyContact2Name",
+        "table": "Patient"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"emergencyContact2Name\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Patient",
+          "emergencyContact2Name"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"emergencyContact2Name\"",
+        "sql": "ALTER TABLE \"public\".\"Patient\" ADD COLUMN \"emergencyContact2Name\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"emergencyContact2Name\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Patient",
+          "emergencyContact2Name"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Patient.emergencyContact2Number",
+    "label": "Add column \"emergencyContact2Number\" to \"Patient\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "emergencyContact2Number",
+        "table": "Patient"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"emergencyContact2Number\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Patient",
+          "emergencyContact2Number"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"emergencyContact2Number\"",
+        "sql": "ALTER TABLE \"public\".\"Patient\" ADD COLUMN \"emergencyContact2Number\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"emergencyContact2Number\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Patient",
+          "emergencyContact2Number"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.Patient.emergencyContact2Relationship",
+    "label": "Add column \"emergencyContact2Relationship\" to \"Patient\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "emergencyContact2Relationship",
+        "table": "Patient"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"emergencyContact2Relationship\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Patient",
+          "emergencyContact2Relationship"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"emergencyContact2Relationship\"",
+        "sql": "ALTER TABLE \"public\".\"Patient\" ADD COLUMN \"emergencyContact2Relationship\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"emergencyContact2Relationship\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "Patient",
+          "emergencyContact2Relationship"
+        ]
+      }
+    ]
+  }
+]
