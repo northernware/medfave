@@ -817,6 +817,9 @@ namespace public {
     /// The staff member who issued the code it came from.
     grantedById String
     caregiverName String?
+    /// The caregiver's family-list entry for this person: the same person on
+    /// both sides, whichever side started it. Set whenever a link is made.
+    familyMemberId String?
     createdAt   TimestampString(3) @default(now())
     revokedAt   TimestampString(3)?
     revokedById String?
@@ -824,11 +827,13 @@ namespace public {
     patient     Patient @relation(fields: [patientId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "CareLink_patientId_fkey")
     account     Account @relation(name: "CareLink_accountId_fkey", fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "CareLink_accountId_fkey")
     grantedBy   Account @relation(name: "CareLink_grantedById_fkey", fields: [grantedById], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "CareLink_grantedById_fkey")
+    familyMember FamilyMember? @relation(fields: [familyMemberId], references: [id], onDelete: SetNull, onUpdate: Cascade, map: "CareLink_familyMemberId_fkey")
 
     @@index([accountId], map: "CareLink_accountId_idx")
     @@index([patientId], map: "CareLink_patientId_idx")
     @@index([clinicId], map: "CareLink_clinicId_idx")
     @@index([grantedById], map: "CareLink_grantedById_idx")
+    @@index([familyMemberId], map: "CareLink_familyMemberId_idx")
 
     @@map("CareLink")
   }
@@ -853,6 +858,8 @@ namespace public {
     updatedAt    TimestampString(3)
     account      Account @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "FamilyMember_accountId_fkey")
     requests     AppointmentRequest[]
+    /// Their charts at clinics, once a clinic has them: the clinic's record.
+    links        CareLink[]
 
     @@index([accountId], map: "FamilyMember_accountId_idx")
 

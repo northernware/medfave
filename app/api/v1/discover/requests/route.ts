@@ -40,7 +40,7 @@ export async function POST(request: Request) {
   // Their chart here, if there is one this login may act on. For a family
   // member: one it already looks after with the same name and birthday.
   const chart = member
-    ? (viewer.charts.find((c) => c.clinicId === doctor.clinic.id && !c.self && sameMember(c.name, member)) ?? null)
+    ? (member.links.find((l) => l.clinicId === doctor.clinic.id) ? { id: member.links.find((l) => l.clinicId === doctor.clinic.id)!.patientId } : null)
     : await orm.Patient
         .select("id")
         .where((p) => p.clinicId.eq(doctor.clinic.id))
@@ -118,7 +118,3 @@ export async function GET(request: Request) {
   });
 }
 
-/** A looked-after chart's name ("First Last") against a family list entry. */
-function sameMember(chartName: string, m: { firstName: string; lastName: string }) {
-  return chartName.trim().toLowerCase() === `${m.firstName} ${m.lastName}`.trim().toLowerCase();
-}

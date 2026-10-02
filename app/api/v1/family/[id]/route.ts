@@ -1,5 +1,5 @@
 import { apiError, apiViewer, readJson } from "@/lib/api";
-import { removeFamilyMember, updateFamilyMember } from "@/lib/family";
+import { familyMember, removeFamilyMember, updateFamilyMember } from "@/lib/family";
 
 /** Change somebody's details. Body as for `POST /family` → `{ member }`. */
 export async function PATCH(request: Request, { params }: RouteContext<"/api/v1/family/[id]">) {
@@ -16,6 +16,11 @@ export async function PATCH(request: Request, { params }: RouteContext<"/api/v1/
 export async function DELETE(request: Request, { params }: RouteContext<"/api/v1/family/[id]">) {
   const viewer = await apiViewer(request);
   if (viewer instanceof Response) return viewer;
-  if (!(await removeFamilyMember(viewer.accountId, (await params).id))) return apiError(404, "Not found.");
+  const id = (await params).id;
+  const member = await familyMember(viewer.accountId, id);
+  if (!member) return apiError(404, "Not found.");
+  // Linked to a clinic: stop looking after them (`DELETE /patient/care?patient=`) first.
+  if (member.links.length > 0) return apiError(409, "A clinic has them on your account. Stop looking after them first.");
+  await removeFamilyMember(viewer.accountId, id);
   return new Response(null, { status: 204 });
 }
