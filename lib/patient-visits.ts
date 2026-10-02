@@ -1,4 +1,5 @@
 import "server-only";
+import { newId } from "@/lib/ids";
 import { revalidatePath } from "next/cache";
 import { orm } from "@/src/prisma/db";
 import { formatDateTime, instantFromDb, instantToDb } from "@/lib/datetime";
@@ -31,7 +32,7 @@ export type PatientChange = { ok: true } | { ok: false; status: number; message:
  * they had asked for is withdrawn with it.
  */
 export async function cancelByPatient(
-  patient: { patientId: string; clinicId: string },
+  patient: { patientId: string; clinicId: string; accountId?: string },
   appointmentId: string,
 ): Promise<PatientChange> {
   const visit = await orm.Appointment
@@ -59,6 +60,14 @@ export async function cancelByPatient(
     status: "CANCELLED",
     internalNotes: visit.internalNotes ? `${visit.internalNotes}\n${note}` : note,
     updatedAt: instantToDb(now),
+  });
+  await orm.AppointmentEvent.create({
+    id: newId(),
+    appointmentId,
+    clinicId: patient.clinicId,
+    status: "CANCELLED",
+    byId: patient.accountId ?? null,
+    at: instantToDb(now),
   });
   await orm.AppointmentRequest
     .where((r) => r.rescheduleOfId.eq(appointmentId))

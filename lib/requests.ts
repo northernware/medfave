@@ -411,6 +411,14 @@ export async function acceptAppointmentRequest(
           internalNotes: old.internalNotes ? `${old.internalNotes}\n${note}` : note,
           updatedAt: now,
         });
+        await tx.orm.public.AppointmentEvent.create({
+          id: newId(),
+          appointmentId: old.id,
+          clinicId: actor.clinicId,
+          status: "CANCELLED",
+          byId: actor.accountId,
+          at: now,
+        });
       }
     }
 
