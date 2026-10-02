@@ -12,7 +12,7 @@ The user set out the card: name and DOB, address, first and second emergency con
 
 ## Tested
 - `tsc` and `eslint` are clean.
-- Results of the dev-DB check are below.
+- On the dev DB, Ramon's card: address 24 Mabini St., Barangay San Roque, Tuguegarao; contact Marilou Dela Cruz (Spouse), no second contact yet; primary care Dr. Ana Reyes, Family Medicine, (074) 555 0101.
 
 ## Heads-up
 Migration `emergency_contact_2`: run `npm run db:migrate` after pulling.
