@@ -12,10 +12,13 @@ export function TypedConfirm({
   phrase,
   confirmLabel,
   variant,
+  children,
 }: {
   phrase: string;
   confirmLabel: string;
-  variant: "danger" | "secondary";
+  variant: "dangerSolid" | "secondary";
+  /** Beside the button: a way out. */
+  children?: React.ReactNode;
 }) {
   const [typed, setTyped] = useState("");
   const ready = typed.trim().toLowerCase() === phrase;
@@ -36,9 +39,12 @@ export function TypedConfirm({
           className="w-full max-w-sm rounded-md border border-danger/40 bg-surface px-3 py-2 text-sm placeholder:text-ink-faint focus:border-danger"
         />
       </label>
-      <button disabled={!ready} className={`${buttonClass(variant)} disabled:cursor-not-allowed disabled:opacity-50`}>
-        {confirmLabel}
-      </button>
+      <div className="flex flex-wrap items-center gap-2">
+        <button disabled={!ready} className={`${buttonClass(variant)} disabled:cursor-not-allowed disabled:opacity-50`}>
+          {confirmLabel}
+        </button>
+        {children}
+      </div>
     </div>
   );
 }

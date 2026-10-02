@@ -1,11 +1,15 @@
-import { AltArrowRightIcon } from "@solar-icons/react/linear/alt-arrow-right";
+"use client";
+
+import { useRef } from "react";
 import { DangerTriangleIcon } from "@solar-icons/react/linear/danger-triangle";
 import { buttonClass } from "./ui";
 import { TypedConfirm } from "./typed-confirm";
 
 /**
- * Destructive actions sit behind a disclosure rather than a JS confirm, so the
- * warning is readable and the whole thing still works without JavaScript.
+ * A destructive (or at least serious) action, set apart as its own row: what
+ * it does, and a button that opens a dialog to confirm it. The dialog carries
+ * the warning and, for a permanent deletion, the phrase to type. Nothing here
+ * is tinted; red is kept for the buttons that mean it.
  */
 export function DangerZone({
   action,
@@ -31,31 +35,54 @@ export function DangerZone({
   /** Extra fields the action needs — a reason, most often. */
   children?: React.ReactNode;
 }) {
-  // A permanent deletion looks like one; an archive, which can be undone, stays quiet.
+  const dialog = useRef<HTMLDialogElement>(null);
   const loud = variant === "danger";
+  const cancel = (
+    <button type="button" onClick={() => dialog.current?.close()} className={buttonClass("ghost")}>
+      Cancel
+    </button>
+  );
+
   return (
-    <details className={`group rounded-xl border ${loud ? "border-danger/40 bg-danger-tint" : "border-border bg-surface"}`}>
-      <summary
-        className={`flex cursor-pointer list-none items-center gap-2 px-5 py-3.5 text-sm font-medium transition-colors ${
-          loud ? "text-danger-ink" : "text-ink-muted hover:text-danger-ink"
-        }`}
+    <section className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-xl border border-border bg-surface px-5 py-4">
+      <div className="min-w-0 flex-1 basis-64">
+        <h2 className="text-sm font-semibold">{summary}</h2>
+        <p className="mt-0.5 text-sm text-pretty text-ink-muted">{warning}</p>
+      </div>
+      <button type="button" onClick={() => dialog.current?.showModal()} className={buttonClass(variant)}>
+        {confirmLabel}…
+      </button>
+
+      <dialog
+        ref={dialog}
+        className="m-auto w-[min(30rem,calc(100vw-2rem))] rounded-xl border border-border bg-surface p-0 text-ink shadow-lg backdrop:bg-black/45"
       >
-        {loud ? <DangerTriangleIcon aria-hidden className="size-4 shrink-0" /> : null}
-        {summary}
-        <AltArrowRightIcon aria-hidden className="ml-auto size-4 shrink-0 transition-transform group-open:rotate-90" />
-      </summary>
-      <div className={`border-t px-5 py-4 ${loud ? "border-danger/30" : "border-border"}`}>
-        <p className="text-sm text-pretty text-ink-muted">{warning}</p>
-        <form action={action} className="mt-3 space-y-3">
+        <form action={action} className="space-y-4 p-5">
           <input type="hidden" name={fieldName} value={fieldValue} />
+          <div className="flex items-start gap-3">
+            {loud ? (
+              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-danger-soft text-danger-ink">
+                <DangerTriangleIcon aria-hidden className="size-5" />
+              </span>
+            ) : null}
+            <div className="min-w-0">
+              <h2 className="text-base font-semibold">{summary}?</h2>
+              <p className="mt-1 text-sm text-pretty text-ink-muted">{warning}</p>
+            </div>
+          </div>
           {children}
           {confirmPhrase ? (
-            <TypedConfirm phrase={confirmPhrase} confirmLabel={confirmLabel} variant={variant} />
+            <TypedConfirm phrase={confirmPhrase} confirmLabel={confirmLabel} variant={loud ? "dangerSolid" : "secondary"}>
+              {cancel}
+            </TypedConfirm>
           ) : (
-            <button className={buttonClass(variant)}>{confirmLabel}</button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button className={buttonClass(loud ? "dangerSolid" : "secondary")}>{confirmLabel}</button>
+              {cancel}
+            </div>
           )}
         </form>
-      </div>
-    </details>
+      </dialog>
+    </section>
   );
 }
