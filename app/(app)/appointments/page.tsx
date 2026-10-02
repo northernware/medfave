@@ -84,25 +84,26 @@ export default async function AppointmentsPage({ searchParams }: PageProps<"/app
         }
       />
 
-      <nav aria-label="Filter appointments" className="flex gap-1 border-b border-border">
-        {VIEWS.map((v) => (
-          <Link
-            key={v.key}
-            href={`/appointments?view=${v.key}`}
-            aria-current={v.key === active ? "page" : undefined}
-            className={[
-              "-mb-px border-b-2 px-3 py-2 text-sm font-medium transition-colors",
-              v.key === active
-                ? "border-accent text-ink"
-                : "border-transparent text-ink-muted hover:text-ink",
-            ].join(" ")}
-          >
-            {v.label}
-          </Link>
-        ))}
-      </nav>
 
       <Card className="overflow-hidden">
+        {/* The filter heads the list it filters. */}
+        <nav aria-label="Filter appointments" className="flex gap-1 border-b border-border px-2">
+          {VIEWS.map((v) => (
+            <Link
+              key={v.key}
+              href={`/appointments?view=${v.key}`}
+              aria-current={v.key === active ? "page" : undefined}
+              className={[
+                "-mb-px border-b-2 px-3 py-2 text-sm font-medium transition-colors",
+                v.key === active
+                  ? "border-accent text-ink"
+                  : "border-transparent text-ink-muted hover:text-ink",
+              ].join(" ")}
+            >
+              {v.label}
+            </Link>
+          ))}
+        </nav>
         <AppointmentList
           appointments={appointments}
           emptyTitle={active === "past" ? "No past appointments" : "Nothing booked"}
