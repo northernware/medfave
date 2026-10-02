@@ -72,6 +72,11 @@ export async function visitHistory(appointmentId: string, clinicId: string): Pro
     const moved = e.previousScheduledAt ? formatDateTime(instantFromDb(e.previousScheduledAt)) : null;
     let label = LABEL[status] ?? "Changed";
     let detail: string | undefined;
+    // A new time, without a status change: rescheduled.
+    if (!status && moved) {
+      entries.push({ at: instantFromDb(e.at), label: "Time changed", by: e.by?.fullName ?? null, detail: `Was ${moved}` });
+      continue;
+    }
     if (status === "CHECKED_IN" || status === "IN_CONSULTATION") {
       if (moved) detail = `Arrived on another day: moved from ${moved}`;
     } else if (status === "CONFIRMED" && wasCheckedIn) {

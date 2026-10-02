@@ -430,12 +430,26 @@ export async function writeConsultation(
     // existed, which meant an unfinished note closed the visit behind the
     // doctor's back.
     if (intent === "finish" && linkedAppointmentId) {
+      // Read first: amending a signed note finishes it again, and that is not a second completion.
+      const before = await t.Appointment.select("status").where((a) => a.id.eq(linkedAppointmentId)).first();
       await t.Appointment
         .where((a) => a.id.eq(linkedAppointmentId))
         // A visit deliberately marked cancelled or missed stays that way; a
         // note written about it does not undo that decision.
         .where((a) => a.status.notIn(["CANCELLED", "NO_SHOW"]))
         .update({ status: AppointmentStatus.COMPLETED, updatedAt: now });
+      const visit = await t.Appointment.select("status").where((a) => a.id.eq(linkedAppointmentId)).first();
+      if (visit?.status === AppointmentStatus.COMPLETED && before?.status !== AppointmentStatus.COMPLETED) {
+        const author = await t.Doctor.select("accountId").where((d) => d.id.eq(doctorId)).first();
+        await t.AppointmentEvent.create({
+          id: newId(),
+          appointmentId: linkedAppointmentId,
+          clinicId,
+          status: AppointmentStatus.COMPLETED,
+          byId: author?.accountId ?? null,
+          at: now,
+        });
+      }
     }
 
     // Every signature and every amendment leaves a version behind. Nothing is

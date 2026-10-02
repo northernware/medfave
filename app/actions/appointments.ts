@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireDoctor, requireStaff } from "@/lib/auth";
 import { db, orm } from "@/src/prisma/db";
-import { instantToDb } from "@/lib/datetime";
+import { instantFromDb, instantToDb } from "@/lib/datetime";
 import { newId } from "@/lib/ids";
 import { isClinicToday,
   bookAppointment,
@@ -44,7 +44,7 @@ export async function updateAppointment(
   if (!parsed.success) return toFieldErrors(parsed.error);
 
   const owned = await orm.Appointment
-    .select("id", "doctorId")
+    .select("id", "doctorId", "scheduledAt")
     .where((a) => a.id.eq(appointmentId))
     .where((a) => a.clinicId.eq(staff.clinicId))
     .first();
@@ -70,9 +70,22 @@ export async function updateAppointment(
     );
     if (clash) return { clash };
 
+    const now = instantToDb(new Date());
     await tx.orm.public.Appointment
       .where((a) => a.id.eq(appointmentId))
-      .update({ ...resolved.data, updatedAt: instantToDb(new Date()) });
+      .update({ ...resolved.data, updatedAt: now });
+    // A new time goes in the visit's history, with the one it had before.
+    if (resolved.scheduledAt.getTime() !== instantFromDb(owned.scheduledAt).getTime()) {
+      await tx.orm.public.AppointmentEvent.create({
+        id: newId(),
+        appointmentId,
+        clinicId: staff.clinicId,
+        status: null,
+        previousScheduledAt: owned.scheduledAt,
+        byId: staff.accountId,
+        at: now,
+      });
+    }
     return { clash: null };
   });
 
