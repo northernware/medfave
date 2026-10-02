@@ -20,6 +20,7 @@ import {
   type FormState,
 } from "@/lib/validation";
 import { findPossibleDuplicates } from "@/lib/queries";
+import { DELETE_PHRASES, phraseTyped } from "@/lib/confirm-phrase";
 import { startOwnHouseholdFor } from "@/lib/households";
 import { ACTIVE_STATUSES } from "@/lib/domain";
 
@@ -696,6 +697,11 @@ export async function deletePatient(formData: FormData) {
   if (!patientId) return;
   // Only a doctor caring for this patient decides about their chart.
   if (!(await caresFor(doctor, patientId))) return;
+
+  // Permanent: the phrase has to have been typed, whatever the page showed.
+  if (!phraseTyped(formData, DELETE_PHRASES.registration)) {
+    blocked(patientId, "Nothing was deleted: the confirmation phrase wasn't typed.");
+  }
 
   const found = await clinicalHistory(doctor.clinicId, patientId);
   if (!found) return;

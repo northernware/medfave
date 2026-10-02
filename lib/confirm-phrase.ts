@@ -4,6 +4,8 @@
  */
 export const DELETE_PHRASES = {
   appointment: "delete appointment",
+  registration: "delete registration",
+  household: "delete household",
 } as const;
 
 /** Whether the form carries the phrase (case and surrounding space aside). */

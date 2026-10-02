@@ -8,6 +8,7 @@ import { orm } from "@/src/prisma/db";
 import { instantToDb } from "@/lib/datetime";
 import { newId } from "@/lib/ids";
 import { householdSchema, toFieldErrors, type FormState } from "@/lib/validation";
+import { DELETE_PHRASES, phraseTyped } from "@/lib/confirm-phrase";
 
 /**
  * Resolves the chosen primary contact, or `undefined` when the id names someone
@@ -182,6 +183,10 @@ export async function deleteHousehold(formData: FormData) {
   const doctor = await requireDoctor();
   const householdId = String(formData.get("householdId") ?? "");
   if (!householdId) return;
+
+  if (!phraseTyped(formData, DELETE_PHRASES.household)) {
+    householdBlocked(householdId, "Nothing was deleted: the confirmation phrase wasn't typed.");
+  }
 
   const household = await orm.Household
     .select("id")
