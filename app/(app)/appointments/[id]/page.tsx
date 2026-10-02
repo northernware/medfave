@@ -320,6 +320,16 @@ export default async function AppointmentPage({
               </Link>
             </div>
           </Card>
+          {/* Keep deletion beneath the visit actions, independent of history length. */}
+          <DangerZone
+            action={deleteAppointment}
+            fieldName="appointmentId"
+            fieldValue={appointment.id}
+            summary="Delete this appointment"
+            warning="Removes the booking entirely. If the visit happened, cancelling or marking it a no-show keeps a more honest history than deleting it."
+            confirmLabel="Delete appointment"
+            confirmPhrase={DELETE_PHRASES.appointment}
+          />
         </div>
         <div className="space-y-3">
           {/* What to know before the visit, at the head of the clinic's side. */}
@@ -345,17 +355,6 @@ export default async function AppointmentPage({
           <VisitHistory entries={history} />
         </div>
       </div>
-
-      {/* Last, and apart from the visit: deleting it is not part of working it. */}
-      <DangerZone
-        action={deleteAppointment}
-        fieldName="appointmentId"
-        fieldValue={appointment.id}
-        summary="Delete this appointment"
-        warning="Removes the booking entirely. If the visit happened, cancelling or marking it a no-show keeps a more honest history than deleting it."
-        confirmLabel="Delete appointment"
-        confirmPhrase={DELETE_PHRASES.appointment}
-      />
     </div>
   );
 }
