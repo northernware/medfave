@@ -33,7 +33,7 @@ export default async function EmergencyPage({ searchParams }: PageProps<"/portal
   );
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <PageHeader title="Emergency card" subtitle="What a medic needs to know. From your clinics' records." />
       {cards.length > 1 ? (
         <nav aria-label="Whose card" className="flex flex-wrap gap-2">

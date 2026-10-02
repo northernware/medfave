@@ -101,7 +101,7 @@ export default async function DeskNewAppointmentPage({
   const preselected = typeof patientId === "string" && patients.some((p) => p.id === patientId);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title={walkIn ? "Register walk-in" : "Book appointment"} />
       <Card className="space-y-6 p-5 sm:p-6">
         {picker}

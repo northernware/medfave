@@ -27,7 +27,7 @@ export default async function EditAppointmentPage({ params }: PageProps<"/appoin
   const { patients, busyByDay, followUps, schedule, window, walkInWindow, now } = await bookingFormData(doctor.id, appointment.id);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title="Edit appointment" />
       <Card className="p-5 sm:p-6">
         <AppointmentForm

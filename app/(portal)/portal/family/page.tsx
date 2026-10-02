@@ -37,7 +37,7 @@ export default async function FamilyPage() {
   }));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title="My family" subtitle="The people you book visits for." />
 
       <Card>

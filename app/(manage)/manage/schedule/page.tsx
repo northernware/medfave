@@ -186,7 +186,7 @@ export default async function SchedulePage({ searchParams }: PageProps<"/manage/
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader
         title={doctors.length > 1 && whose ? `${whose.fullName}'s schedule` : "Clinic schedule"}
         subtitle={`${describeWeek(schedule)}${schedule.breaks.length ? `, with ${schedule.breaks.length} break${schedule.breaks.length === 1 ? "" : "s"}` : ""}.`}

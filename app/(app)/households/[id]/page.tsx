@@ -95,7 +95,7 @@ export default async function HouseholdPage({
   ).map(toAppointmentListItem);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <CrumbName id={household.id} name={`${household.name} household`} />
       <PageHeader
         title={`${household.name} household`}

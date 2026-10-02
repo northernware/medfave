@@ -45,7 +45,7 @@ export default async function DocumentPage({ params, searchParams }: PageProps<"
   const restriction = DOCUMENT_TYPE_RESTRICTIONS[request.type];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader
         title={DOCUMENT_TYPE_LABELS[request.type]}
         subtitle={

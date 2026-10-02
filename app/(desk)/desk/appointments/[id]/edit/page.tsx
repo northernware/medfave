@@ -30,7 +30,7 @@ export default async function DeskReschedulePage({
     await bookingFormData(appointment.doctorId, appointment.id);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title="Reschedule" subtitle={fullName(appointment.patient)} />
       <Card className="p-5 sm:p-6">
         <AppointmentForm

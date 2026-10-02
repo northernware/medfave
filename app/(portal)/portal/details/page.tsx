@@ -44,7 +44,7 @@ export default async function PortalDetailsPage({ searchParams }: PageProps<"/po
   const care = await carersOf(me);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader
         title="Your details"
         subtitle="Keep your contact details right and the clinic can reach you."

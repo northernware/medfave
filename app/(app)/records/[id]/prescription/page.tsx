@@ -36,7 +36,7 @@ export default async function PrescriptionPage({ params }: PageProps<"/records/[
   const visitDate = instantFromDb(record.visitDate);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       {/* Screen-only controls; the sheet below is what prints. */}
       <div className="flex flex-wrap items-center justify-between gap-3 print:hidden">
         <div>

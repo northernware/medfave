@@ -28,7 +28,7 @@ export default async function EditDocumentPage({ params }: PageProps<"/documents
   const { patients, visits } = await documentFormData(doctor.id);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader
         title={`Edit ${DOCUMENT_TYPE_LABELS[request.type].toLowerCase()}`}
         subtitle={fullName(request.patient)}

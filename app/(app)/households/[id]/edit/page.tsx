@@ -28,7 +28,7 @@ export default async function EditHouseholdPage({ params }: PageProps<"/househol
   const action = updateHousehold.bind(null, household.id);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title={`Edit ${household.name} household`} />
       <Card className="p-5 sm:p-6">
         <HouseholdForm

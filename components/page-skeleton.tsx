@@ -143,7 +143,7 @@ export function TodaySkeleton() {
 /** A list page: header, search, the list. */
 export function ListPageSkeleton({ search = true, avatar = true }: { search?: boolean; avatar?: boolean }) {
   return (
-    <Busy className="space-y-6">
+    <Busy className="space-y-3">
       <HeaderSkeleton action />
       {search ? <SearchSkeleton /> : null}
       <ListSkeleton rows={8} title={false} avatar={avatar} />
@@ -169,10 +169,10 @@ export function CalendarPageSkeleton() {
 /** Anything else: a header and a few cards. */
 export function PageSkeleton({ cards = 3 }: { cards?: number }) {
   return (
-    <Busy className="space-y-6">
+    <Busy className="space-y-3">
       <HeaderSkeleton />
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
-        <div className="space-y-4">
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="space-y-3">
           {Array.from({ length: cards }, (_, i) => (
             <div key={i} className={`${card} space-y-3 p-5`}>
               <div className={`${pulse} h-5 w-40`} />

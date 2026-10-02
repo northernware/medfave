@@ -70,7 +70,7 @@ export default async function PortalPage({ searchParams }: PageProps<"/portal">)
   if (!profile) return null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader
         title={`Hello, ${profile.firstName}`}
         subtitle={`${profile.household.name} household${profile.patientNumber ? ` · ${profile.patientNumber}` : ""}`}

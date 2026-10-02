@@ -104,7 +104,7 @@ export default async function RecordPage({ params }: PageProps<"/records/[id]">)
   ].filter((v) => v.value != null);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader
         title={record.chiefComplaint || "Untitled draft"}
         subtitle={

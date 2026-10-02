@@ -29,7 +29,7 @@ export default async function PortalDocumentPage({ params }: PageProps<"/portal/
   const details = parseDetails(document.details);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader
         title={DOCUMENT_TYPE_LABELS[document.type]}
         subtitle={`Shared with you ${formatDateTime(instantFromDb(document.sharedWithPatientAt!))}`}

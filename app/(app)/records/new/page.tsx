@@ -68,7 +68,7 @@ export default async function NewRecordPage({ searchParams }: PageProps<"/record
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader
         title="Document visit"
         subtitle={

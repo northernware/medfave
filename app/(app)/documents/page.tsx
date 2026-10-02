@@ -59,7 +59,7 @@ export default async function DocumentsPage({ searchParams }: PageProps<"/docume
     .all();
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <PageHeader
         title="Records requests"
         subtitle="Certificates, abstracts and copies asked for from the chart."

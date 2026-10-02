@@ -33,7 +33,7 @@ export default async function ClinicDetailsPage({ searchParams }: PageProps<"/ma
   ]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader
         title="Clinic details"
         subtitle="The one place the clinic's name is kept. Every letterhead and email reads it from here."

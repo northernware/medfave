@@ -68,7 +68,7 @@ export default async function DeskAppointmentPage({
   );
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <CrumbName id={appointment.id} name={`Visit · ${fullName(appointment.patient)}`} />
       <PageHeader
         title={formatDateTime(instantFromDb(appointment.scheduledAt))}
@@ -108,8 +108,8 @@ export default async function DeskAppointmentPage({
         </div>
       ) : null}
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
-        <div className="min-w-0 space-y-4">
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+        <div className="min-w-0 space-y-3">
           <Card>
             <CardHeader title="The visit" />
             <dl className="grid gap-4 px-5 py-4 sm:grid-cols-2">

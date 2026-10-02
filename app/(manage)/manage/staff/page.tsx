@@ -56,7 +56,7 @@ export default async function StaffPage({ searchParams }: PageProps<"/manage/sta
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader
         title="Staff"
         subtitle={`Who works at ${manager.clinicName}, and what they may reach.`}
