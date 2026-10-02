@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { CrumbName } from "@/components/crumb-names";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { issuePatientActivation, revokeCareLink, revokePatientActivation } from "@/app/actions/access";
+import { giveCareAccess, issuePatientActivation, revokeCareLink, revokePatientActivation } from "@/app/actions/access";
+import { isAdult as isAdultDob } from "@/lib/households";
 import { StartHousehold } from "@/components/start-household";
 import { requireStaff } from "@/lib/auth";
 import { orm } from "@/src/prisma/db";
@@ -109,7 +110,7 @@ export default async function DeskPatientPage({
 }: PageProps<"/desk/patients/[id]">) {
   const staff = await requireStaff();
   const { id } = await params;
-  const { code, pin, mail, for: forWho, to, household: householdNote } = await searchParams;
+  const { code, pin, mail, for: forWho, to, household: householdNote, care, why } = await searchParams;
 
   const patient = await orm.Patient
     .select(
@@ -166,7 +167,7 @@ export default async function DeskPatientPage({
   // Logins that look after this chart for the patient, and the caregiver codes still out (one per person).
   const [carers, careCodes] = await Promise.all([
     orm.CareLink
-      .select("id", "caregiverName", "createdAt")
+      .select("id", "caregiverName", "createdAt", "accountId")
       .include("account", (a) => a.select("fullName", "email"))
       .where((l) => l.patientId.eq(patient.id))
       .where((l) => l.clinicId.eq(staff.clinicId))
@@ -187,12 +188,18 @@ export default async function DeskPatientPage({
 
   // The rest of their household: who could come along if they start their own.
   const housemates = await orm.Patient
-    .select("id", "firstName", "middleName", "lastName", "relationship")
+    .select("id", "firstName", "middleName", "lastName", "relationship", "accountId", "dateOfBirth")
     .where((p) => p.householdId.eq(patient.household.id))
     .where((p) => p.clinicId.eq(staff.clinicId))
     .where((p) => p.archivedAt.isNull())
     .all();
   const others = housemates.filter((h) => h.id !== patient.id);
+  // Who could look after them in one tap: grown-ups in the household who use
+  // Medfave and don't already. Anybody else: by email, or a code.
+  const carerIds = new Set(carers.map((c) => c.accountId));
+  const suggested = others.filter(
+    (h) => h.accountId && h.accountId !== patient.accountId && !carerIds.has(h.accountId) && isAdultDob(String(h.dateOfBirth)),
+  );
 
   return (
     <div className="space-y-6">
@@ -346,15 +353,47 @@ export default async function DeskPatientPage({
                 </form>
               </div>
             ))}
+            {care === "given" ? (
+              <p className="px-5 py-3 text-sm text-ok-ink">
+                {typeof to === "string" && to ? to : "They"} can now see this chart and book for {patient.firstName}. It&rsquo;s in
+                their family list in the app.
+              </p>
+            ) : care === "refused" ? (
+              <p className="px-5 py-3 text-sm text-danger-ink">{typeof why === "string" ? why : "That didn't work."}</p>
+            ) : null}
             {patient.archivedAt ? null : (
-              <form action={issuePatientActivation} className="flex flex-wrap items-center gap-2 px-5 py-4">
-                <input type="hidden" name="patientId" value={patient.id} />
-                <input type="hidden" name="for" value="caregiver" />
-                <div className="min-w-0 flex-1">
-                  <TextInput name="caregiverName" placeholder="Their name, e.g. Ana Santos (mother)" aria-label="Parent or guardian's name" />
-                </div>
-                <button className={buttonClass("secondary")}>Give access</button>
-              </form>
+              <div className="space-y-3 px-5 py-4">
+                {/* One tap for a grown-up in the household who already uses Medfave. */}
+                {suggested.map((h) => (
+                  <form key={h.id} action={giveCareAccess} className="flex items-center gap-3">
+                    <input type="hidden" name="patientId" value={patient.id} />
+                    <input type="hidden" name="accountId" value={h.accountId!} />
+                    <p className="min-w-0 flex-1 text-sm">
+                      <span className="font-medium">{fullName(h)}</span>
+                      <span className="text-ink-muted"> · {RELATIONSHIP_LABELS[h.relationship]} · uses Medfave</span>
+                    </p>
+                    <button className={buttonClass("primary")}>Give access</button>
+                  </form>
+                ))}
+                <form action={giveCareAccess} className="flex flex-wrap items-center gap-2">
+                  <input type="hidden" name="patientId" value={patient.id} />
+                  <div className="min-w-0 flex-1">
+                    <TextInput name="email" type="email" placeholder="Their Medfave email" aria-label="Their Medfave email" />
+                  </div>
+                  <button className={buttonClass("secondary")}>Give access</button>
+                </form>
+                <details>
+                  <summary className="cursor-pointer text-sm text-ink-muted hover:text-ink">Not on Medfave yet? Give them a code</summary>
+                  <form action={issuePatientActivation} className="mt-2 flex flex-wrap items-center gap-2">
+                    <input type="hidden" name="patientId" value={patient.id} />
+                    <input type="hidden" name="for" value="caregiver" />
+                    <div className="min-w-0 flex-1">
+                      <TextInput name="caregiverName" placeholder="Their name (optional)" aria-label="Their name" />
+                    </div>
+                    <button className={buttonClass("secondary")}>Make a code</button>
+                  </form>
+                </details>
+              </div>
             )}
           </div>
         </Card>

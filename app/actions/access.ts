@@ -10,6 +10,7 @@ import { hashPin, issuePin, issueToken } from "@/lib/tokens";
 import { appUrl, sendPatientActivation } from "@/lib/email";
 import type { FormState } from "@/lib/validation";
 import { createStaffInvite } from "@/lib/staff";
+import { grantCareByStaff } from "@/lib/caregivers";
 
 /** Long enough to hand over and be typed in later; short enough to expire. */
 const ACTIVATION_DAYS = 14;
@@ -151,6 +152,24 @@ export async function revokePatientActivation(formData: FormData) {
 
   revalidatePath(`/desk/patients/${patientId}`);
   redirect(`/desk/patients/${patientId}`);
+}
+
+/**
+ * Gives somebody already on Medfave access to a chart they look after — picked
+ * from the household, or found by their email. No code: it is in their family
+ * list straight away (`grantCareByStaff`).
+ */
+export async function giveCareAccess(formData: FormData) {
+  const staff = await requireStaff();
+  const patientId = String(formData.get("patientId") ?? "");
+  const result = await grantCareByStaff(staff, patientId, {
+    accountId: String(formData.get("accountId") ?? "") || undefined,
+    email: String(formData.get("email") ?? "") || undefined,
+  });
+  revalidatePath(`/desk/patients/${patientId}`);
+  redirect(
+    `/desk/patients/${patientId}?care=${result.ok ? `given&to=${encodeURIComponent(result.name ?? "")}` : `refused&why=${encodeURIComponent(result.message)}`}`,
+  );
 }
 
 /**
