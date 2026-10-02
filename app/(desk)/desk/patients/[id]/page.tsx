@@ -130,6 +130,9 @@ export default async function DeskPatientPage({
       "emergencyContactName",
       "emergencyContactRelationship",
       "emergencyContactNumber",
+      "emergencyContact2Name",
+      "emergencyContact2Relationship",
+      "emergencyContact2Number",
     )
     .include("household", (h) => h.select("id", "name", "address", "contactNumber"))
     .include("appointments", (a) =>
@@ -416,6 +419,15 @@ export default async function DeskPatientPage({
               value={
                 patient.emergencyContactNumber
                   ? `${patient.emergencyContactNumber}${patient.emergencyContactRelationship ? ` (${patient.emergencyContactRelationship})` : ""}`
+                  : null
+              }
+            />
+            <Detail label="Second contact" value={patient.emergencyContact2Name} />
+            <Detail
+              label="Second contact number"
+              value={
+                patient.emergencyContact2Number
+                  ? `${patient.emergencyContact2Number}${patient.emergencyContact2Relationship ? ` (${patient.emergencyContact2Relationship})` : ""}`
                   : null
               }
             />

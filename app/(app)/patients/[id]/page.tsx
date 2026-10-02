@@ -393,6 +393,21 @@ export default async function PatientPage({
             }
           />
           <Detail
+            label="Second contact"
+            value={
+              patient.emergencyContact2Name ? (
+                <>
+                  {patient.emergencyContact2Name}
+                  <span className="mt-0.5 block text-xs text-ink-faint">
+                    {[patient.emergencyContact2Relationship, patient.emergencyContact2Number]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                </>
+              ) : null
+            }
+          />
+          <Detail
             className="col-span-2"
             label="Current medications"
             value={

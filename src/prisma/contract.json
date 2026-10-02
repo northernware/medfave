@@ -4866,6 +4866,27 @@
                   "kind": "scalar"
                 }
               },
+              "emergencyContact2Name": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "emergencyContact2Number": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "emergencyContact2Relationship": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "emergencyContactName": {
                 "nullable": true,
                 "type": {
@@ -5244,6 +5265,15 @@
                 },
                 "email": {
                   "column": "email"
+                },
+                "emergencyContact2Name": {
+                  "column": "emergencyContact2Name"
+                },
+                "emergencyContact2Number": {
+                  "column": "emergencyContact2Number"
+                },
+                "emergencyContact2Relationship": {
+                  "column": "emergencyContact2Relationship"
                 },
                 "emergencyContactName": {
                   "column": "emergencyContactName"
@@ -10240,6 +10270,21 @@
                   "nativeType": "text",
                   "nullable": true
                 },
+                "emergencyContact2Name": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "emergencyContact2Number": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "emergencyContact2Relationship": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "emergencyContactName": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -11704,7 +11749,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "e53313c2c2de4a6a7d1ce3185d44bddbf117b05d3cd945faade51d574e1887aa"
+    "storageHash": "360c574596fd67e27e8a8f998e0df167a69871e5d871c6c388e7d7eb75ac4e9b"
   },
   "capabilities": {
     "postgres": {

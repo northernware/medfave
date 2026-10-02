@@ -71,6 +71,9 @@ function GeneralView({ card }: { card: EmergencyCard }) {
   const g = card.general;
   return (
     <>
+      <Section title="Address">
+        <p>{g.address ?? <span className="text-ink-muted">Not recorded</span>}</p>
+      </Section>
       <Section title="Blood type">
         {g.bloodTypes.length === 0 ? <p className="text-ink-muted">Not recorded</p> : null}
         {g.bloodTypes.map((b) => (
@@ -114,7 +117,7 @@ function GeneralView({ card }: { card: EmergencyCard }) {
           </p>
         ))}
       </Section>
-      <Section title="Emergency contact">
+      <Section title="Emergency contacts">
         {g.contacts.length === 0 ? <p className="text-ink-muted">Not recorded</p> : null}
         {g.contacts.map((c) => (
           <p key={`${c.name}${c.number}`}>
@@ -128,7 +131,25 @@ function GeneralView({ card }: { card: EmergencyCard }) {
           </p>
         ))}
       </Section>
+      <Section title="Primary care">
+        {g.physician ? <Physician p={g.physician} /> : <p className="text-ink-muted">Not recorded</p>}
+      </Section>
     </>
+  );
+}
+
+function Physician({ p }: { p: NonNullable<EmergencyCard["general"]["physician"]> }) {
+  return (
+    <p>
+      <span className="font-medium">{p.name}</span>
+      {p.specialty ? <span className="text-ink-muted"> · {p.specialty}</span> : null}
+      {p.phone ? (
+        <a href={`tel:${p.phone.replace(/[^\d+]/g, "")}`} className="ml-2 text-accent-ink hover:underline">
+          {p.phone}
+        </a>
+      ) : null}
+      <span className="text-xs text-ink-faint"> · {p.clinicName}</span>
+    </p>
   );
 }
 
@@ -164,6 +185,9 @@ function ClinicView({ r }: { r: ClinicRecord }) {
         {r.conditions.map((c) => (
           <p key={c}>{c}</p>
         ))}
+      </Section>
+      <Section title="Primary care">
+        {r.physician ? <Physician p={r.physician} /> : <p className="text-ink-muted">Not recorded</p>}
       </Section>
       <Section title="Emergency contact">
         {r.emergencyContact ? (

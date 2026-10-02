@@ -23,11 +23,18 @@ export type Medication = { label: string; dosage: string | null; frequency: stri
 export type Contact = { name: string; relationship: string | null; number: string | null };
 type ListStatus = "RECORDED" | "NONE_KNOWN" | "UNKNOWN";
 
+/** Their usual doctor at a clinic: whoever saw them last, else their household's. */
+export type Physician = { name: string; specialty: string | null; phone: string | null; clinicName: string };
+
 export type ClinicRecord = {
   clinicId: string;
   clinicName: string;
   patientId: string;
   updatedAt: string;
+  address: string | null;
+  /** First and second, in that order; either may be missing. */
+  contacts: Contact[];
+  physician: Physician | null;
   bloodType: string | null;
   allergyStatus: ListStatus;
   allergies: Allergy[];
@@ -36,6 +43,8 @@ export type ClinicRecord = {
   conditionStatus: ListStatus;
   conditions: string[];
   emergencyContact: Contact | null;
+  /** When they were last seen there, to pick the usual doctor across clinics. */
+  lastSeenAt: string;
 };
 
 export type EmergencyCard = {
@@ -54,6 +63,9 @@ export type EmergencyCard = {
     medications: Tagged<Medication>[];
     conditions: Tagged<{ label: string }>[];
     contacts: Tagged<Contact>[];
+    address: string | null;
+    /** The usual doctor at the clinic seen most recently. */
+    physician: Physician | null;
   };
 };
 
@@ -64,18 +76,34 @@ const RANK = { SEVERE: 3, MODERATE: 2, MILD: 1 } as const;
 async function recordsFor(charts: PatientChart[]): Promise<ClinicRecord[]> {
   return Promise.all(
     charts.map(async (c) => {
-      const [p, allergies, medications, conditions] = await Promise.all([
+      const [p, allergies, medications, conditions, lastSeen] = await Promise.all([
         orm.Patient
           .select(
             "updatedAt", "bloodType", "allergyStatus", "medicationStatus", "conditionStatus",
             "emergencyContactName", "emergencyContactRelationship", "emergencyContactNumber",
+            "emergencyContact2Name", "emergencyContact2Relationship", "emergencyContact2Number",
           )
+          .include("household", (h) =>
+            h.select("address").include("doctor", (d) => d.select("fullName", "specialty")),
+          )
+          .include("clinic", (k) => k.select("contactNumber"))
           .where((x) => x.id.eq(c.id))
           .first(),
         orm.PatientAllergy.select("label", "reaction", "severity").where((x) => x.patientId.eq(c.id)).all(),
         orm.PatientMedication.select("label", "dosage", "frequency").where((x) => x.patientId.eq(c.id)).all(),
         orm.PatientCondition.select("label").where((x) => x.patientId.eq(c.id)).all(),
+        // Whoever saw them last there.
+        orm.Appointment
+          .select("scheduledAt")
+          .include("doctor", (d) => d.select("fullName", "specialty"))
+          .where((a) => a.patientId.eq(c.id))
+          .where((a) => a.status.in(["COMPLETED", "IN_CONSULTATION", "CHECKED_IN"]))
+          .orderBy((a) => a.scheduledAt.desc())
+          .first(),
       ]);
+      const doc = lastSeen?.doctor ?? p?.household.doctor ?? null;
+      const contact = (name: string | null | undefined, relationship: string | null | undefined, number: string | null | undefined) =>
+        name ? { name, relationship: relationship ?? null, number: number ?? null } : null;
       return {
         clinicId: c.clinicId,
         clinicName: c.clinicName,
@@ -88,9 +116,16 @@ async function recordsFor(charts: PatientChart[]): Promise<ClinicRecord[]> {
         medications: medications.map((m) => ({ label: m.label, dosage: m.dosage, frequency: m.frequency })),
         conditionStatus: (p?.conditionStatus ?? "UNKNOWN") as ListStatus,
         conditions: conditions.map((x) => x.label),
-        emergencyContact: p?.emergencyContactName
-          ? { name: p.emergencyContactName, relationship: p.emergencyContactRelationship, number: p.emergencyContactNumber }
+        emergencyContact: contact(p?.emergencyContactName, p?.emergencyContactRelationship, p?.emergencyContactNumber),
+        address: p?.household.address ?? null,
+        contacts: [
+          contact(p?.emergencyContactName, p?.emergencyContactRelationship, p?.emergencyContactNumber),
+          contact(p?.emergencyContact2Name, p?.emergencyContact2Relationship, p?.emergencyContact2Number),
+        ].filter((x): x is Contact => x !== null),
+        physician: doc
+          ? { name: doc.fullName, specialty: doc.specialty, phone: p?.clinic.contactNumber ?? null, clinicName: c.clinicName }
           : null,
+        lastSeenAt: lastSeen ? String(lastSeen.scheduledAt) : "",
       };
     }),
   );
@@ -126,7 +161,9 @@ function combine(records: ClinicRecord[]): EmergencyCard["general"] {
       records.some((r) => r.allergyStatus === "NONE_KNOWN") && records.every((r) => r.allergies.length === 0),
     medications: merge(records, (r) => r.medications, (m) => `${m.label} ${m.dosage ?? ""}`),
     conditions: merge(records, (r) => r.conditions.map((label) => ({ label })), (c) => c.label),
-    contacts: merge(records, (r) => (r.emergencyContact ? [r.emergencyContact] : []), (c) => `${c.name} ${c.number ?? ""}`),
+    contacts: merge(records, (r) => r.contacts, (c) => `${c.name} ${c.number ?? ""}`),
+    address: records.find((r) => r.address)?.address ?? null,
+    physician: [...records].sort((a, b) => b.lastSeenAt.localeCompare(a.lastSeenAt)).find((r) => r.physician)?.physician ?? null,
   };
 }
 

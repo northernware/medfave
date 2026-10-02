@@ -38,6 +38,9 @@ export default async function DeskEditPatientPage({
       "emergencyContactName",
       "emergencyContactRelationship",
       "emergencyContactNumber",
+      "emergencyContact2Name",
+      "emergencyContact2Relationship",
+      "emergencyContact2Number",
     )
     .where((p) => p.id.eq(id))
     .where((p) => p.clinicId.eq(staff.clinicId))
@@ -74,6 +77,9 @@ export default async function DeskEditPatientPage({
             emergencyContactName: text(patient.emergencyContactName),
             emergencyContactRelationship: text(patient.emergencyContactRelationship),
             emergencyContactNumber: text(patient.emergencyContactNumber),
+            emergencyContact2Name: text(patient.emergencyContact2Name),
+            emergencyContact2Relationship: text(patient.emergencyContact2Relationship),
+            emergencyContact2Number: text(patient.emergencyContact2Number),
             // Not shown and not written back for a secretary; the action
             // leaves whatever the doctor recorded exactly as it is.
             allergyStatus: "UNKNOWN",

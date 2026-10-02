@@ -259,6 +259,9 @@ export const patientSchema = z.object({
   emergencyContactName: optionalText(120),
   emergencyContactRelationship: optionalText(60),
   emergencyContactNumber: optionalText(40),
+  emergencyContact2Name: optionalText(120),
+  emergencyContact2Relationship: optionalText(60),
+  emergencyContact2Number: optionalText(40),
   email: optionalText(160).refine((v) => v === null || z.email().safeParse(v).success, {
     message: "Enter a valid email address",
   }),

@@ -44,6 +44,9 @@ export type PatientDefaults = {
   emergencyContactName: string;
   emergencyContactRelationship: string;
   emergencyContactNumber: string;
+  emergencyContact2Name: string;
+  emergencyContact2Relationship: string;
+  emergencyContact2Number: string;
 };
 
 export function blankPatient(householdId: string): PatientDefaults {
@@ -68,6 +71,9 @@ export function blankPatient(householdId: string): PatientDefaults {
     emergencyContactName: "",
     emergencyContactRelationship: "",
     emergencyContactNumber: "",
+    emergencyContact2Name: "",
+    emergencyContact2Relationship: "",
+    emergencyContact2Number: "",
   };
 }
 
