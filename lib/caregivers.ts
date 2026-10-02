@@ -131,3 +131,49 @@ export async function stopCaringFor(accountId: string, patientId: string): Promi
   await orm.CareLink.where((l) => l.id.eq(link.id)).update({ revokedAt: instantToDb(new Date()), revokedById: accountId });
   return { ok: true };
 }
+
+/**
+ * The desk linking a caregiver directly — somebody it has identified who
+ * already uses Medfave (a parent in the same household, say). No code to hand
+ * over: the person appears in their family list at once. `who` is their
+ * account id, or the email their Medfave login uses.
+ */
+export async function grantCareByStaff(
+  staff: { accountId: string; clinicId: string },
+  patientId: string,
+  who: { accountId?: string; email?: string },
+): Promise<CareResult & { name?: string }> {
+  const patient = await orm.Patient
+    .select("id", "accountId", "archivedAt")
+    .where((p) => p.id.eq(patientId))
+    .where((p) => p.clinicId.eq(staff.clinicId))
+    .first();
+  if (!patient || patient.archivedAt) return { ok: false, message: "That chart can't be changed." };
+
+  const email = who.email?.trim().toLowerCase();
+  const carer = who.accountId
+    ? await orm.Account.select("id", "fullName").where((a) => a.id.eq(who.accountId!)).first()
+    : email
+      ? await orm.Account.select("id", "fullName").where((a) => a.email.eq(email)).first()
+      : null;
+  if (!carer) return { ok: false, message: "Nobody uses Medfave with that email. Give them a code instead." };
+  if (carer.id === patient.accountId) return { ok: false, message: "That's the patient's own login." };
+
+  const already = await orm.CareLink
+    .select("id")
+    .where((l) => l.accountId.eq(carer.id))
+    .where((l) => l.patientId.eq(patientId))
+    .where((l) => l.revokedAt.isNull())
+    .first();
+  if (!already) {
+    await orm.CareLink.create({
+      id: newId(),
+      clinicId: staff.clinicId,
+      patientId,
+      accountId: carer.id,
+      grantedById: staff.accountId,
+      createdAt: instantToDb(new Date()),
+    });
+  }
+  return { ok: true, name: carer.fullName };
+}
