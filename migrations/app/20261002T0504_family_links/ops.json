@@ -1,0 +1,125 @@
+[
+  {
+    "id": "column.public.CareLink.familyMemberId",
+    "label": "Add column \"familyMemberId\" to \"CareLink\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "familyMemberId",
+        "table": "CareLink"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"familyMemberId\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "CareLink",
+          "familyMemberId"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"familyMemberId\"",
+        "sql": "ALTER TABLE \"public\".\"CareLink\" ADD COLUMN \"familyMemberId\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"familyMemberId\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "CareLink",
+          "familyMemberId"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.CareLink.CareLink_familyMemberId_idx",
+    "label": "Create index \"CareLink_familyMemberId_idx\" on \"CareLink\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "CareLink_familyMemberId_idx",
+        "table": "CareLink"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"CareLink_familyMemberId_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"CareLink_familyMemberId_idx\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"CareLink_familyMemberId_idx\"",
+        "sql": "CREATE INDEX \"CareLink_familyMemberId_idx\" ON \"public\".\"CareLink\" (\"familyMemberId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"CareLink_familyMemberId_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"CareLink_familyMemberId_idx\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.CareLink.CareLink_familyMemberId_fkey",
+    "label": "Add foreign key \"CareLink_familyMemberId_fkey\" on \"CareLink\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "CareLink_familyMemberId_fkey",
+        "table": "CareLink"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"CareLink_familyMemberId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "CareLink_familyMemberId_fkey",
+          "public",
+          "\"public\".\"CareLink\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"CareLink_familyMemberId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"CareLink\"\nADD CONSTRAINT \"CareLink_familyMemberId_fkey\"\nFOREIGN KEY (\"familyMemberId\")\nREFERENCES \"public\".\"FamilyMember\" (\"id\")\nON DELETE SET NULL\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"CareLink_familyMemberId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "CareLink_familyMemberId_fkey",
+          "public",
+          "\"public\".\"CareLink\""
+        ]
+      }
+    ]
+  }
+]

@@ -1725,6 +1725,13 @@
                   }
                 }
               },
+              "familyMemberId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "grantedById": {
                 "nullable": false,
                 "type": {
@@ -1795,6 +1802,21 @@
                   "namespace": "public"
                 }
               },
+              "familyMember": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "familyMemberId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "FamilyMember",
+                  "namespace": "public"
+                }
+              },
               "grantedBy": {
                 "cardinality": "N:1",
                 "on": {
@@ -1839,6 +1861,9 @@
                 },
                 "createdAt": {
                   "column": "createdAt"
+                },
+                "familyMemberId": {
+                  "column": "familyMemberId"
                 },
                 "grantedById": {
                   "column": "grantedById"
@@ -3706,6 +3731,21 @@
                 },
                 "to": {
                   "model": "Account",
+                  "namespace": "public"
+                }
+              },
+              "links": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "familyMemberId"
+                  ]
+                },
+                "to": {
+                  "model": "CareLink",
                   "namespace": "public"
                 }
               },
@@ -7725,6 +7765,11 @@
                     "precision": 3
                   }
                 },
+                "familyMemberId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "grantedById": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -7830,6 +7875,25 @@
                     "namespaceId": "public",
                     "tableName": "Account"
                   }
+                },
+                {
+                  "name": "CareLink_familyMemberId_fkey",
+                  "onDelete": "setNull",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "familyMemberId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "CareLink"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "FamilyMember"
+                  }
                 }
               ],
               "indexes": [
@@ -7845,6 +7909,13 @@
                     "clinicId"
                   ],
                   "name": "CareLink_clinicId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "familyMemberId"
+                  ],
+                  "name": "CareLink_familyMemberId_idx",
                   "unique": false
                 },
                 {
@@ -11633,7 +11704,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "96ffb42c7bc4dfaa3789264493231f88ba00a952c3f40d439adfe1a31fbe55b5"
+    "storageHash": "e53313c2c2de4a6a7d1ce3185d44bddbf117b05d3cd945faade51d574e1887aa"
   },
   "capabilities": {
     "postgres": {

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { removeFamilyAction } from "@/app/actions/portal";
+import { removeFamilyAction, stopCaringForAction } from "@/app/actions/portal";
 import { requirePatientAccount } from "@/lib/auth";
 import { listFamily } from "@/lib/family";
 import { buttonClass, Card, CardHeader, PageHeader } from "@/components/ui";
@@ -24,34 +24,17 @@ const RELATIONSHIP: Record<string, string> = {
 export default async function FamilyPage() {
   const me = await requirePatientAccount();
   const family0 = await listFamily(me.accountId);
-  const lookedAfter = me.charts.filter((c) => !c.self);
 
-  // Your list and the clinics' links, as one family, matched by name: each
-  // person once, saying whether a clinic has them yet.
-  const key = (n: string) => n.trim().toLowerCase().replace(/\s+/g, " ");
-  const family = [
-    ...family0.map((m) => {
-      const name = `${m.firstName} ${m.middleName ? `${m.middleName} ` : ""}${m.lastName}`;
-      const plain = `${m.firstName} ${m.lastName}`;
-      return {
-        key: m.id,
-        name,
-        memberId: m.id as string | null,
-        detail: `${RELATIONSHIP[m.relationship]} · born ${m.dateOfBirth} · `,
-        clinics: lookedAfter.filter((c) => key(c.name) === key(plain)).map((c) => c.clinicName),
-      };
-    }),
-    ...lookedAfter
-      .filter((c) => !family0.some((m) => key(`${m.firstName} ${m.lastName}`) === key(c.name)))
-      .filter((c, i, all) => all.findIndex((o) => key(o.name) === key(c.name)) === i)
-      .map((c) => ({
-        key: c.id,
-        name: c.name,
-        memberId: null as string | null,
-        detail: "",
-        clinics: lookedAfter.filter((o) => key(o.name) === key(c.name)).map((o) => o.clinicName),
-      })),
-  ];
+  // One list: every person, whoever started them — each linked chart is the
+  // clinic's record of them (lib/family.ts keeps the two joined).
+  const family = family0.map((m) => ({
+    key: m.id,
+    name: `${m.firstName} ${m.middleName ? `${m.middleName} ` : ""}${m.lastName}`,
+    memberId: m.id,
+    detail: `${RELATIONSHIP[m.relationship]} · born ${m.dateOfBirth} · `,
+    clinics: m.links.map((l) => l.clinicName),
+    patientId: m.links[0]?.patientId ?? null,
+  }));
 
   return (
     <div className="space-y-6">
@@ -77,12 +60,18 @@ export default async function FamilyPage() {
                   )}
                 </p>
               </div>
-              {f.memberId ? (
+              {/* Linked people follow the clinic: stepping back unlinks them; only an unlinked entry is removed. */}
+              {f.patientId ? (
+                <form action={stopCaringForAction}>
+                  <input type="hidden" name="patientId" value={f.patientId} />
+                  <button className={buttonClass("secondary")}>Stop looking after</button>
+                </form>
+              ) : (
                 <form action={removeFamilyAction}>
                   <input type="hidden" name="id" value={f.memberId} />
                   <button className={buttonClass("secondary")}>Remove</button>
                 </form>
-              ) : null}
+              )}
             </li>
           ))}
         </ul>

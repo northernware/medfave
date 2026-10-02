@@ -256,7 +256,7 @@ export async function acceptAppointmentRequest(
     .select(
       "id", "status", "patientId", "doctorId", "preferredDate", "preferredTime", "service", "reason", "requestedById", "rescheduleOfId",
       "newFirstName", "newMiddleName", "newLastName", "newDateOfBirth", "newSex", "newContactNumber", "newEmail", "newAddress",
-      "forOther", "newRelationship",
+      "forOther", "newRelationship", "familyMemberId",
     )
     .include("patient", (p) => p.select("reminderPreference"))
     .where((r) => r.id.eq(requestId))
@@ -368,6 +368,8 @@ export async function acceptAppointmentRequest(
             patientId: patientId!,
             accountId: request.requestedById,
             grantedById: actor.accountId,
+            // The very person on their family list it was asked for.
+            familyMemberId: request.familyMemberId,
             createdAt: now,
           });
         }

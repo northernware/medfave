@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { PORTAL_CLINIC_COOKIE, PORTAL_PERSON_COOKIE, requirePatientAccount, requireViewer } from "@/lib/auth";
 import { linkPatientActivation, previewActivation, type ActivationPreview } from "@/lib/sign-in";
-import { grantCare, removeCare, stopCaring } from "@/lib/caregivers";
+import { grantCare, removeCare, stopCaring, stopCaringFor } from "@/lib/caregivers";
 import { addFamilyMember, removeFamilyMember } from "@/lib/family";
 import { revalidatePath } from "next/cache";
 import type { FormState } from "@/lib/validation";
@@ -114,6 +114,15 @@ export async function addFamilyAction(_prev: FormState, formData: FormData): Pro
 export async function removeFamilyAction(formData: FormData) {
   const viewer = await requireViewer();
   await removeFamilyMember(viewer.accountId, String(formData.get("id") ?? ""));
+  revalidatePath("/portal/family");
+  redirect("/portal/family");
+}
+
+/** Stop looking after somebody on the family list: their chart leaves this login; they stay on the list, unlinked. */
+export async function stopCaringForAction(formData: FormData) {
+  const viewer = await requireViewer();
+  await stopCaringFor(viewer.accountId, String(formData.get("patientId") ?? ""));
+  (await cookies()).delete(PORTAL_PERSON_COOKIE);
   revalidatePath("/portal/family");
   redirect("/portal/family");
 }

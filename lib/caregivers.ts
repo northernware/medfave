@@ -118,3 +118,16 @@ export async function stopCaring(me: CurrentPatient): Promise<CareResult> {
   await orm.CareLink.where((l) => l.id.eq(link.id)).update({ revokedAt: instantToDb(new Date()), revokedById: me.accountId });
   return { ok: true };
 }
+
+/** A caregiver stepping back from one person's chart, from their family list. */
+export async function stopCaringFor(accountId: string, patientId: string): Promise<CareResult> {
+  const link = await orm.CareLink
+    .select("id")
+    .where((l) => l.accountId.eq(accountId))
+    .where((l) => l.patientId.eq(patientId))
+    .where((l) => l.revokedAt.isNull())
+    .first();
+  if (!link) return { ok: false, message: "Not found." };
+  await orm.CareLink.where((l) => l.id.eq(link.id)).update({ revokedAt: instantToDb(new Date()), revokedById: accountId });
+  return { ok: true };
+}
