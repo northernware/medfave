@@ -71,12 +71,25 @@ function read(input: unknown): { ok: true; data: FamilyMemberInput } | ({ ok: fa
 async function attachLinks(accountId: string) {
   const loose = await orm.CareLink
     .select("id", "patientId")
-    .include("patient", (p) => p.select("firstName", "middleName", "lastName", "dateOfBirth", "sex"))
+    .include("patient", (p) => p.select("firstName", "middleName", "lastName", "dateOfBirth", "sex", "householdId", "relationship"))
     .where((l) => l.accountId.eq(accountId))
     .where((l) => l.revokedAt.isNull())
     .where((l) => l.familyMemberId.isNull())
     .all();
   if (loose.length === 0) return;
+  // Their own charts, to read who somebody is to them from a shared household.
+  const own = await orm.Patient.select("householdId", "relationship").where((p) => p.accountId.eq(accountId)).all();
+  const relationTo = (p: { householdId: string; relationship: string }) => {
+    const me = own.find((o) => o.householdId === p.householdId);
+    if (!me) return "OTHER" as const;
+    const parent = me.relationship === "HEAD" || me.relationship === "SPOUSE";
+    if (parent && p.relationship === "CHILD") return "CHILD" as const;
+    if (parent && (p.relationship === "HEAD" || p.relationship === "SPOUSE")) return "SPOUSE" as const;
+    if (me.relationship === "CHILD" && (p.relationship === "HEAD" || p.relationship === "SPOUSE")) return "PARENT" as const;
+    if (me.relationship === p.relationship && p.relationship === "CHILD") return "SIBLING" as const;
+    if (parent && p.relationship === "GRANDPARENT") return "PARENT" as const;
+    return "OTHER" as const;
+  };
   const members = await orm.FamilyMember
     .select("id", "firstName", "lastName", "dateOfBirth")
     .where((m) => m.accountId.eq(accountId))
@@ -98,8 +111,8 @@ async function attachLinks(accountId: string) {
         lastName: p.lastName,
         dateOfBirth: p.dateOfBirth,
         sex: p.sex,
-        // The clinic doesn't know who they are to this login; they can say.
-        relationship: "OTHER",
+        // Read from a household they share; otherwise theirs to say.
+        relationship: relationTo(p),
         createdAt: now,
         updatedAt: now,
       } as Parameters<typeof orm.FamilyMember.create>[0]);
