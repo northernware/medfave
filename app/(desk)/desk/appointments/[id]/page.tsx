@@ -68,7 +68,7 @@ export default async function DeskAppointmentPage({
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <CrumbName id={appointment.id} name={`Visit · ${fullName(appointment.patient)}`} />
       <PageHeader
         title={formatDateTime(instantFromDb(appointment.scheduledAt))}
@@ -108,55 +108,58 @@ export default async function DeskAppointmentPage({
         </div>
       ) : null}
 
-      <Card>
-        <CardHeader title="The visit" />
-        <dl className="grid gap-4 px-5 py-4 sm:grid-cols-2">
-          <Detail label="Service" value={SERVICE_LABELS[appointment.service]} />
-          <Detail label="Reason" value={appointment.reason} />
-          <Detail label="Type" value={APPOINTMENT_TYPE_LABELS[appointment.visitType]} />
-          <Detail label="Priority" value={VISIT_PRIORITY_LABELS[appointment.priority]} />
-          <Detail label="Room" value={appointment.room} />
-          <Detail label="Booked as" value={BOOKING_SOURCE_LABELS[appointment.source]} />
-          {/* The desk books, so the desk is who needs to know whether anything
-              goes out the day before. */}
-          <Detail label="Reminder" value={REMINDER_LABELS[appointment.reminderPreference]} />
-          <Detail
-            label="Arrived"
-            value={appointment.arrivedAt ? formatTime(instantFromDb(appointment.arrivedAt)) : null}
-          />
-          <Detail
-            label="Contact"
-            value={patient.contactNumber ?? patient.household.contactNumber}
-          />
-        </dl>
-        {/* Scheduling notes are for the desk; internal notes are not shown
-            here, and neither is anything clinical. */}
-        {appointment.notes ? (
-          <div className="border-t border-border px-5 py-4 text-sm">
-            <p className="font-medium">Scheduling notes</p>
-            <p className="mt-1 text-ink-muted">{appointment.notes}</p>
-          </div>
-        ) : null}
-      </Card>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+        <div className="min-w-0 space-y-4">
+          <Card>
+            <CardHeader title="The visit" />
+            <dl className="grid gap-4 px-5 py-4 sm:grid-cols-2">
+              <Detail label="Service" value={SERVICE_LABELS[appointment.service]} />
+              <Detail label="Reason" value={appointment.reason} />
+              <Detail label="Type" value={APPOINTMENT_TYPE_LABELS[appointment.visitType]} />
+              <Detail label="Priority" value={VISIT_PRIORITY_LABELS[appointment.priority]} />
+              <Detail label="Room" value={appointment.room} />
+              <Detail label="Booked as" value={BOOKING_SOURCE_LABELS[appointment.source]} />
+              {/* The desk books, so the desk is who needs to know whether anything
+                  goes out the day before. */}
+              <Detail label="Reminder" value={REMINDER_LABELS[appointment.reminderPreference]} />
+              <Detail
+                label="Arrived"
+                value={appointment.arrivedAt ? formatTime(instantFromDb(appointment.arrivedAt)) : null}
+              />
+              <Detail
+                label="Contact"
+                value={patient.contactNumber ?? patient.household.contactNumber}
+              />
+            </dl>
+            {/* Scheduling notes are for the desk; internal notes are not shown
+                here, and neither is anything clinical. */}
+            {appointment.notes ? (
+              <div className="border-t border-border px-5 py-4 text-sm">
+                <p className="font-medium">Scheduling notes</p>
+                <p className="mt-1 text-ink-muted">{appointment.notes}</p>
+              </div>
+            ) : null}
+          </Card>
 
-      {moves.length > 0 ? (
-        <Card>
-          <CardHeader title="Move it along" />
-          <div className="flex flex-wrap gap-2 px-5 py-4">
-            {moves.map((next, i) => (
-              <form key={next} action={setAppointmentStatus}>
-                <input type="hidden" name="appointmentId" value={appointment.id} />
-                <input type="hidden" name="status" value={next} />
-                <button className={buttonClass(i === 0 ? "primary" : "secondary")}>
-                  {statusActionLabel(appointment.status, next)}
-                </button>
-              </form>
-            ))}
-          </div>
-        </Card>
-      ) : null}
-
-      <VisitHistory entries={history} />
+          {moves.length > 0 ? (
+            <Card>
+              <CardHeader title="Move it along" />
+              <div className="flex flex-wrap gap-2 px-5 py-4">
+                {moves.map((next, i) => (
+                  <form key={next} action={setAppointmentStatus}>
+                    <input type="hidden" name="appointmentId" value={appointment.id} />
+                    <input type="hidden" name="status" value={next} />
+                    <button className={buttonClass(i === 0 ? "primary" : "secondary")}>
+                      {statusActionLabel(appointment.status, next)}
+                    </button>
+                  </form>
+                ))}
+              </div>
+            </Card>
+          ) : null}
+        </div>
+          <VisitHistory entries={history} />
+      </div>
     </div>
   );
 }
