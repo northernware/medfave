@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { CrumbName } from "@/components/crumb-names";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { setAppointmentStatus } from "@/app/actions/appointments";
@@ -68,6 +69,7 @@ export default async function DeskAppointmentPage({
 
   return (
     <div className="space-y-6">
+      <CrumbName id={appointment.id} name={`Visit · ${fullName(appointment.patient)}`} />
       <PageHeader
         title={formatDateTime(instantFromDb(appointment.scheduledAt))}
         subtitle={

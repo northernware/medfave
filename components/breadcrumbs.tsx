@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AltArrowLeftIcon } from "@solar-icons/react/linear/alt-arrow-left";
+import { useCrumbNames } from "@/components/crumb-names";
 
 /*
  * Where you are, and the way back: "Patients › Patient › Edit" above any page
@@ -56,6 +57,7 @@ const isId = (s: string) => /^[0-9a-f-]{16,}$/i.test(s);
 
 export function Breadcrumbs() {
   const path = usePathname() ?? "";
+  const named = useCrumbNames();
   const parts = path.split("/").filter(Boolean);
   if (parts.length < 2 || (parts.length === 2 && ["desk", "portal", "manage"].includes(parts[0]) && LISTS.has(path))) {
     return null;
@@ -63,7 +65,8 @@ export function Breadcrumbs() {
 
   const crumbs = parts.map((part, i) => {
     const href = "/" + parts.slice(0, i + 1).join("/");
-    const label = isId(part) ? (ITEM[parts[i - 1]] ?? "Details") : (NAMES[part] ?? part);
+    // An id is called what its page says it is (`CrumbName`), or by its kind.
+    const label = isId(part) ? (named[part] ?? ITEM[parts[i - 1]] ?? "Details") : (NAMES[part] ?? part);
     // An id is linkable (it has a page); a list only if it has one.
     const linkable = i < parts.length - 1 && (isId(part) || LISTS.has(href));
     return { href, label, linkable };

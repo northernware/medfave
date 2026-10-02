@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { CrumbName } from "@/components/crumb-names";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { issuePatientActivation, revokeCareLink, revokePatientActivation } from "@/app/actions/access";
@@ -195,6 +196,7 @@ export default async function DeskPatientPage({
 
   return (
     <div className="space-y-6">
+      <CrumbName id={patient.id} name={fullName(patient)} />
       <header className="flex flex-wrap items-center gap-4">
         <span
           aria-hidden="true"
