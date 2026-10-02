@@ -3089,6 +3089,21 @@
                   "namespace": "public"
                 }
               },
+              "primaryFor": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "primaryDoctorId"
+                  ]
+                },
+                "to": {
+                  "model": "Patient",
+                  "namespace": "public"
+                }
+              },
               "recordVersions": {
                 "cardinality": "1:N",
                 "on": {
@@ -4960,6 +4975,13 @@
                   "kind": "scalar"
                 }
               },
+              "primaryDoctorId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "relationship": {
                 "nullable": false,
                 "type": {
@@ -5226,6 +5248,21 @@
                   "model": "Household",
                   "namespace": "public"
                 }
+              },
+              "primaryDoctor": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "primaryDoctorId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Doctor",
+                  "namespace": "public"
+                }
               }
             },
             "storage": {
@@ -5304,6 +5341,9 @@
                 },
                 "patientNumber": {
                   "column": "patientNumber"
+                },
+                "primaryDoctorId": {
+                  "column": "primaryDoctorId"
                 },
                 "relationship": {
                   "column": "relationship"
@@ -10348,6 +10388,11 @@
                   "nativeType": "text",
                   "nullable": true
                 },
+                "primaryDoctorId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "relationship": {
                   "codecId": "pg/enum@1",
                   "default": {
@@ -10464,6 +10509,25 @@
                     "namespaceId": "public",
                     "tableName": "Household"
                   }
+                },
+                {
+                  "name": "Patient_primaryDoctorId_fkey",
+                  "onDelete": "setNull",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "primaryDoctorId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Patient"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Doctor"
+                  }
                 }
               ],
               "indexes": [
@@ -10503,6 +10567,14 @@
                   ],
                   "name": "Patient_patientNumber_key",
                   "unique": true
+                },
+                {
+                  "columns": [
+                    "primaryDoctorId"
+                  ],
+                  "name": "Patient_primaryDoctorId_idx_46462886",
+                  "prefix": "Patient_primaryDoctorId_idx",
+                  "unique": false
                 }
               ],
               "primaryKey": {
@@ -11749,7 +11821,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "360c574596fd67e27e8a8f998e0df167a69871e5d871c6c388e7d7eb75ac4e9b"
+    "storageHash": "daa1a904f198b0b801df854978ecc00d7c24d2ad1a698d1260338958256b26b9"
   },
   "capabilities": {
     "postgres": {

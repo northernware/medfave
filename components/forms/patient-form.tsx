@@ -311,11 +311,11 @@ export function PatientForm({
         <div>
           <h2 className="flex items-center gap-2 font-display text-lg leading-6 font-semibold tracking-[-0.01em] before:h-5 before:w-1 before:rounded-full before:bg-accent">Emergency contacts</h2>
           <p className="text-sm text-ink-muted">
-            Who to ring about this patient, first and second. On their emergency card in the app.
+            Who to ring about this patient: primary, then secondary. On their emergency card in the app.
           </p>
         </div>
         <FieldGrid className="sm:grid-cols-3">
-          <Field label="First contact" htmlFor="emergencyContactName" error={err?.emergencyContactName}>
+          <Field label="Primary contact" htmlFor="emergencyContactName" error={err?.emergencyContactName}>
             <TextInput
               id="emergencyContactName"
               name="emergencyContactName"
@@ -349,7 +349,7 @@ export function PatientForm({
           </Field>
         </FieldGrid>
         <FieldGrid className="sm:grid-cols-3">
-          <Field label="Second contact (optional)" htmlFor="emergencyContact2Name" error={err?.emergencyContact2Name}>
+          <Field label="Secondary contact (optional)" htmlFor="emergencyContact2Name" error={err?.emergencyContact2Name}>
             <TextInput
               id="emergencyContact2Name"
               name="emergencyContact2Name"

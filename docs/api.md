@@ -125,6 +125,7 @@ uses the login's own chart at the clinic. Any other chart gets `404`.
 | | |
 | --- | --- |
 | `GET /patient/emergency` | `{ cards: [{ key, name, dateOfBirth, self, general, clinics[] }] }` — the emergency card for this login and each person it looks after, read-only from the clinics' records. `clinics[]`: each clinic's own (`bloodType`, `allergies[]`, `medications[]`, `conditions[]`, `emergencyContact`, the three list statuses, `updatedAt`). `general`: all of them side by side, each item with `clinics[]`; every allergy from every clinic, the worst severity kept; `bloodTypeDisagrees` when clinics differ |
+| `POST /patient/emergency/physician` | `{ cardKey, doctorId \| null }` → `204`. Choose the primary care physician on an emergency card: one of a clinic record's `doctorsSeen`, or null for the default (seen most in the past year, the more recent on a tie, else the household's doctor). Each record's `physician` has `chosen`, `visits`, `lastVisit` |
 | `GET /patient/carers` | `{ carers: [{ id, name, email, since }], canManage }` — who can see this patient's **own** records here. `canManage` is false under 18 (the desk manages a child's). `404` when viewing somebody looked after |
 | `POST /patient/carers` | `{ email }` → `201` (same shape). "Let someone look after me": an adult adds a Medfave login by its email. `422` when no account uses it |
 | `DELETE /patient/carers/:id` | `204`. An adult removes somebody's access |
