@@ -173,9 +173,6 @@ export default async function AppointmentPage({
         </div>
       ) : null}
 
-      <AlertBanner alerts={patient.alerts} />
-      <AllergyBanner status={patient.allergyStatus} allergies={patient.allergies} />
-
       {/* The visit and what to do with it on the left; the clinic's side of it on the right. */}
       <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
         <div className="min-w-0 space-y-3">
@@ -327,6 +324,9 @@ export default async function AppointmentPage({
           />
         </div>
         <div className="space-y-3">
+          {/* What to know before the visit, at the head of the clinic's side. */}
+          <AlertBanner alerts={patient.alerts} />
+          <AllergyBanner status={patient.allergyStatus} allergies={patient.allergies} />
           <Card>
             <CardHeader title="Clinic use" subtitle="Not shown to the patient." />
             <div className="px-5 py-4">
