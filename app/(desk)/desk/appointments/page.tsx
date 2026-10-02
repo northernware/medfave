@@ -64,7 +64,7 @@ export default async function DeskAppointmentsPage({
   ).map((a) => ({ ...a, scheduledAt: instantFromDb(a.scheduledAt) }));
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <PageHeader
         title="Appointments"
         subtitle="Everything booked at this clinic."

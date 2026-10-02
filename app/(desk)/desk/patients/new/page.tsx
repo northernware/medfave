@@ -29,7 +29,7 @@ export default async function DeskNewPatientPage({ searchParams }: PageProps<"/d
         : "";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader
         title="Add patient"
         subtitle="Registration details. Allergies and conditions are recorded by the doctor at the visit."

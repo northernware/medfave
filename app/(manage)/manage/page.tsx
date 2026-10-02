@@ -57,7 +57,7 @@ export default async function ManagePage({ searchParams }: PageProps<"/manage">)
   const waiting = me && me.verificationStatus !== "VERIFIED";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader
         title={clinic?.name ?? manager.clinicName}
         subtitle={

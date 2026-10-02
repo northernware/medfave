@@ -70,7 +70,7 @@ export default async function PatientsPage({ searchParams }: PageProps<"/patient
   ]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader
         title={archived ? "Archived patients" : "Patients"}
         subtitle={`${patients.length} ${patients.length === 1 ? "person" : "people"}${query ? " matching" : archived ? " set aside" : everyone ? " at the clinic" : " on your list"}`}

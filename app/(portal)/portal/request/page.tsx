@@ -23,7 +23,7 @@ export default async function RequestPage({ searchParams }: PageProps<"/portal/r
   const whose = doctors.find((d) => d.id === doctorId);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader
         title="Request an appointment"
         subtitle={schedule ? `${whose && doctors.length > 1 ? `${whose.fullName}: ` : ""}${describeWeek(schedule)}` : undefined}

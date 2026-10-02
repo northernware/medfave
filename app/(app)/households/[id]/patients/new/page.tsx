@@ -29,7 +29,7 @@ export default async function NewHouseholdMemberPage({ params }: PageProps<"/hou
     .all();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader title="Add patient" subtitle={`Joining the ${household.name} household`} />
       <Card className="p-5 sm:p-6">
         <PatientForm

@@ -45,7 +45,7 @@ export default async function DeskPatientsPage({ searchParams }: PageProps<"/des
     .all();
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <PageHeader
         title="Patients"
         subtitle="Names, contact details and households. Clinical notes are the doctor's."

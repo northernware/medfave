@@ -205,7 +205,7 @@ export default async function DeskPatientPage({
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <CrumbName id={patient.id} name={fullName(patient)} />
       <header className="flex flex-wrap items-center gap-4">
         <span
@@ -264,7 +264,7 @@ export default async function DeskPatientPage({
         />
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
         <section className="min-w-0">
           <SectionTitle title="Visits" />
           <Card className="overflow-hidden">
@@ -277,7 +277,7 @@ export default async function DeskPatientPage({
           </Card>
         </section>
 
-        <div className="space-y-6">
+        <div className="space-y-3">
         <Card>
           <CardHeader title="Medfave account" subtitle="Lets them see their visits and ask for times." />
           <div className="flex flex-wrap items-center gap-3 px-5 py-4">

@@ -68,7 +68,7 @@ export default async function AppointmentsPage({ searchParams }: PageProps<"/app
   const hrefFor = (n: number) => `/appointments?view=${active}${n > 1 ? `&page=${n}` : ""}`;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3">
       <PageHeader
         title="Appointments"
         subtitle="Grouped by day, in clinic time."

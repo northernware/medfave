@@ -38,7 +38,7 @@ export default async function NewPatientPage({ searchParams }: PageProps<"/patie
         : "";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader
         title="Add patient"
         subtitle="Choose a household or create one here — no need to go and make it first."

@@ -76,7 +76,7 @@ export default async function DeskRequestsPage({ searchParams }: PageProps<"/des
     r.patient ? fullName(r.patient) : fullName({ firstName: r.newFirstName ?? "", middleName: r.newMiddleName, lastName: r.newLastName ?? "" });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader
         title="Booking requests"
         subtitle="Asked for by patients. Nothing is held until you accept one."

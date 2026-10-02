@@ -154,7 +154,7 @@ export default async function PatientPage({
     patient.accountId !== null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <CrumbName id={patient.id} name={fullName(patient)} />
       <PageHeader
         title={fullName(patient)}
@@ -362,7 +362,7 @@ export default async function PatientPage({
         </div>
 
         {/* Standing clinical context, kept beside the timeline rather than above it. */}
-        <aside className="space-y-4">
+        <aside className="space-y-3">
           <AlertBanner alerts={patient.alerts} />
           <AllergyBanner status={patient.allergyStatus} allergies={patient.allergies} />
       {housemates.length > 0 ? (
@@ -553,7 +553,7 @@ function DetailsOnly({
   };
 }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <CrumbName id={patient.id} name={fullName(patient)} />
       <PageHeader
         title={fullName(patient)}

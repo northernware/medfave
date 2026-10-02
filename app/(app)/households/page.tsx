@@ -42,7 +42,7 @@ export default async function HouseholdsPage({ searchParams }: PageProps<"/house
   ]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader
         title={archived ? "Archived households" : "Households"}
         subtitle="Every patient belongs to one. Each keeps their own record — the grouping links relatives, shared contact details and hereditary risk."

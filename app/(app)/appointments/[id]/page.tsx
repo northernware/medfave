@@ -81,7 +81,7 @@ export default async function AppointmentPage({
       : null;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <CrumbName id={appointment.id} name={`Visit · ${fullName(appointment.patient)}`} />
       <PageHeader
         title={fullName(patient)}
@@ -177,8 +177,8 @@ export default async function AppointmentPage({
       <AllergyBanner status={patient.allergyStatus} allergies={patient.allergies} />
 
       {/* The visit and what to do with it on the left; the clinic's side of it on the right. */}
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
-        <div className="min-w-0 space-y-4">
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+        <div className="min-w-0 space-y-3">
           <Card className="p-5">
             <div className="mb-4 flex flex-wrap items-center gap-2">
               <Badge tone={APPOINTMENT_STATUS_TONE[appointment.status]}>
@@ -326,7 +326,7 @@ export default async function AppointmentPage({
             confirmLabel="Delete appointment"
           />
         </div>
-        <div className="space-y-4">
+        <div className="space-y-3">
           <Card>
             <CardHeader title="Clinic use" subtitle="Not shown to the patient." />
             <div className="px-5 py-4">

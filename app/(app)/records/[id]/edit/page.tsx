@@ -36,7 +36,7 @@ export default async function EditRecordPage({ params }: PageProps<"/records/[id
   if (record.archivedAt) redirect(`/records/${record.id}`);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader
         title={record.status === "DRAFT" ? "Consultation notes" : "Amend record"}
         subtitle={

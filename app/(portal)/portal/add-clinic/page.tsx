@@ -15,7 +15,7 @@ export default async function AddClinicPage({ searchParams }: PageProps<"/portal
   const { code } = await searchParams;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <PageHeader
         title="Add a clinic"
         subtitle={`Linked now: ${me.charts.map((c) => c.clinicName).join(", ")}`}
