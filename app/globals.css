@@ -55,9 +55,11 @@
   --accent-ink: light-dark(#b51260, #ff8ac0);
   --on-accent: light-dark(#ffffff, #32132c);
 
-  --danger: light-dark(oklch(0.56 0.2 29), oklch(0.68 0.17 29));
-  --danger-soft: light-dark(oklch(0.965 0.025 29), oklch(0.32 0.07 29));
-  --danger-ink: light-dark(oklch(0.47 0.18 29), oklch(0.83 0.1 29));
+  --danger: light-dark(oklch(0.52 0.2 25), oklch(0.68 0.17 25));
+  --danger-soft: light-dark(oklch(0.965 0.025 22), oklch(0.32 0.07 25));
+  --danger-ink: light-dark(oklch(0.45 0.18 25), oklch(0.83 0.1 25));
+  /* Text on a solid danger button. */
+  --on-danger: light-dark(#ffffff, oklch(0.2 0.05 25));
 
   --warn: light-dark(oklch(0.66 0.14 70), oklch(0.78 0.13 80));
   --warn-soft: light-dark(oklch(0.965 0.05 85), oklch(0.33 0.06 75));
@@ -70,7 +72,7 @@
   /* Tints for badges and rules — lighter than the -soft fills they replace, so a
      status reads as a marking on the surface rather than a second card. */
   --accent-tint: light-dark(#fdeef5, #3a1530);
-  --danger-tint: light-dark(oklch(0.975 0.016 29), oklch(0.29 0.05 29));
+  --danger-tint: light-dark(oklch(0.975 0.014 22), oklch(0.29 0.05 25));
   --warn-tint: light-dark(oklch(0.977 0.03 85), oklch(0.29 0.045 75));
   --ok-tint: light-dark(oklch(0.972 0.022 160), oklch(0.28 0.04 160));
 
@@ -116,6 +118,7 @@
   --color-accent-soft: var(--accent-soft);
   --color-accent-ink: var(--accent-ink);
   --color-on-accent: var(--on-accent);
+  --color-on-danger: var(--on-danger);
 
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);

@@ -38,13 +38,15 @@ export function Badge({
   );
 }
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "dangerSolid";
 
 const VARIANT_CLASS: Record<ButtonVariant, string> = {
   primary: "bg-accent text-on-accent shadow-card hover:bg-accent-hover",
   secondary: "bg-surface text-ink border border-border-strong hover:border-accent hover:text-accent-ink",
   ghost: "text-ink-muted hover:text-ink hover:bg-surface-muted",
   danger: "bg-surface text-danger-ink border border-border-strong hover:border-danger hover:bg-danger-tint",
+  // The one that actually does it: filled, so it is never mistaken for a way out.
+  dangerSolid: "bg-danger text-on-danger hover:opacity-90",
 };
 
 export function buttonClass(variant: ButtonVariant = "primary", extra = "") {
