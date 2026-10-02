@@ -26,6 +26,7 @@ import {
   VISIT_PRIORITY_TONE,
 } from "@/lib/domain";
 import { AlertBanner, AllergyBanner } from "@/components/allergy-banner";
+import { DELETE_PHRASES } from "@/lib/confirm-phrase";
 import { DangerZone } from "@/components/danger-zone";
 import { Badge, buttonClass, Card, CardHeader, Detail, PageHeader, Prose } from "@/components/ui";
 
@@ -144,6 +145,11 @@ export default async function AppointmentPage({
         <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm">
           <p className="font-medium">Not today&rsquo;s visit.</p>
           <p className="mt-0.5 text-ink-muted">Check in and start a visit on its day. Nothing was changed.</p>
+        </div>
+      ) : blocked === "confirm" ? (
+        <div className="rounded-lg border border-danger/30 bg-danger-tint px-4 py-3 text-sm">
+          <p className="font-medium text-danger-ink">Not deleted.</p>
+          <p className="mt-0.5 text-ink-muted">The appointment is still here: the confirmation phrase wasn&rsquo;t typed.</p>
         </div>
       ) : typeof blocked === "string" && blocked ? (
         <div className="rounded-lg border border-border bg-surface-muted px-4 py-3 text-sm">
@@ -321,6 +327,7 @@ export default async function AppointmentPage({
             summary="Delete this appointment"
             warning="Removes the booking entirely. If the visit happened, cancelling or marking it a no-show keeps a more honest history than deleting it."
             confirmLabel="Delete appointment"
+            confirmPhrase={DELETE_PHRASES.appointment}
           />
         </div>
         <div className="space-y-3">

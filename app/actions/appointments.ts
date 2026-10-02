@@ -6,6 +6,7 @@ import { requireDoctor, requireStaff } from "@/lib/auth";
 import { db, orm } from "@/src/prisma/db";
 import { instantFromDb, instantToDb } from "@/lib/datetime";
 import { newId } from "@/lib/ids";
+import { DELETE_PHRASES, phraseTyped } from "@/lib/confirm-phrase";
 import { isClinicToday,
   bookAppointment,
   changeAppointmentStatus,
@@ -182,6 +183,8 @@ export async function deleteAppointment(formData: FormData) {
   const staff = await requireStaff();
   const appointmentId = String(formData.get("appointmentId") ?? "");
   if (!appointmentId) return;
+  // Permanent: the phrase has to have been typed, whatever the page showed.
+  if (!phraseTyped(formData, DELETE_PHRASES.appointment)) redirect(`/appointments/${appointmentId}?blocked=confirm`);
 
   await orm.Appointment
     .where((a) => a.id.eq(appointmentId))
