@@ -18,7 +18,8 @@ export type IconKey =
   | "clinic"
   | "details"
   | "staff"
-  | "admin";
+  | "admin"
+  | "emergency";
 
 export type NavLink = { href: string; label: string; icon: IconKey; group?: string };
 
@@ -39,6 +40,7 @@ export const PATIENT_LINKS: readonly NavLink[] = [
   { href: "/portal", label: "Home", icon: "today", group: "My care" },
   { href: "/portal/request", label: "Request a visit", icon: "calendar", group: "My care" },
   { href: "/portal/documents", label: "Documents", icon: "documents", group: "My care" },
+  { href: "/portal/emergency", label: "Emergency card", icon: "emergency", group: "My care" },
   { href: "/portal/details", label: "My details", icon: "details", group: "My care" },
   { href: "/portal/family", label: "My family", icon: "households", group: "My care" },
 ];

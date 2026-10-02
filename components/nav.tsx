@@ -12,6 +12,7 @@ import { InboxInIcon } from "@solar-icons/react/linear/inbox-in";
 import { NotesIcon } from "@solar-icons/react/linear/notes";
 import { SettingsIcon } from "@solar-icons/react/linear/settings";
 import { ShieldCheckIcon } from "@solar-icons/react/linear/shield-check";
+import { HeartPulseIcon } from "@solar-icons/react/linear/heart-pulse";
 import { UserRoundedIcon } from "@solar-icons/react/linear/user-rounded";
 import { UsersGroupRoundedIcon } from "@solar-icons/react/linear/users-group-rounded";
 import { UsersGroupTwoRoundedIcon } from "@solar-icons/react/linear/users-group-two-rounded";
@@ -31,6 +32,7 @@ const ICONS: Record<IconKey, typeof Home2Icon> = {
   details: NotesIcon,
   staff: UsersGroupRoundedIcon,
   admin: ShieldCheckIcon,
+  emergency: HeartPulseIcon,
 };
 
 export function NavIcon({ name, className = "size-5" }: { name: IconKey; className?: string }) {
