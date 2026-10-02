@@ -81,7 +81,7 @@ export default async function AppointmentPage({
       : null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <CrumbName id={appointment.id} name={`Visit · ${fullName(appointment.patient)}`} />
       <PageHeader
         title={fullName(patient)}
@@ -176,173 +176,177 @@ export default async function AppointmentPage({
       <AlertBanner alerts={patient.alerts} />
       <AllergyBanner status={patient.allergyStatus} allergies={patient.allergies} />
 
-      <Card className="p-5">
-        <div className="mb-4 flex flex-wrap items-center gap-2">
-          <Badge tone={APPOINTMENT_STATUS_TONE[appointment.status]}>
-            {APPOINTMENT_STATUS_LABELS[appointment.status]}
-          </Badge>
-          <Badge tone="neutral">{APPOINTMENT_TYPE_LABELS[appointment.visitType]}</Badge>
-          {appointment.priority !== "ROUTINE" ? (
-            <Badge tone={VISIT_PRIORITY_TONE[appointment.priority]}>
-              {VISIT_PRIORITY_LABELS[appointment.priority]}
-            </Badge>
-          ) : null}
-          {appointment.medicalRecord ? <Badge tone="neutral">Documented</Badge> : null}
-        </div>
-
-        <dl className="grid gap-4 sm:grid-cols-2">
-          <Detail
-            label="Service"
-            value={
-              <>
-                {SERVICE_LABELS[appointment.service]}
-                <span className="mt-0.5 block text-xs text-ink-faint">
-                  {SERVICE_DESCRIPTIONS[appointment.service]}
-                </span>
-              </>
-            }
-          />
-          <Detail
-            label="Patient"
-            value={
-              <Link href={`/patients/${patient.id}`} className="text-accent-ink hover:underline">
-                {fullName(patient)}, {ageFrom(calendarDateFromDb(patient.dateOfBirth))}
-              </Link>
-            }
-          />
-          <Detail label="Reason for visit" value={appointment.reason} />
-          <Detail label="Room" value={appointment.room} />
-          {/* When they were booked for and when they actually turned up are
-              different facts, so they are shown as different facts. */}
-          <Detail
-            label="Arrived"
-            value={
-              appointment.arrivedAt ? (
-                <>
-                  {formatDateTime(instantFromDb(appointment.arrivedAt))}
-                  <span className="mt-0.5 block text-xs text-ink-faint">
-                    {describeArrival(
-                      instantFromDb(appointment.scheduledAt),
-                      instantFromDb(appointment.arrivedAt),
-                    )}
-                  </span>
-                </>
-              ) : null
-            }
-          />
-          <Detail
-            label="Seen"
-            value={
-              appointment.consultationStartedAt ? (
-                <>
-                  {formatDateTime(instantFromDb(appointment.consultationStartedAt))}
-                  {appointment.arrivedAt ? (
-                    <span className="mt-0.5 block text-xs text-ink-faint">
-                      after waiting{" "}
-                      {Math.max(
-                        0,
-                        Math.floor(
-                          (instantFromDb(appointment.consultationStartedAt).getTime() -
-                            instantFromDb(appointment.arrivedAt).getTime()) /
-                            60_000,
-                        ),
-                      )}{" "}
-                      minutes
-                    </span>
-                  ) : null}
-                </>
-              ) : null
-            }
-          />
-          <Detail
-            label="Follows on from"
-            value={
-              appointment.previousAppointment ? (
-                <Link
-                  href={`/appointments/${appointment.previousAppointment.id}`}
-                  className="text-accent-ink hover:underline"
-                >
-                  {formatDateTime(instantFromDb(appointment.previousAppointment.scheduledAt))} —{" "}
-                  {SERVICE_LABELS[appointment.previousAppointment.service]}
-                </Link>
-              ) : null
-            }
-          />
-          <Detail
-            label="Later follow-ups"
-            value={
-              appointment.followUps.length > 0 ? (
-                <ul className="space-y-0.5">
-                  {appointment.followUps.map((f) => (
-                    <li key={f.id}>
-                      <Link href={`/appointments/${f.id}`} className="text-accent-ink hover:underline">
-                        {formatDateTime(instantFromDb(f.scheduledAt))} — {SERVICE_LABELS[f.service]}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              ) : null
-            }
-          />
-        </dl>
-
-        {appointment.notes ? (
-          <div className="mt-4 border-t border-border pt-4">
-            <Prose label="Scheduling notes" text={appointment.notes} />
-          </div>
-        ) : null}
-
-        <div className="mt-5 flex flex-wrap gap-2 border-t border-border pt-4">
-          {/* Only the moves that exist from here. The first is the one the
-              visit is expected to make next, so it leads. */}
-          {STATUS_TRANSITIONS[appointment.status].map((next, i) => (
-            <form key={next} action={setAppointmentStatus}>
-              <input type="hidden" name="appointmentId" value={appointment.id} />
-              <input type="hidden" name="status" value={next} />
-              <button className={buttonClass(i === 0 ? "primary" : "secondary")}>
-                {statusActionLabel(appointment.status, next)}
-              </button>
-            </form>
-          ))}
-          {STATUS_TRANSITIONS[appointment.status].length === 0 ? (
-            <p className="text-sm text-ink-muted">
-              This visit is finished. Its record is where anything further belongs.
-            </p>
-          ) : null}
-          <Link href={`/appointments/${appointment.id}/edit`} className={buttonClass("ghost")}>
-            Reschedule
-          </Link>
-        </div>
-      </Card>
-
-      <Card>
-        <CardHeader title="Clinic use" subtitle="Not shown to the patient." />
-        <div className="px-5 py-4">
-          <dl className="grid gap-4 sm:grid-cols-2">
-            <Detail label="Booking source" value={BOOKING_SOURCE_LABELS[appointment.source]} />
-            <Detail
-              label="Reminder"
-              value={REMINDER_LABELS[appointment.reminderPreference]}
-            />
-          </dl>
-          {appointment.internalNotes ? (
-            <div className="mt-4 border-t border-border pt-4">
-              <Prose label="Internal notes" text={appointment.internalNotes} />
+      {/* The visit and what to do with it on the left; the clinic's side of it on the right. */}
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+        <div className="min-w-0 space-y-4">
+          <Card className="p-5">
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <Badge tone={APPOINTMENT_STATUS_TONE[appointment.status]}>
+                {APPOINTMENT_STATUS_LABELS[appointment.status]}
+              </Badge>
+              <Badge tone="neutral">{APPOINTMENT_TYPE_LABELS[appointment.visitType]}</Badge>
+              {appointment.priority !== "ROUTINE" ? (
+                <Badge tone={VISIT_PRIORITY_TONE[appointment.priority]}>
+                  {VISIT_PRIORITY_LABELS[appointment.priority]}
+                </Badge>
+              ) : null}
+              {appointment.medicalRecord ? <Badge tone="neutral">Documented</Badge> : null}
             </div>
-          ) : null}
+
+            <dl className="grid gap-4 sm:grid-cols-2">
+              <Detail
+                label="Service"
+                value={
+                  <>
+                    {SERVICE_LABELS[appointment.service]}
+                    <span className="mt-0.5 block text-xs text-ink-faint">
+                      {SERVICE_DESCRIPTIONS[appointment.service]}
+                    </span>
+                  </>
+                }
+              />
+              <Detail
+                label="Patient"
+                value={
+                  <Link href={`/patients/${patient.id}`} className="text-accent-ink hover:underline">
+                    {fullName(patient)}, {ageFrom(calendarDateFromDb(patient.dateOfBirth))}
+                  </Link>
+                }
+              />
+              <Detail label="Reason for visit" value={appointment.reason} />
+              <Detail label="Room" value={appointment.room} />
+              {/* When they were booked for and when they actually turned up are
+                  different facts, so they are shown as different facts. */}
+              <Detail
+                label="Arrived"
+                value={
+                  appointment.arrivedAt ? (
+                    <>
+                      {formatDateTime(instantFromDb(appointment.arrivedAt))}
+                      <span className="mt-0.5 block text-xs text-ink-faint">
+                        {describeArrival(
+                          instantFromDb(appointment.scheduledAt),
+                          instantFromDb(appointment.arrivedAt),
+                        )}
+                      </span>
+                    </>
+                  ) : null
+                }
+              />
+              <Detail
+                label="Seen"
+                value={
+                  appointment.consultationStartedAt ? (
+                    <>
+                      {formatDateTime(instantFromDb(appointment.consultationStartedAt))}
+                      {appointment.arrivedAt ? (
+                        <span className="mt-0.5 block text-xs text-ink-faint">
+                          after waiting{" "}
+                          {Math.max(
+                            0,
+                            Math.floor(
+                              (instantFromDb(appointment.consultationStartedAt).getTime() -
+                                instantFromDb(appointment.arrivedAt).getTime()) /
+                                60_000,
+                            ),
+                          )}{" "}
+                          minutes
+                        </span>
+                      ) : null}
+                    </>
+                  ) : null
+                }
+              />
+              <Detail
+                label="Follows on from"
+                value={
+                  appointment.previousAppointment ? (
+                    <Link
+                      href={`/appointments/${appointment.previousAppointment.id}`}
+                      className="text-accent-ink hover:underline"
+                    >
+                      {formatDateTime(instantFromDb(appointment.previousAppointment.scheduledAt))} —{" "}
+                      {SERVICE_LABELS[appointment.previousAppointment.service]}
+                    </Link>
+                  ) : null
+                }
+              />
+              <Detail
+                label="Later follow-ups"
+                value={
+                  appointment.followUps.length > 0 ? (
+                    <ul className="space-y-0.5">
+                      {appointment.followUps.map((f) => (
+                        <li key={f.id}>
+                          <Link href={`/appointments/${f.id}`} className="text-accent-ink hover:underline">
+                            {formatDateTime(instantFromDb(f.scheduledAt))} — {SERVICE_LABELS[f.service]}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null
+                }
+              />
+            </dl>
+
+            {appointment.notes ? (
+              <div className="mt-4 border-t border-border pt-4">
+                <Prose label="Scheduling notes" text={appointment.notes} />
+              </div>
+            ) : null}
+
+            <div className="mt-5 flex flex-wrap gap-2 border-t border-border pt-4">
+              {/* Only the moves that exist from here. The first is the one the
+                  visit is expected to make next, so it leads. */}
+              {STATUS_TRANSITIONS[appointment.status].map((next, i) => (
+                <form key={next} action={setAppointmentStatus}>
+                  <input type="hidden" name="appointmentId" value={appointment.id} />
+                  <input type="hidden" name="status" value={next} />
+                  <button className={buttonClass(i === 0 ? "primary" : "secondary")}>
+                    {statusActionLabel(appointment.status, next)}
+                  </button>
+                </form>
+              ))}
+              {STATUS_TRANSITIONS[appointment.status].length === 0 ? (
+                <p className="text-sm text-ink-muted">
+                  This visit is finished. Its record is where anything further belongs.
+                </p>
+              ) : null}
+              <Link href={`/appointments/${appointment.id}/edit`} className={buttonClass("ghost")}>
+                Reschedule
+              </Link>
+            </div>
+          </Card>
+          <DangerZone
+            action={deleteAppointment}
+            fieldName="appointmentId"
+            fieldValue={appointment.id}
+            summary="Delete this appointment"
+            warning="Removes the booking entirely. If the visit happened, cancelling or marking it a no-show keeps a more honest history than deleting it."
+            confirmLabel="Delete appointment"
+          />
         </div>
-      </Card>
-
-      <VisitHistory entries={history} />
-
-      <DangerZone
-        action={deleteAppointment}
-        fieldName="appointmentId"
-        fieldValue={appointment.id}
-        summary="Delete this appointment"
-        warning="Removes the booking entirely. If the visit happened, cancelling or marking it a no-show keeps a more honest history than deleting it."
-        confirmLabel="Delete appointment"
-      />
+        <div className="space-y-4">
+          <Card>
+            <CardHeader title="Clinic use" subtitle="Not shown to the patient." />
+            <div className="px-5 py-4">
+              <dl className="grid gap-4 sm:grid-cols-2">
+                <Detail label="Booking source" value={BOOKING_SOURCE_LABELS[appointment.source]} />
+                <Detail
+                  label="Reminder"
+                  value={REMINDER_LABELS[appointment.reminderPreference]}
+                />
+              </dl>
+              {appointment.internalNotes ? (
+                <div className="mt-4 border-t border-border pt-4">
+                  <Prose label="Internal notes" text={appointment.internalNotes} />
+                </div>
+              ) : null}
+            </div>
+          </Card>
+          <VisitHistory entries={history} />
+        </div>
+      </div>
     </div>
   );
 }
