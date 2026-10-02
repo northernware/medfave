@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { CrumbName } from "@/components/crumb-names";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { archivePatient, deletePatient, restorePatient } from "@/app/actions/patients";
@@ -154,6 +155,7 @@ export default async function PatientPage({
 
   return (
     <div className="space-y-6">
+      <CrumbName id={patient.id} name={fullName(patient)} />
       <PageHeader
         title={fullName(patient)}
         subtitle={
@@ -537,6 +539,7 @@ function DetailsOnly({
 }) {
   return (
     <div className="space-y-6">
+      <CrumbName id={patient.id} name={fullName(patient)} />
       <PageHeader
         title={fullName(patient)}
         subtitle={`${patient.household.name} household · ${RELATIONSHIP_LABELS[patient.relationship]} · ${SEX_LABELS[patient.sex]} · ${ageFrom(calendarDateFromDb(patient.dateOfBirth))}`}

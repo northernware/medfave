@@ -6,6 +6,7 @@ import type { NavLink, ViewKey } from "@/components/nav-links";
 import { BackLink, ClinicSection, ClinicSwitcher, MobileDrawer, ProfileMenu, ViewSwitch } from "@/components/shell-menus";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Breadcrumbs } from "@/components/breadcrumbs";
+import { CrumbNamesProvider } from "@/components/crumb-names";
 
 /**
  * The frame every signed-in clinic screen shares — doctor, front desk and
@@ -112,8 +113,10 @@ export function AppShell({
 
       <main className="min-w-0 flex-1">
         <div className={`mx-auto w-full ${narrow ? "max-w-4xl" : wide ? "max-w-[1680px]" : "max-w-6xl"} px-4 py-6 sm:px-6 lg:p-3`}>
-          <Breadcrumbs />
-          {children}
+          <CrumbNamesProvider>
+            <Breadcrumbs />
+            {children}
+          </CrumbNamesProvider>
         </div>
       </main>
     </div>

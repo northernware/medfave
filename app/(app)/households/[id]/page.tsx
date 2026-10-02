@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { CrumbName } from "@/components/crumb-names";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { archiveHousehold, deleteHousehold, restoreHousehold } from "@/app/actions/households";
@@ -95,6 +96,7 @@ export default async function HouseholdPage({
 
   return (
     <div className="space-y-6">
+      <CrumbName id={household.id} name={`${household.name} household`} />
       <PageHeader
         title={`${household.name} household`}
         subtitle={`${members.length} ${members.length === 1 ? "member" : "members"}${setAside.length ? ` · ${setAside.length} archived` : ""}`}
