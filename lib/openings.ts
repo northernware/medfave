@@ -20,7 +20,8 @@ export type Opening = { date: string; time: string };
  */
 export async function openingsFor(
   doctorId: string,
-  service: ServiceType,
+  /** One kind of visit, or several seen back to back (one each, in order): the whole run has to fit. */
+  services: ServiceType | ServiceType[],
   options: {
     /** One day's free times, in full: the request form's time chips. */
     date?: string;
@@ -32,7 +33,9 @@ export async function openingsFor(
 ) {
   const now = options.now ?? new Date();
   const schedule = await loadSchedule(doctorId);
-  const minutes = durationFor(schedule, service, SERVICE_MINUTES[service]);
+  const minutes = [services]
+    .flat()
+    .reduce((sum, s) => sum + durationFor(schedule, s, SERVICE_MINUTES[s]), 0);
   const window = { earliest: earliestBookableDay(schedule, now), latest: latestBookableDay(schedule, now) };
   const first = options.date ?? window.earliest;
   const last = options.date ?? window.latest;
