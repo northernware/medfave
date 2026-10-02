@@ -13,6 +13,7 @@ import { AppointmentList } from "@/components/appointment-list";
 import { DangerZone } from "@/components/danger-zone";
 import { caredForIds, sharesCharts } from "@/lib/care";
 import { Badge, buttonClass, Card, CardHeader, Detail, EmptyState, PageHeader, Prose } from "@/components/ui";
+import { DELETE_PHRASES } from "@/lib/confirm-phrase";
 
 /** A household of the clinic: households are the clinic's, like its patients. */
 async function loadHousehold(doctor: { id: string; clinicId: string }, householdId: string) {
@@ -279,6 +280,7 @@ export default async function HouseholdPage({
           summary="Delete this household"
           warning={`Nobody is registered in the ${household.name} household, so deleting it removes only its name, address and notes.`}
           confirmLabel="Delete household"
+          confirmPhrase={DELETE_PHRASES.household}
         />
       ) : archived ? null : members.length === 0 ? (
         <DangerZone

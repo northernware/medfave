@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { CrumbName } from "@/components/crumb-names";
+import { DELETE_PHRASES } from "@/lib/confirm-phrase";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { archivePatient, deletePatient, restorePatient } from "@/app/actions/patients";
@@ -521,6 +522,7 @@ export default async function PatientPage({
               summary="Delete this registration"
               warning={`${fullName(patient)} has no visits, appointments, requests or clinical lists, so deleting removes only the registration. Once anything is recorded, a chart can be archived but not deleted.`}
               confirmLabel="Delete registration"
+              confirmPhrase={DELETE_PHRASES.registration}
             />
           )}
         </div>

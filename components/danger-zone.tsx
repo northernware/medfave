@@ -2,14 +2,14 @@
 
 import { useRef } from "react";
 import { DangerTriangleIcon } from "@solar-icons/react/linear/danger-triangle";
+import { TrashBinMinimalistic2Icon } from "@solar-icons/react/linear/trash-bin-minimalistic-2";
 import { buttonClass } from "./ui";
-import { TypedConfirm } from "./typed-confirm";
+import { Footer, TypedConfirm } from "./typed-confirm";
 
 /**
- * A destructive (or at least serious) action, set apart as its own row: what
- * it does, and a button that opens a dialog to confirm it. The dialog carries
- * the warning and, for a permanent deletion, the phrase to type. Nothing here
- * is tinted; red is kept for the buttons that mean it.
+ * An action that cannot be taken back, kept out of the way of the work: a
+ * quiet line at the foot of a page, and a dialog that asks properly. The page
+ * stays calm; the red is spent in the dialog, on the button that does it.
  */
 export function DangerZone({
   action,
@@ -38,51 +38,51 @@ export function DangerZone({
   const dialog = useRef<HTMLDialogElement>(null);
   const loud = variant === "danger";
   const cancel = (
-    <button type="button" onClick={() => dialog.current?.close()} className={buttonClass("ghost")}>
+    <button type="button" onClick={() => dialog.current?.close()} className={buttonClass("secondary")}>
       Cancel
     </button>
   );
 
   return (
-    <section className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-xl border border-border bg-surface px-5 py-4">
-      <div className="min-w-0 flex-1 basis-64">
-        <h2 className="text-sm font-semibold">{summary}</h2>
-        <p className="mt-0.5 text-sm text-pretty text-ink-muted">{warning}</p>
-      </div>
-      <button type="button" onClick={() => dialog.current?.showModal()} className={buttonClass(variant)}>
-        {confirmLabel}…
+    <div className="flex justify-end pt-1">
+      <button
+        type="button"
+        onClick={() => dialog.current?.showModal()}
+        className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-ink-faint transition-colors hover:bg-danger-tint hover:text-danger-ink"
+      >
+        {loud ? <TrashBinMinimalistic2Icon aria-hidden className="size-4" /> : null}
+        {summary}
       </button>
 
+      {/* Closes on Escape and on a click outside, as a dialog should. */}
       <dialog
         ref={dialog}
-        className="m-auto w-[min(30rem,calc(100vw-2rem))] rounded-xl border border-border bg-surface p-0 text-ink shadow-lg backdrop:bg-black/45"
+        onClick={(e) => {
+          if (e.target === dialog.current) dialog.current.close();
+        }}
+        className="m-auto w-[min(32rem,calc(100vw-2rem))] rounded-xl border border-border bg-surface p-0 text-left text-ink shadow-card backdrop:bg-ink/50 backdrop:backdrop-blur-[2px]"
       >
-        <form action={action} className="space-y-4 p-5">
+        <form action={action} onClick={(e) => e.stopPropagation()}>
           <input type="hidden" name={fieldName} value={fieldValue} />
-          <div className="flex items-start gap-3">
+          <div className="flex items-start gap-4 px-6 pt-6 pb-4">
             {loud ? (
-              <span className="grid size-9 shrink-0 place-items-center rounded-full bg-danger-soft text-danger-ink">
+              <span className="grid size-10 shrink-0 place-items-center rounded-full bg-danger-tint text-danger">
                 <DangerTriangleIcon aria-hidden className="size-5" />
               </span>
             ) : null}
             <div className="min-w-0">
-              <h2 className="text-base font-semibold">{summary}?</h2>
-              <p className="mt-1 text-sm text-pretty text-ink-muted">{warning}</p>
+              <h2 className="font-display text-lg leading-6 font-semibold tracking-[-0.01em]">{summary}?</h2>
+              <p className="mt-1.5 text-sm leading-6 text-pretty text-ink-muted">{warning}</p>
             </div>
           </div>
-          {children}
+          {children ? <div className="px-6 pb-4">{children}</div> : null}
           {confirmPhrase ? (
-            <TypedConfirm phrase={confirmPhrase} confirmLabel={confirmLabel} variant={loud ? "dangerSolid" : "secondary"}>
-              {cancel}
-            </TypedConfirm>
+            <TypedConfirm phrase={confirmPhrase} confirmLabel={confirmLabel} cancel={cancel} />
           ) : (
-            <div className="flex flex-wrap items-center gap-2">
-              <button className={buttonClass(loud ? "dangerSolid" : "secondary")}>{confirmLabel}</button>
-              {cancel}
-            </div>
+            <Footer cancel={cancel} confirmLabel={confirmLabel} variant={loud ? "dangerSolid" : "primary"} />
           )}
         </form>
       </dialog>
-    </section>
+    </div>
   );
 }
