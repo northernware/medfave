@@ -13,12 +13,14 @@ import { NotesIcon } from "@solar-icons/react/linear/notes";
 import { SettingsIcon } from "@solar-icons/react/linear/settings";
 import { ShieldCheckIcon } from "@solar-icons/react/linear/shield-check";
 import { HeartPulseIcon } from "@solar-icons/react/linear/heart-pulse";
+import { ChatRoundLikeIcon } from "@solar-icons/react/linear/chat-round-like";
 import { UserRoundedIcon } from "@solar-icons/react/linear/user-rounded";
 import { UsersGroupRoundedIcon } from "@solar-icons/react/linear/users-group-rounded";
 import { UsersGroupTwoRoundedIcon } from "@solar-icons/react/linear/users-group-two-rounded";
 import { DOCTOR_LINKS, type IconKey, type NavLink } from "@/components/nav-links";
 
 const ICONS: Record<IconKey, typeof Home2Icon> = {
+  feedback: ChatRoundLikeIcon,
   today: Home2Icon,
   calendar: CalendarIcon,
   appointments: ClipboardListIcon,
