@@ -898,8 +898,8 @@ namespace public {
     @@map("Fave")
   }
 
-  /// What a patient said after a visit, for the clinic only: good or not, and
-  /// a line why. A row with no rating means the after-visit card was closed
+  /// What a patient said after a visit, for the clinic only: a score, what
+  /// stood out, and a line. A row with no rating means the after-visit card was closed
   /// without answering, so it isn't asked again. One per visit and login.
   model VisitFeedback {
     id            String @id(map: "VisitFeedback_pkey")
@@ -908,6 +908,11 @@ namespace public {
     clinicId      String
     doctorId      String
     rating        pg.enum(VisitRating)?
+    /// 1 (upset) to 5 (delighted), from the faces on the rating sheet.
+    /// `rating` follows it: 4–5 GOOD, 1–3 NOT_GREAT.
+    score         Int?
+    /// What stood out, as tag codes joined by commas (e.g. "ON_TIME,LISTENED").
+    tags          String?
     note          String?
     createdAt     TimestampString(3) @default(now())
     appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "VisitFeedback_appointmentId_fkey")

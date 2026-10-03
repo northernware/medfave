@@ -84,11 +84,33 @@ export async function visitToAskAbout(me: CurrentPatient) {
 
 export type Rating = "GOOD" | "NOT_GREAT";
 
+/** What can stand out about a visit: the tags on the rating sheet. The app has the words. */
+export const FEEDBACK_TAGS = [
+  "LISTENED",
+  "EXPLAINED",
+  "ON_TIME",
+  "FRIENDLY",
+  "CLEAN",
+  "LONG_WAIT",
+  "RUSHED",
+  "UNCLEAR",
+  "UNFRIENDLY",
+  "COST",
+] as const;
+export type FeedbackTag = (typeof FEEDBACK_TAGS)[number];
+
+export type Feedback = { score: number | null; rating: Rating | null; tags: FeedbackTag[]; note: string | null };
+
 /**
- * Records what the patient said about a finished visit of theirs: a rating and
- * a line, or nothing (the card was closed). Saying it again replaces it.
+ * Records what the patient said about a finished visit of theirs: a score from
+ * the faces, what stood out and a line, or nothing (the sheet was closed).
+ * Saying it again replaces it.
  */
-export async function saveFeedback(me: CurrentPatient, appointmentId: string, rating: Rating | null, note: string | null) {
+export async function saveFeedback(me: CurrentPatient, appointmentId: string, feedback: Feedback) {
+  const { score, tags, note } = feedback;
+  // The coarse rating follows the score, for a clinic's at-a-glance count.
+  const rating: Rating | null = score ? (score >= 4 ? "GOOD" : "NOT_GREAT") : feedback.rating;
+  const fields = { rating, score, tags: tags.length ? tags.join(",") : null, note };
   const visit = await orm.Appointment
     .select("id", "status", "clinicId", "doctorId")
     .where((a) => a.id.eq(appointmentId))
@@ -103,7 +125,7 @@ export async function saveFeedback(me: CurrentPatient, appointmentId: string, ra
     .where((f) => f.accountId.eq(me.accountId))
     .first();
   if (existing) {
-    await orm.VisitFeedback.where((f) => f.id.eq(existing.id)).update({ rating, note });
+    await orm.VisitFeedback.where((f) => f.id.eq(existing.id)).update(fields);
   } else {
     await orm.VisitFeedback.create({
       id: newId(),
@@ -111,8 +133,7 @@ export async function saveFeedback(me: CurrentPatient, appointmentId: string, ra
       accountId: me.accountId,
       clinicId: visit.clinicId,
       doctorId: visit.doctorId,
-      rating,
-      note,
+      ...fields,
       createdAt: instantToDb(new Date()),
     });
   }

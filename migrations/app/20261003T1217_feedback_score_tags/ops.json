@@ -1,0 +1,86 @@
+[
+  {
+    "id": "column.public.VisitFeedback.score",
+    "label": "Add column \"score\" to \"VisitFeedback\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "score",
+        "table": "VisitFeedback"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"score\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "VisitFeedback",
+          "score"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"score\"",
+        "sql": "ALTER TABLE \"public\".\"VisitFeedback\" ADD COLUMN \"score\" int4"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"score\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "VisitFeedback",
+          "score"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "column.public.VisitFeedback.tags",
+    "label": "Add column \"tags\" to \"VisitFeedback\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "column",
+        "name": "tags",
+        "table": "VisitFeedback"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure column \"tags\" is missing",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "VisitFeedback",
+          "tags"
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add column \"tags\"",
+        "sql": "ALTER TABLE \"public\".\"VisitFeedback\" ADD COLUMN \"tags\" text"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify column \"tags\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"information_schema\".\"columns\" WHERE (\"table_schema\" = $1 AND \"table_name\" = $2 AND \"column_name\" = $3)) AS \"result\"",
+        "params": [
+          "public",
+          "VisitFeedback",
+          "tags"
+        ]
+      }
+    ]
+  }
+]
