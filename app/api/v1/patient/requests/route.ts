@@ -11,10 +11,16 @@ export async function GET(request: Request) {
 
   const requests = await orm.AppointmentRequest
     .select("id", "preferredDate", "preferredTime", "service", "reason", "status", "decisionNote", "createdAt", "rescheduleOfId")
+    .include("doctor", (d) => d.select("id", "fullName"))
     .where((r) => r.patientId.eq(me.patientId))
     .orderBy((r) => r.createdAt.desc())
     .limit(50)
     .all();
+  // For a move: the time the visit has now, so the card can say "from … to …".
+  const movingIds = requests.flatMap((r) => (r.rescheduleOfId ? [r.rescheduleOfId] : []));
+  const moving = movingIds.length
+    ? await orm.Appointment.select("id", "scheduledAt").where((a) => a.id.in(movingIds)).all()
+    : [];
 
   return Response.json({
     requests: requests.map((r) => ({
@@ -29,6 +35,12 @@ export async function GET(request: Request) {
       createdAt: instantFromDb(r.createdAt).toISOString(),
       /** Set when this asks to move an existing visit. */
       rescheduleOf: r.rescheduleOfId,
+      /** That visit's current time, for a move. */
+      rescheduleFrom: (() => {
+        const visit = moving.find((a) => a.id === r.rescheduleOfId);
+        return visit ? instantFromDb(visit.scheduledAt).toISOString() : null;
+      })(),
+      doctor: r.doctor ? { id: r.doctor.id, fullName: r.doctor.fullName } : null,
     })),
   });
 }
