@@ -31,6 +31,8 @@
   --brand: #e91e83;
   --brand-plum: #32132c;
   --brand-blush: #fde7f1;
+  /* The one loud card on a screen: deep pink in both themes, as the app's hero. */
+  --hero: #b51260;
   /* Emergency information only (medfave-design: emergencyRed): the emergency
      card's band. Never for brand, buttons or errors. */
   --emergency: #c62828;
@@ -138,6 +140,7 @@
   --color-brand: var(--brand);
   --color-brand-plum: var(--brand-plum);
   --color-brand-blush: var(--brand-blush);
+  --color-hero: var(--hero);
   --color-emergency: var(--emergency);
 
   /* Two companion typefaces: Plus Jakarta Sans for headings, Inter for body
