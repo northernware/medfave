@@ -99,6 +99,23 @@ export const FEEDBACK_TAGS = [
 ] as const;
 export type FeedbackTag = (typeof FEEDBACK_TAGS)[number];
 
+/** The words the app shows for each tag, for the clinic's feedback page. Keep in step with the app. */
+export const FEEDBACK_TAG_LABELS: Record<FeedbackTag, string> = {
+  LISTENED: "Listened well",
+  EXPLAINED: "Clear advice",
+  ON_TIME: "On time",
+  FRIENDLY: "Friendly",
+  CLEAN: "Clean clinic",
+  LONG_WAIT: "Long wait",
+  RUSHED: "Felt rushed",
+  UNCLEAR: "Unclear plan",
+  UNFRIENDLY: "Unfriendly",
+  COST: "Cost",
+};
+
+/** The words for each score, as the app's faces say them. */
+export const SCORE_WORDS = ["", "Bad", "Not good", "Okay", "Good", "Great!"] as const;
+
 export type Feedback = { score: number | null; rating: Rating | null; tags: FeedbackTag[]; note: string | null };
 
 /**
