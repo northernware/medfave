@@ -109,8 +109,20 @@ export const STATUS_TRANSITIONS: Record<AppointmentStatus, AppointmentStatus[]> 
   IN_CONSULTATION: ["COMPLETED", "CANCELLED"],
   COMPLETED: [],
   CANCELLED: ["CONFIRMED"],
-  NO_SHOW: ["CONFIRMED"],
+  // Checking in a no-show is someone arriving late, and only on the visit's own day
+  // (changeAppointmentStatus checks it; `movesFrom` offers it only then).
+  NO_SHOW: ["CONFIRMED", "CHECKED_IN"],
 };
+
+/**
+ * The moves to offer from here. A no-show can be checked in on its own day,
+ * and then that leads: they turned up late, which is the likelier fix than
+ * restoring a time that has passed.
+ */
+export function movesFrom(status: AppointmentStatus, onItsDay: boolean): AppointmentStatus[] {
+  if (status === "NO_SHOW") return onItsDay ? ["CHECKED_IN", "CONFIRMED"] : ["CONFIRMED"];
+  return STATUS_TRANSITIONS[status];
+}
 
 export function canMoveTo(from: AppointmentStatus, to: AppointmentStatus) {
   return STATUS_TRANSITIONS[from].includes(to);
@@ -126,6 +138,7 @@ export function statusActionLabel(from: AppointmentStatus, to: AppointmentStatus
     return "Restore booking";
   }
   if (to === "CONFIRMED" && from === "CHECKED_IN") return "Undo check-in";
+  if (to === "CHECKED_IN" && from === "NO_SHOW") return "Check in (arrived late)";
   return {
     PENDING: "Back to pending",
     CONFIRMED: "Confirm",
