@@ -31,6 +31,7 @@
   --brand: #e91e83;
   --brand-plum: #32132c;
   --brand-blush: #fde7f1;
+  --brand-gray: #6e616b;
   /* Emergency information only (medfave-design: emergencyRed): the emergency
      card's band. Never for brand, buttons or errors. */
   --emergency: #c62828;
@@ -138,6 +139,7 @@
   --color-brand: var(--brand);
   --color-brand-plum: var(--brand-plum);
   --color-brand-blush: var(--brand-blush);
+  --color-brand-gray: var(--brand-gray);
   --color-emergency: var(--emergency);
 
   /* Two companion typefaces: Plus Jakarta Sans for headings, Inter for body

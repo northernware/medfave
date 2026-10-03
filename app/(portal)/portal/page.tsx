@@ -19,6 +19,7 @@ import {
   SERVICE_LABELS,
 } from "@/lib/domain";
 import { DOCUMENT_TYPE_LABELS } from "@/lib/documents";
+import { PersonSwitch } from "@/components/person-switch";
 import { RatingFace } from "@/components/rating-face";
 import { SCORE_WORDS } from "@/lib/faves";
 import { Badge, buttonClass, Card, CardHeader, EmptyState, PageHeader, Stat, StatStrip } from "@/components/ui";
@@ -73,6 +74,8 @@ export default async function PortalPage({ searchParams }: PageProps<"/portal">)
   ]);
 
   if (!profile) return null;
+  const clinic = await orm.Clinic.select("name", "address", "contactNumber").where((c) => c.id.eq(me.clinicId)).first();
+  const people = me.charts.filter((c) => c.clinicId === me.clinicId);
 
   // As the app: live visits lead, the next one as the pink card; called-off ones fold away.
   const live = upcoming.filter((a) => !ENDED.includes(a.status));
@@ -97,6 +100,7 @@ export default async function PortalPage({ searchParams }: PageProps<"/portal">)
           </Link>
         }
       />
+      <PersonSwitch />
 
       {added ? (
         <div className="rounded-lg border border-ok/40 bg-ok-tint px-4 py-3 text-sm">
@@ -123,6 +127,9 @@ export default async function PortalPage({ searchParams }: PageProps<"/portal">)
         <Stat label="Documents" value={documents.length} hint="shared with you" />
       </StatStrip>
 
+      {/* A web app's page: the work in the middle, the clinic and what's yours at the side. */}
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_340px] lg:items-start">
+      <div className="min-w-0 space-y-3">
       <Card>
         <CardHeader title="Upcoming visits" />
         {live.length === 0 ? (
@@ -212,24 +219,6 @@ export default async function PortalPage({ searchParams }: PageProps<"/portal">)
         </Card>
       ) : null}
 
-      {documents.length > 0 ? (
-        <Card>
-          <CardHeader title="Documents shared with you" />
-          <ul className="divide-y divide-border">
-            {documents.map((d) => (
-              <li key={d.id}>
-                <Link href={`/portal/documents/${d.id}`} className="flex items-baseline gap-3 px-5 py-3 hover:bg-surface-muted">
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium">{DOCUMENT_TYPE_LABELS[d.type]}</span>
-                    <span className="block truncate text-sm text-ink-muted">{d.purpose}</span>
-                  </span>
-                  <span className="text-sm font-medium text-accent-ink">Open</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      ) : null}
 
       {past.length > 0 ? (
         <Card>
@@ -259,6 +248,59 @@ export default async function PortalPage({ searchParams }: PageProps<"/portal">)
           </ul>
         </Card>
       ) : null}
+      </div>
+
+      <aside className="space-y-3">
+        {clinic ? (
+          <Card>
+            <CardHeader title="Your clinic" />
+            <div className="space-y-1 px-5 pb-4 text-sm">
+              <p className="font-medium">{clinic.name}</p>
+              {clinic.address ? <p className="text-ink-muted">{clinic.address}</p> : null}
+              {clinic.contactNumber ? (
+                <a href={`tel:${clinic.contactNumber}`} className="inline-block pt-2 font-medium text-accent-ink hover:underline">
+                  Call {clinic.contactNumber}
+                </a>
+              ) : null}
+            </div>
+          </Card>
+        ) : null}
+      {documents.length > 0 ? (
+        <Card>
+          <CardHeader title="Documents" action={<Link href="/portal/documents" className="text-sm font-medium text-accent-ink hover:underline">See all</Link>} />
+          <ul className="divide-y divide-border">
+            {documents.slice(0, 4).map((d) => (
+              <li key={d.id}>
+                <Link href={`/portal/documents/${d.id}`} className="flex items-baseline gap-3 px-5 py-3 hover:bg-surface-muted">
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-medium">{DOCUMENT_TYPE_LABELS[d.type]}</span>
+                    <span className="block truncate text-sm text-ink-muted">{d.purpose}</span>
+                  </span>
+                  <span className="text-sm font-medium text-accent-ink">Open</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      ) : null}
+        {people.length > 1 ? (
+          <Card>
+            <CardHeader
+              title="Family"
+              action={<Link href="/portal/family" className="text-sm font-medium text-accent-ink hover:underline">Manage</Link>}
+            />
+            <ul className="divide-y divide-border">
+              {people.map((c) => (
+                <li key={c.id} className="flex items-baseline gap-3 px-5 py-2.5 text-sm">
+                  <span className="flex-1 font-medium">{c.self ? "You" : c.name}</span>
+                  {c.id === me.patientId ? <span className="text-ink-faint">Showing</span> : null}
+                </li>
+              ))}
+            </ul>
+          </Card>
+        ) : null}
+      </aside>
+      </div>
     </div>
   );
 }

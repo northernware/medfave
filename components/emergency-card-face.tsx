@@ -29,7 +29,7 @@ const MAX_ITEMS = 4;
 export function EmergencyCardFace({ face }: { face: CardFace }) {
   return (
     <div
-      className="@container aspect-[85.6/54] w-full min-w-0 overflow-hidden rounded-[4cqw] bg-canvas shadow-card ring-1 ring-border"
+      className="@container aspect-[85.6/54] w-full min-w-0 overflow-hidden rounded-[4cqw] bg-white shadow-card ring-1 ring-black/10"
       style={{ containerType: "inline-size" }}
     >
       <div className="flex h-full">
@@ -60,8 +60,8 @@ export function EmergencyCardFace({ face }: { face: CardFace }) {
             <p className="line-clamp-2 font-display text-[3.7cqw] leading-[1.15] font-semibold text-brand-plum">
               {face.name}
             </p>
-            <p className="truncate text-[1.95cqw] text-ink-muted">Born {face.born}</p>
-            <p className="truncate text-[2cqw] text-ink-muted">{face.address ?? "Address not recorded"}</p>
+            <p className="truncate text-[1.95cqw] text-brand-gray">Born {face.born}</p>
+            <p className="truncate text-[2cqw] text-brand-gray">{face.address ?? "Address not recorded"}</p>
           </div>
 
           <div>
@@ -74,7 +74,7 @@ export function EmergencyCardFace({ face }: { face: CardFace }) {
                 </span>
                 <span className="min-w-0 flex-1 truncate font-semibold">
                   {c.name}
-                  {c.relationship ? <span className="font-normal text-ink-muted"> ({c.relationship})</span> : null}
+                  {c.relationship ? <span className="font-normal text-brand-gray"> ({c.relationship})</span> : null}
                 </span>
                 {c.number ? <span className="shrink-0 font-semibold">{c.number}</span> : null}
               </p>
@@ -99,7 +99,7 @@ export function EmergencyCardFace({ face }: { face: CardFace }) {
                 <span className="min-w-0 flex-1 truncate font-semibold">
                   {face.physician.name}
                   {face.physician.specialty ? (
-                    <span className="font-normal text-ink-muted"> · {face.physician.specialty}</span>
+                    <span className="font-normal text-brand-gray"> · {face.physician.specialty}</span>
                   ) : null}
                 </span>
                 {face.physician.phone ? <span className="shrink-0 font-semibold">{face.physician.phone}</span> : null}
@@ -107,7 +107,7 @@ export function EmergencyCardFace({ face }: { face: CardFace }) {
             ) : (
               <Muted>Not recorded</Muted>
             )}
-            <p className="mt-[0.6cqw] truncate text-[1.45cqw] text-ink-faint">{face.source}</p>
+            <p className="mt-[0.6cqw] truncate text-[1.45cqw] text-brand-gray/70">{face.source}</p>
           </div>
         </div>
       </div>
@@ -116,10 +116,10 @@ export function EmergencyCardFace({ face }: { face: CardFace }) {
 }
 
 const Label = ({ children }: { children: React.ReactNode }) => (
-  <p className="text-[1.55cqw] font-semibold tracking-[0.12em] text-ink-muted">{children}</p>
+  <p className="text-[1.55cqw] font-semibold tracking-[0.12em] text-brand-gray">{children}</p>
 );
 const Muted = ({ children }: { children: React.ReactNode }) => (
-  <p className="text-[2.1cqw] leading-[1.45] text-ink-muted">{children}</p>
+  <p className="text-[2.1cqw] leading-[1.45] text-brand-gray">{children}</p>
 );
 
 /** One medical list, an item per line, then "+N more". */

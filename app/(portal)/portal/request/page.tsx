@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PersonSwitch } from "@/components/person-switch";
 import { requestAppointment } from "@/app/actions/requests";
 import { requirePatientAccount } from "@/lib/auth";
 import { lastDoctorFor, pickDoctor } from "@/lib/clinic";
@@ -23,11 +24,12 @@ export default async function RequestPage({ searchParams }: PageProps<"/portal/r
   const whose = doctors.find((d) => d.id === doctorId);
 
   return (
-    <div className="space-y-3">
+    <div className="max-w-4xl space-y-3">
       <PageHeader
         title="Request an appointment"
         subtitle={schedule ? `${whose && doctors.length > 1 ? `${whose.fullName}: ` : ""}${describeWeek(schedule)}` : undefined}
       />
+      <PersonSwitch />
 
       <div className="rounded-lg border border-warn/40 bg-warn-tint px-4 py-3 text-sm">
         <p className="font-medium text-warn-ink">A request is not a booking.</p>

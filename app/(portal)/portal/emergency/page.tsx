@@ -35,7 +35,7 @@ export default async function EmergencyPage({ searchParams }: PageProps<"/portal
   );
 
   return (
-    <div className="space-y-3">
+    <div className="max-w-4xl space-y-3">
       <div className="print:hidden">
         <PageHeader title="Emergency card" subtitle="What a medic needs to know. From your clinics' records." />
       </div>

@@ -50,8 +50,13 @@ const ITEM: Record<string, string> = {
 const LISTS = new Set([
   "/dashboard", "/calendar", "/appointments", "/patients", "/households", "/documents",
   "/desk", "/desk/appointments", "/desk/patients", "/desk/requests",
-  "/portal", "/manage",
+  "/portal", "/portal/documents", "/portal/emergency", "/portal/details", "/portal/family", "/portal/request",
+  "/manage",
 ]);
+
+// The patient's own words for the same places, under /portal.
+const PORTAL_NAMES: Record<string, string> = { documents: "Documents", emergency: "Emergency card" };
+const PORTAL_ITEM: Record<string, string> = { documents: "Document" };
 
 const isId = (s: string) => /^[0-9a-f-]{16,}$/i.test(s);
 
@@ -66,7 +71,10 @@ export function Breadcrumbs() {
   const crumbs = parts.map((part, i) => {
     const href = "/" + parts.slice(0, i + 1).join("/");
     // An id is called what its page says it is (`CrumbName`), or by its kind.
-    const label = isId(part) ? (named[part] ?? ITEM[parts[i - 1]] ?? "Details") : (NAMES[part] ?? part);
+    const portal = parts[0] === "portal";
+    const label = isId(part)
+      ? (named[part] ?? (portal ? PORTAL_ITEM[parts[i - 1]] : undefined) ?? ITEM[parts[i - 1]] ?? "Details")
+      : ((portal ? PORTAL_NAMES[part] : undefined) ?? NAMES[part] ?? part);
     // An id is linkable (it has a page); a list only if it has one.
     const linkable = i < parts.length - 1 && (isId(part) || LISTS.has(href));
     return { href, label, linkable };
