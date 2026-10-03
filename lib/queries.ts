@@ -14,6 +14,7 @@ import { fullName, SERVICE_LABELS } from "./domain";
 import type { DuplicateMatch } from "./validation";
 import { DEFAULT_SCHEDULE, type Schedule } from "./availability";
 import { caredForIds, idsOrNone } from "./care";
+import { heldSlots } from "./held-slots";
 import { addDays, minuteOfDay, occupiesSlot } from "./scheduling";
 import { earliestBookableDay, latestBookableDay } from "./availability";
 import type { AppointmentListItem } from "@/components/appointment-list";
@@ -154,6 +155,15 @@ export async function bookingFormData(
     const scheduledAt = instantFromDb(a.scheduledAt);
     const start = minuteOfDay(scheduledAt);
     (busyByDay[dayKey(scheduledAt)] ??= []).push({ start, end: start + a.durationMinutes });
+  }
+
+  // An early check-in still holds its old time, until the consultation starts.
+  const held = await heldSlots(doctorId, startOfClinicDay(walkInEarliest), startOfClinicDay(addDays(latest, 1)), {
+    ignoreAppointmentId: excludeAppointmentId,
+  });
+  for (const h of held) {
+    const start = minuteOfDay(h.scheduledAt);
+    (busyByDay[dayKey(h.scheduledAt)] ??= []).push({ start, end: start + h.durationMinutes });
   }
 
   const followUps: FollowUpOptions = {};

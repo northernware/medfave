@@ -15,6 +15,7 @@ import { newId } from "@/lib/ids";
 import { canMoveTo, fullName, SERVICE_MINUTES } from "@/lib/domain";
 import { formatSpan, minuteOfDay, occupiesSlot, overlaps } from "@/lib/scheduling";
 import { checkAvailability, durationFor } from "@/lib/availability";
+import { heldSlots } from "@/lib/held-slots";
 import { loadSchedule } from "@/lib/queries";
 import { appUrl, sendAppointmentConfirmation } from "@/lib/email";
 import { appointmentSchema, toFieldErrors, type FormState } from "@/lib/validation";
@@ -201,7 +202,8 @@ export async function lockDoctorSchedule(tx: Tx, doctorId: string) {
  * Overlap is `newStart < existingEnd AND newEnd > existingStart` — identical
  * start times are only the most obvious case of it. Cancelled and no-show
  * visits do not hold their time (see `occupiesSlot`), so their slots are free
- * to rebook.
+ * to rebook. An early check-in still holds the time it was booked for (see
+ * `heldSlots`), so undoing it can always put it back.
  */
 export async function findClash(
   tx: Tx,
@@ -231,6 +233,19 @@ export async function findClash(
       ])
     ) {
       return { ...existing, startMinute: existingStart };
+    }
+  }
+  for (const held of await heldSlots(doctorId, start, end, { q: tx.orm.public, ignoreAppointmentId })) {
+    const heldStart = minuteOfDay(held.scheduledAt);
+    if (overlaps(proposedStart, durationMinutes, [{ start: heldStart, end: heldStart + held.durationMinutes }])) {
+      return {
+        id: held.id,
+        scheduledAt: instantToDb(held.scheduledAt),
+        durationMinutes: held.durationMinutes,
+        status: "CHECKED_IN" as const,
+        patient: held.patient,
+        startMinute: heldStart,
+      };
     }
   }
   return null;
