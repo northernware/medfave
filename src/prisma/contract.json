@@ -6697,6 +6697,20 @@
                     "typeName": "VisitRating"
                   }
                 }
+              },
+              "score": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "tags": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
               }
             },
             "relations": {
@@ -6786,6 +6800,12 @@
                 },
                 "rating": {
                   "column": "rating"
+                },
+                "score": {
+                  "column": "score"
+                },
+                "tags": {
+                  "column": "tags"
                 }
               },
               "namespaceId": "public",
@@ -12142,6 +12162,16 @@
                     "namespaceId": "public",
                     "plane": "storage"
                   }
+                },
+                "score": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
+                "tags": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 }
               },
               "foreignKeys": [
@@ -12473,7 +12503,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "3052c604611e2abdc9f5a14149e2d70e572b39d64a045a6be05e49bd54138cfe"
+    "storageHash": "db5065a364bcc03314531fde6adda919a531c985214eea7b0752035425cdd9be"
   },
   "capabilities": {
     "postgres": {
