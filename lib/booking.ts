@@ -509,7 +509,12 @@ export async function changeAppointmentStatus(
   // queue. Undoing the check-in puts it back where it was (below); the move is
   // in the visit's history either way.
   const arriving = status === "CHECKED_IN" || status === "IN_CONSULTATION";
-  const movedFrom = arriving && !isClinicToday(existing.scheduledAt) ? existing.scheduledAt : null;
+  // Somebody assumed (or marked) not to be coming who turns up later the same
+  // day: they are here now, so the visit moves to now and joins the queue in
+  // arrival order, as a walk-in does. Only on its day.
+  const lateArrival = existing.status === "NO_SHOW" && status === "CHECKED_IN";
+  if (lateArrival && !isClinicToday(existing.scheduledAt)) return { ok: false, reason: "not-today" };
+  const movedFrom = arriving && (lateArrival || !isClinicToday(existing.scheduledAt)) ? existing.scheduledAt : null;
 
   // Undoing a check-in that moved the visit: back to the time it had.
   let restoreTo: typeof existing.scheduledAt | null = null;
@@ -556,7 +561,8 @@ export async function changeAppointmentStatus(
    */
   // Putting an early check-in back re-claims its old slot, which may have gone
   // since: that is a booking, so it takes the lock and the overlap check too.
-  if ((occupiesSlot(existing.status) || !occupiesSlot(status)) && !restoreTo) {
+  // A late arrival joins the queue whatever the book says about now: no overlap check.
+  if (((occupiesSlot(existing.status) || !occupiesSlot(status)) && !restoreTo) || lateArrival) {
     await db.transaction(async (tx) => {
       await tx.orm.public.Appointment
         .where((a) => a.id.eq(appointmentId))

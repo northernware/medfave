@@ -17,10 +17,11 @@ import {
   fullName,
   REMINDER_LABELS,
   SERVICE_LABELS,
-  STATUS_TRANSITIONS,
+  movesFrom,
   statusActionLabel,
   VISIT_PRIORITY_LABELS,
 } from "@/lib/domain";
+import { isClinicToday } from "@/lib/booking";
 import type { AppointmentStatus } from "@/lib/enums";
 import { Badge, buttonClass, Card, CardHeader, Detail, PageHeader } from "@/components/ui";
 
@@ -63,7 +64,7 @@ export default async function DeskAppointmentPage({
 
   const { patient } = appointment;
   const history = await visitHistory(appointment.id, staff.clinicId);
-  const moves = STATUS_TRANSITIONS[appointment.status].filter(
+  const moves = movesFrom(appointment.status, isClinicToday(appointment.scheduledAt)).filter(
     (next) => staff.role !== "SECRETARY" || DESK_STATUSES.includes(next),
   );
 

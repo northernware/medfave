@@ -1,6 +1,7 @@
 import "server-only";
 import { instantFromDb } from "@/lib/datetime";
-import { APPOINTMENT_STATUS_LABELS, fullName, SERVICE_LABELS, STATUS_TRANSITIONS } from "@/lib/domain";
+import { isClinicToday } from "@/lib/booking";
+import { APPOINTMENT_STATUS_LABELS, fullName, movesFrom, SERVICE_LABELS } from "@/lib/domain";
 import type { AppointmentStatus, BookingSource, ServiceType } from "@/lib/enums";
 
 /*
@@ -51,6 +52,6 @@ export function shapeAppointment(a: AppointmentRow) {
     consultationStartedAt: a.consultationStartedAt ? instantFromDb(a.consultationStartedAt).toISOString() : null,
     patient: { id: a.patient.id, fullName: fullName(a.patient) },
     /** Where this visit may move next — the only statuses the status endpoint will accept. */
-    nextStatuses: STATUS_TRANSITIONS[a.status].map((s) => ({ status: s, label: APPOINTMENT_STATUS_LABELS[s] })),
+    nextStatuses: movesFrom(a.status, isClinicToday(a.scheduledAt)).map((s) => ({ status: s, label: APPOINTMENT_STATUS_LABELS[s] })),
   };
 }
