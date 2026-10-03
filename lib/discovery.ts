@@ -17,7 +17,7 @@ export type FoundDoctor = {
   clinic: { id: string; name: string; address: string | null; slug: string | null };
 };
 
-async function shape(doctors: { id: string; fullName: string; specialty: string | null; clinicId: string | null }[]) {
+export async function shape(doctors: { id: string; fullName: string; specialty: string | null; clinicId: string | null }[]) {
   const clinicIds = [...new Set(doctors.flatMap((d) => (d.clinicId ? [d.clinicId] : [])))];
   const clinics = clinicIds.length
     ? await orm.Clinic.select("id", "name", "address", "slug").where((c) => c.id.in(clinicIds)).all()

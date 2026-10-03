@@ -134,6 +134,8 @@ uses the login's own chart at the clinic. Any other chart gets `404`.
 | `POST /patient/clinics` | `{ code, confirmedPatientId }` → `201 { clinic: { id, name }, patientId }`. **Add a clinic:** redeems an activation code (after `POST /activation/preview`) and links that chart to this login: as its own, or, for a caregiver code, as somebody it looks after. Open to any signed-in account. `422` for an invalid code, a clinic already linked (own codes only) or a code that now opens a different chart |
 | `GET /patient/appointments` | `{ upcoming[], past[], cancelHours }`. `upcoming`: visits still ahead, plus today's that aren't over yet (pending, confirmed, checked in or in consultation), even past their start time; `past`: the rest. Each `{ id, scheduledAt, durationMinutes, service, serviceLabel, reason, status, statusLabel, visitType, doctor, doctorId }`; upcoming ones also `{ canCancel, cancelBy, canMove, movePending }` |
 | `POST /patient/appointments/:id/cancel` | Cancels the patient's own visit, up to the clinic's cut-off (`cancelHours` before it) → `{ id, status: "CANCELLED" }`; `409` with what to do instead when it's too late |
+| `GET /patient/after-visit` | `{ visit: { id, scheduledAt, serviceLabel, doctor: { id, fullName }, faved } \| null }`: the latest completed visit of this person in the last 14 days that this login hasn't given feedback on or closed, for the "How was your visit?" card |
+| `POST /patient/appointments/:id/feedback` | `{ rating?: "GOOD" \| "NOT_GREAT", note? }` → `{ id, saved: true }`. Only the clinic sees it. Without `rating`, records the card as closed. Completed visits only (`409` otherwise); sending again replaces it |
 | `GET /patient/requests` | `{ requests[] }`, each `{ id, preferredDate, preferredTime, service, serviceLabel, reason, status, decisionNote, createdAt }` |
 | `POST /patient/requests` | `{ service, preferredDate, preferredTime?, reason, doctorId?, rescheduleOf? }` (`rescheduleOf`: an upcoming visit's id, to ask to move it; same doctor, and the old time is freed when accepted) → `201 { id, status: "PENDING" }`. Patients ask for a **doctor**: `doctorId` is one of `/patient/clinic`'s `doctors`. Left out: the doctor they saw last, or the only one; with several and no history, `422` asks to choose. Checked against that doctor's hours |
 | `DELETE /patient/requests/:id` | Withdraws a request that is still pending → `{ id, status: "WITHDRAWN" }` |
@@ -186,8 +188,18 @@ Any signed-in account. Only verified doctors appear.
 | | |
 | --- | --- |
 | `GET /discover?q=&specialty=` | `{ doctors: [{ id, fullName, specialty, clinic: { id, name, address, slug } }], specialties[] }` — doctors at clinics that list themselves |
-| `GET /discover/doctors/:id` | `{ doctor, booking, knownPatient }` — `booking` is `/patient/clinic`'s shape for this doctor (services, hours, window); `knownPatient` says the caller already has a record there |
+| `GET /discover/doctors/:id` | `{ doctor, booking, knownPatient, faved }` — `booking` is `/patient/clinic`'s shape for this doctor (services, hours, window); `knownPatient` says the caller already has a record there; `faved`, that they keep this doctor in their faves |
 | `GET /discover/clinics/:slug` | `{ clinic, doctors[] }` — a clinic by its link, listed or not |
+
+### Faves
+
+Any signed-in account. A fave is private to the login; doctors are never told who (PRODUCT.md, decision 6).
+
+| | |
+| --- | --- |
+| `GET /faves` | `{ doctors[] }`, newest first, in `/discover`'s shape |
+| `PUT /faves/:doctorId` | → `{ doctorId, faved: true }`. Verified doctors only (`404` otherwise); faving twice is fine |
+| `DELETE /faves/:doctorId` | → `{ doctorId, faved: false }` |
 | `POST /discover/requests` | `{ doctorId, service, preferredDate, preferredTime?, reason, details? }` → `201 { id, status, newPatient }`. Without a record at that clinic, `details` (`{ firstName, middleName?, lastName, dateOfBirth, sex, contactNumber, address, email? }`) is required and the request is a new patient's. **For somebody else:** add `familyMemberId` (from `GET /family`): their name, birthday and sex come from the list, `details` gives the mobile and address. Accepting makes the requester their caregiver, never the chart's own login |
 | `GET /discover/requests` | `{ requests[] }` — every request this account sent, at any clinic |
 | `GET /family` | `{ family: [{ id, firstName, middleName, lastName, dateOfBirth, sex, relationship, links: [{ patientId, clinicId, clinicName }] }] }` — the people this login books for, **one list whichever side started them**: every chart this login looks after appears here (a clinic-made link joins or creates an entry). Once `links` is non-empty the name, birthday and sex are the clinic's record (`relationship`: `CHILD`, `SPOUSE`, `PARENT`, `SIBLING`, `GRANDPARENT`, `OTHER`). Details on the account holder's word; grants nothing at any clinic |

@@ -71,6 +71,7 @@ type AppointmentScalars = Omit<
   | "bookedBy"
   | "appointmentRequests"
   | "events"
+  | "feedback"
 >;
 
 /**

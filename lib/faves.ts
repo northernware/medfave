@@ -1,0 +1,120 @@
+import "server-only";
+import { instantFromDb, instantToDb } from "@/lib/datetime";
+import { findDoctor, shape } from "@/lib/discovery";
+import { SERVICE_LABELS } from "@/lib/domain";
+import { newId } from "@/lib/ids";
+import type { CurrentPatient } from "@/lib/auth";
+import { orm } from "@/src/prisma/db";
+
+/*
+ * Faves and after-visit feedback (medfave-design PRODUCT.md, decision 6).
+ *
+ * A fave is a login keeping a doctor close: private, never shown to the doctor
+ * by name. Feedback is a patient's word on one finished visit, for the clinic
+ * only. Neither is a public rating.
+ */
+
+/** How long after a visit the "How was it?" card is still offered. */
+const ASK_FOR_DAYS = 14;
+
+/** The doctors this login has faved, newest first, as Find a doctor shows them. */
+export async function listFaves(accountId: string) {
+  const faves = await orm.Fave
+    .select("doctorId", "createdAt")
+    .where((f) => f.accountId.eq(accountId))
+    .orderBy((f) => f.createdAt.desc())
+    .all();
+  if (faves.length === 0) return [];
+  const doctors = await orm.Doctor
+    .select("id", "fullName", "specialty", "clinicId")
+    .where((d) => d.id.in(faves.map((f) => f.doctorId)))
+    .all();
+  const shaped = await shape(doctors);
+  return faves.flatMap((f) => shaped.filter((d) => d.id === f.doctorId));
+}
+
+export async function isFaved(accountId: string, doctorId: string) {
+  return Boolean(
+    await orm.Fave.select("id").where((f) => f.accountId.eq(accountId)).where((f) => f.doctorId.eq(doctorId)).first(),
+  );
+}
+
+/** Faves or un-faves a verified doctor. Saying the same twice is fine. */
+export async function setFave(accountId: string, doctorId: string, faved: boolean) {
+  if (!faved) {
+    await orm.Fave.where((f) => f.accountId.eq(accountId)).where((f) => f.doctorId.eq(doctorId)).delete();
+    return { ok: true as const, faved };
+  }
+  if (!(await findDoctor(doctorId))) return { ok: false as const };
+  if (!(await isFaved(accountId, doctorId))) {
+    await orm.Fave.create({ id: newId(), accountId, doctorId, createdAt: instantToDb(new Date()) });
+  }
+  return { ok: true as const, faved };
+}
+
+/**
+ * The visit to ask about: this person's latest completed visit in the last
+ * two weeks that this login hasn't answered or closed the card for.
+ */
+export async function visitToAskAbout(me: CurrentPatient) {
+  const since = instantToDb(new Date(Date.now() - ASK_FOR_DAYS * 86_400_000));
+  const visit = await orm.Appointment
+    .select("id", "scheduledAt", "service")
+    .include("doctor", (d) => d.select("id", "fullName"))
+    .where((a) => a.patientId.eq(me.patientId))
+    .where((a) => a.status.eq("COMPLETED"))
+    .where((a) => a.scheduledAt.gte(since))
+    .orderBy((a) => a.scheduledAt.desc())
+    .first();
+  if (!visit) return null;
+  const answered = await orm.VisitFeedback
+    .select("id")
+    .where((f) => f.appointmentId.eq(visit.id))
+    .where((f) => f.accountId.eq(me.accountId))
+    .first();
+  if (answered) return null;
+  return {
+    id: visit.id,
+    scheduledAt: instantFromDb(visit.scheduledAt).toISOString(),
+    serviceLabel: SERVICE_LABELS[visit.service],
+    doctor: { id: visit.doctor.id, fullName: visit.doctor.fullName },
+    faved: await isFaved(me.accountId, visit.doctor.id),
+  };
+}
+
+export type Rating = "GOOD" | "NOT_GREAT";
+
+/**
+ * Records what the patient said about a finished visit of theirs: a rating and
+ * a line, or nothing (the card was closed). Saying it again replaces it.
+ */
+export async function saveFeedback(me: CurrentPatient, appointmentId: string, rating: Rating | null, note: string | null) {
+  const visit = await orm.Appointment
+    .select("id", "status", "clinicId", "doctorId")
+    .where((a) => a.id.eq(appointmentId))
+    .where((a) => a.patientId.eq(me.patientId))
+    .first();
+  if (!visit) return { ok: false as const, status: 404, message: "No visit of yours with that id." };
+  if (visit.status !== "COMPLETED") return { ok: false as const, status: 409, message: "Only a finished visit can be rated." };
+
+  const existing = await orm.VisitFeedback
+    .select("id")
+    .where((f) => f.appointmentId.eq(visit.id))
+    .where((f) => f.accountId.eq(me.accountId))
+    .first();
+  if (existing) {
+    await orm.VisitFeedback.where((f) => f.id.eq(existing.id)).update({ rating, note });
+  } else {
+    await orm.VisitFeedback.create({
+      id: newId(),
+      appointmentId: visit.id,
+      accountId: me.accountId,
+      clinicId: visit.clinicId,
+      doctorId: visit.doctorId,
+      rating,
+      note,
+      createdAt: instantToDb(new Date()),
+    });
+  }
+  return { ok: true as const };
+}

@@ -1,0 +1,711 @@
+[
+  {
+    "id": "createNativeEnumType.VisitRating",
+    "label": "Create enum type \"VisitRating\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "type",
+        "name": "VisitRating"
+      }
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "create enum type \"VisitRating\"",
+        "sql": "CREATE TYPE \"public\".\"VisitRating\" AS ENUM ('GOOD', 'NOT_GREAT')",
+        "params": []
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "table.Fave",
+    "label": "Create table \"Fave\"",
+    "summary": "Creates table \"Fave\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "Fave"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"Fave\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Fave\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"Fave\"",
+        "sql": "CREATE TABLE \"public\".\"Fave\" (\n  \"accountId\" text NOT NULL,\n  \"createdAt\" timestamp(3) DEFAULT (now()) NOT NULL,\n  \"doctorId\" text NOT NULL,\n  \"id\" text NOT NULL,\n  CONSTRAINT \"Fave_pkey\" PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"Fave\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Fave\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.VisitFeedback",
+    "label": "Create table \"VisitFeedback\"",
+    "summary": "Creates table \"VisitFeedback\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "VisitFeedback"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"VisitFeedback\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"VisitFeedback\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"VisitFeedback\"",
+        "sql": "CREATE TABLE \"public\".\"VisitFeedback\" (\n  \"accountId\" text NOT NULL,\n  \"appointmentId\" text NOT NULL,\n  \"clinicId\" text NOT NULL,\n  \"createdAt\" timestamp(3) DEFAULT (now()) NOT NULL,\n  \"doctorId\" text NOT NULL,\n  \"id\" text NOT NULL,\n  \"note\" text,\n  \"rating\" \"VisitRating\",\n  CONSTRAINT \"VisitFeedback_pkey\" PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"VisitFeedback\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"VisitFeedback\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.Fave.Fave_accountId_doctorId_key",
+    "label": "Add unique constraint on \"Fave\" (accountId, doctorId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "Fave_accountId_doctorId_key",
+        "table": "Fave"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"Fave_accountId_doctorId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Fave_accountId_doctorId_key",
+          "public",
+          "\"public\".\"Fave\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"Fave_accountId_doctorId_key\"",
+        "sql": "ALTER TABLE \"public\".\"Fave\" ADD CONSTRAINT \"Fave_accountId_doctorId_key\" UNIQUE (\"accountId\", \"doctorId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"Fave_accountId_doctorId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Fave_accountId_doctorId_key",
+          "public",
+          "\"public\".\"Fave\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.VisitFeedback.VisitFeedback_appointmentId_accountId_key",
+    "label": "Add unique constraint on \"VisitFeedback\" (appointmentId, accountId)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "VisitFeedback_appointmentId_accountId_key",
+        "table": "VisitFeedback"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"VisitFeedback_appointmentId_accountId_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "VisitFeedback_appointmentId_accountId_key",
+          "public",
+          "\"public\".\"VisitFeedback\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"VisitFeedback_appointmentId_accountId_key\"",
+        "sql": "ALTER TABLE \"public\".\"VisitFeedback\" ADD CONSTRAINT \"VisitFeedback_appointmentId_accountId_key\" UNIQUE (\"appointmentId\", \"accountId\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"VisitFeedback_appointmentId_accountId_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "VisitFeedback_appointmentId_accountId_key",
+          "public",
+          "\"public\".\"VisitFeedback\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.Fave.Fave_accountId_idx_cbfb3085",
+    "label": "Create index \"Fave_accountId_idx_cbfb3085\" on \"Fave\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "Fave_accountId_idx_cbfb3085",
+        "table": "Fave"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"Fave_accountId_idx_cbfb3085\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Fave_accountId_idx_cbfb3085\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"Fave_accountId_idx_cbfb3085\"",
+        "sql": "CREATE INDEX \"Fave_accountId_idx_cbfb3085\" ON \"public\".\"Fave\" (\"accountId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"Fave_accountId_idx_cbfb3085\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Fave_accountId_idx_cbfb3085\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.Fave.Fave_doctorId_idx",
+    "label": "Create index \"Fave_doctorId_idx\" on \"Fave\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "Fave_doctorId_idx",
+        "table": "Fave"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"Fave_doctorId_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Fave_doctorId_idx\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"Fave_doctorId_idx\"",
+        "sql": "CREATE INDEX \"Fave_doctorId_idx\" ON \"public\".\"Fave\" (\"doctorId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"Fave_doctorId_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"Fave_doctorId_idx\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.VisitFeedback.VisitFeedback_accountId_idx",
+    "label": "Create index \"VisitFeedback_accountId_idx\" on \"VisitFeedback\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "VisitFeedback_accountId_idx",
+        "table": "VisitFeedback"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"VisitFeedback_accountId_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"VisitFeedback_accountId_idx\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"VisitFeedback_accountId_idx\"",
+        "sql": "CREATE INDEX \"VisitFeedback_accountId_idx\" ON \"public\".\"VisitFeedback\" (\"accountId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"VisitFeedback_accountId_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"VisitFeedback_accountId_idx\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.VisitFeedback.VisitFeedback_appointmentId_idx_682a8b58",
+    "label": "Create index \"VisitFeedback_appointmentId_idx_682a8b58\" on \"VisitFeedback\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "VisitFeedback_appointmentId_idx_682a8b58",
+        "table": "VisitFeedback"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"VisitFeedback_appointmentId_idx_682a8b58\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"VisitFeedback_appointmentId_idx_682a8b58\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"VisitFeedback_appointmentId_idx_682a8b58\"",
+        "sql": "CREATE INDEX \"VisitFeedback_appointmentId_idx_682a8b58\" ON \"public\".\"VisitFeedback\" (\"appointmentId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"VisitFeedback_appointmentId_idx_682a8b58\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"VisitFeedback_appointmentId_idx_682a8b58\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.VisitFeedback.VisitFeedback_clinicId_createdAt_idx",
+    "label": "Create index \"VisitFeedback_clinicId_createdAt_idx\" on \"VisitFeedback\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "VisitFeedback_clinicId_createdAt_idx",
+        "table": "VisitFeedback"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"VisitFeedback_clinicId_createdAt_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"VisitFeedback_clinicId_createdAt_idx\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"VisitFeedback_clinicId_createdAt_idx\"",
+        "sql": "CREATE INDEX \"VisitFeedback_clinicId_createdAt_idx\" ON \"public\".\"VisitFeedback\" (\"clinicId\", \"createdAt\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"VisitFeedback_clinicId_createdAt_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"VisitFeedback_clinicId_createdAt_idx\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.VisitFeedback.VisitFeedback_clinicId_idx_8f933800",
+    "label": "Create index \"VisitFeedback_clinicId_idx_8f933800\" on \"VisitFeedback\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "VisitFeedback_clinicId_idx_8f933800",
+        "table": "VisitFeedback"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"VisitFeedback_clinicId_idx_8f933800\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"VisitFeedback_clinicId_idx_8f933800\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"VisitFeedback_clinicId_idx_8f933800\"",
+        "sql": "CREATE INDEX \"VisitFeedback_clinicId_idx_8f933800\" ON \"public\".\"VisitFeedback\" (\"clinicId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"VisitFeedback_clinicId_idx_8f933800\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"VisitFeedback_clinicId_idx_8f933800\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.VisitFeedback.VisitFeedback_doctorId_idx",
+    "label": "Create index \"VisitFeedback_doctorId_idx\" on \"VisitFeedback\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "VisitFeedback_doctorId_idx",
+        "table": "VisitFeedback"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"VisitFeedback_doctorId_idx\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"VisitFeedback_doctorId_idx\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"VisitFeedback_doctorId_idx\"",
+        "sql": "CREATE INDEX \"VisitFeedback_doctorId_idx\" ON \"public\".\"VisitFeedback\" (\"doctorId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"VisitFeedback_doctorId_idx\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"VisitFeedback_doctorId_idx\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.Fave.Fave_accountId_fkey",
+    "label": "Add foreign key \"Fave_accountId_fkey\" on \"Fave\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "Fave_accountId_fkey",
+        "table": "Fave"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"Fave_accountId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Fave_accountId_fkey",
+          "public",
+          "\"public\".\"Fave\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"Fave_accountId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"Fave\"\nADD CONSTRAINT \"Fave_accountId_fkey\"\nFOREIGN KEY (\"accountId\")\nREFERENCES \"public\".\"Account\" (\"id\")\nON DELETE CASCADE\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"Fave_accountId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Fave_accountId_fkey",
+          "public",
+          "\"public\".\"Fave\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.Fave.Fave_doctorId_fkey",
+    "label": "Add foreign key \"Fave_doctorId_fkey\" on \"Fave\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "Fave_doctorId_fkey",
+        "table": "Fave"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"Fave_doctorId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Fave_doctorId_fkey",
+          "public",
+          "\"public\".\"Fave\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"Fave_doctorId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"Fave\"\nADD CONSTRAINT \"Fave_doctorId_fkey\"\nFOREIGN KEY (\"doctorId\")\nREFERENCES \"public\".\"Doctor\" (\"id\")\nON DELETE CASCADE\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"Fave_doctorId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "Fave_doctorId_fkey",
+          "public",
+          "\"public\".\"Fave\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.VisitFeedback.VisitFeedback_appointmentId_fkey",
+    "label": "Add foreign key \"VisitFeedback_appointmentId_fkey\" on \"VisitFeedback\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "VisitFeedback_appointmentId_fkey",
+        "table": "VisitFeedback"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"VisitFeedback_appointmentId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "VisitFeedback_appointmentId_fkey",
+          "public",
+          "\"public\".\"VisitFeedback\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"VisitFeedback_appointmentId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"VisitFeedback\"\nADD CONSTRAINT \"VisitFeedback_appointmentId_fkey\"\nFOREIGN KEY (\"appointmentId\")\nREFERENCES \"public\".\"Appointment\" (\"id\")\nON DELETE CASCADE\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"VisitFeedback_appointmentId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "VisitFeedback_appointmentId_fkey",
+          "public",
+          "\"public\".\"VisitFeedback\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.VisitFeedback.VisitFeedback_accountId_fkey",
+    "label": "Add foreign key \"VisitFeedback_accountId_fkey\" on \"VisitFeedback\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "VisitFeedback_accountId_fkey",
+        "table": "VisitFeedback"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"VisitFeedback_accountId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "VisitFeedback_accountId_fkey",
+          "public",
+          "\"public\".\"VisitFeedback\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"VisitFeedback_accountId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"VisitFeedback\"\nADD CONSTRAINT \"VisitFeedback_accountId_fkey\"\nFOREIGN KEY (\"accountId\")\nREFERENCES \"public\".\"Account\" (\"id\")\nON DELETE CASCADE\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"VisitFeedback_accountId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "VisitFeedback_accountId_fkey",
+          "public",
+          "\"public\".\"VisitFeedback\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.VisitFeedback.VisitFeedback_clinicId_fkey",
+    "label": "Add foreign key \"VisitFeedback_clinicId_fkey\" on \"VisitFeedback\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "VisitFeedback_clinicId_fkey",
+        "table": "VisitFeedback"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"VisitFeedback_clinicId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "VisitFeedback_clinicId_fkey",
+          "public",
+          "\"public\".\"VisitFeedback\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"VisitFeedback_clinicId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"VisitFeedback\"\nADD CONSTRAINT \"VisitFeedback_clinicId_fkey\"\nFOREIGN KEY (\"clinicId\")\nREFERENCES \"public\".\"Clinic\" (\"id\")\nON DELETE CASCADE\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"VisitFeedback_clinicId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "VisitFeedback_clinicId_fkey",
+          "public",
+          "\"public\".\"VisitFeedback\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.VisitFeedback.VisitFeedback_doctorId_fkey",
+    "label": "Add foreign key \"VisitFeedback_doctorId_fkey\" on \"VisitFeedback\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "VisitFeedback_doctorId_fkey",
+        "table": "VisitFeedback"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"VisitFeedback_doctorId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "VisitFeedback_doctorId_fkey",
+          "public",
+          "\"public\".\"VisitFeedback\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"VisitFeedback_doctorId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"VisitFeedback\"\nADD CONSTRAINT \"VisitFeedback_doctorId_fkey\"\nFOREIGN KEY (\"doctorId\")\nREFERENCES \"public\".\"Doctor\" (\"id\")\nON DELETE CASCADE\nON UPDATE CASCADE"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"VisitFeedback_doctorId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "VisitFeedback_doctorId_fkey",
+          "public",
+          "\"public\".\"VisitFeedback\""
+        ]
+      }
+    ]
+  }
+]

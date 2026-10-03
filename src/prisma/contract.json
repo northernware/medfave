@@ -72,6 +72,10 @@
       "model": "FamilyMember",
       "namespace": "public"
     },
+    "Fave": {
+      "model": "Fave",
+      "namespace": "public"
+    },
     "Household": {
       "model": "Household",
       "namespace": "public"
@@ -134,6 +138,10 @@
     },
     "StaffInvite": {
       "model": "StaffInvite",
+      "namespace": "public"
+    },
+    "VisitFeedback": {
+      "model": "VisitFeedback",
       "namespace": "public"
     }
   },
@@ -418,6 +426,21 @@
                   "namespace": "public"
                 }
               },
+              "faves": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "accountId"
+                  ]
+                },
+                "to": {
+                  "model": "Fave",
+                  "namespace": "public"
+                }
+              },
               "identities": {
                 "cardinality": "1:N",
                 "on": {
@@ -535,6 +558,21 @@
                 },
                 "to": {
                   "model": "AppointmentRequest",
+                  "namespace": "public"
+                }
+              },
+              "visitFeedback": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "accountId"
+                  ]
+                },
+                "to": {
+                  "model": "VisitFeedback",
                   "namespace": "public"
                 }
               }
@@ -977,6 +1015,21 @@
                 },
                 "to": {
                   "model": "AppointmentEvent",
+                  "namespace": "public"
+                }
+              },
+              "feedback": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "appointmentId"
+                  ]
+                },
+                "to": {
+                  "model": "VisitFeedback",
                   "namespace": "public"
                 }
               },
@@ -2294,6 +2347,21 @@
                   "model": "StaffInvite",
                   "namespace": "public"
                 }
+              },
+              "visitFeedback": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "clinicId"
+                  ]
+                },
+                "to": {
+                  "model": "VisitFeedback",
+                  "namespace": "public"
+                }
               }
             },
             "storage": {
@@ -3044,6 +3112,21 @@
                   "namespace": "public"
                 }
               },
+              "faves": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "doctorId"
+                  ]
+                },
+                "to": {
+                  "model": "Fave",
+                  "namespace": "public"
+                }
+              },
               "followUpsClosed": {
                 "cardinality": "1:N",
                 "on": {
@@ -3191,6 +3274,21 @@
                 },
                 "to": {
                   "model": "Account",
+                  "namespace": "public"
+                }
+              },
+              "visitFeedback": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "doctorId"
+                  ]
+                },
+                "to": {
+                  "model": "VisitFeedback",
                   "namespace": "public"
                 }
               }
@@ -3815,6 +3913,91 @@
               },
               "namespaceId": "public",
               "table": "FamilyMember"
+            }
+          },
+          "Fave": {
+            "fields": {
+              "accountId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "doctorId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              }
+            },
+            "relations": {
+              "account": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "accountId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Account",
+                  "namespace": "public"
+                }
+              },
+              "doctor": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "doctorId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Doctor",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "accountId": {
+                  "column": "accountId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "doctorId": {
+                  "column": "doctorId"
+                },
+                "id": {
+                  "column": "id"
+                }
+              },
+              "namespaceId": "public",
+              "table": "Fave"
             }
           },
           "Household": {
@@ -6450,6 +6633,164 @@
               "namespaceId": "public",
               "table": "StaffInvite"
             }
+          },
+          "VisitFeedback": {
+            "fields": {
+              "accountId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "appointmentId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "clinicId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "createdAt": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/timestamp-string@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "precision": 3
+                  }
+                }
+              },
+              "doctorId": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "id": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "note": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "rating": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/enum@1",
+                  "kind": "scalar",
+                  "typeParams": {
+                    "typeName": "VisitRating"
+                  }
+                }
+              }
+            },
+            "relations": {
+              "account": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "accountId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Account",
+                  "namespace": "public"
+                }
+              },
+              "appointment": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "appointmentId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Appointment",
+                  "namespace": "public"
+                }
+              },
+              "clinic": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "clinicId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Clinic",
+                  "namespace": "public"
+                }
+              },
+              "doctor": {
+                "cardinality": "N:1",
+                "on": {
+                  "localFields": [
+                    "doctorId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Doctor",
+                  "namespace": "public"
+                }
+              }
+            },
+            "storage": {
+              "fields": {
+                "accountId": {
+                  "column": "accountId"
+                },
+                "appointmentId": {
+                  "column": "appointmentId"
+                },
+                "clinicId": {
+                  "column": "clinicId"
+                },
+                "createdAt": {
+                  "column": "createdAt"
+                },
+                "doctorId": {
+                  "column": "doctorId"
+                },
+                "id": {
+                  "column": "id"
+                },
+                "note": {
+                  "column": "note"
+                },
+                "rating": {
+                  "column": "rating"
+                }
+              },
+              "namespaceId": "public",
+              "table": "VisitFeedback"
+            }
           }
         }
       }
@@ -6658,6 +6999,14 @@
                 "FOLLOW_UP"
               ],
               "typeName": "VisitPriority"
+            },
+            "VisitRating": {
+              "kind": "postgres-enum",
+              "members": [
+                "GOOD",
+                "NOT_GREAT"
+              ],
+              "typeName": "VisitRating"
             }
           },
           "table": {
@@ -9384,6 +9733,109 @@
               },
               "uniques": []
             },
+            "Fave": {
+              "columns": {
+                "accountId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamp",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "doctorId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                }
+              },
+              "foreignKeys": [
+                {
+                  "name": "Fave_accountId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "accountId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Fave"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Account"
+                  }
+                },
+                {
+                  "name": "Fave_doctorId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "doctorId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Fave"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Doctor"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "accountId"
+                  ],
+                  "name": "Fave_accountId_idx_cbfb3085",
+                  "prefix": "Fave_accountId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "doctorId"
+                  ],
+                  "name": "Fave_doctorId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ],
+                "name": "Fave_pkey"
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "accountId",
+                    "doctorId"
+                  ],
+                  "name": "Fave_accountId_doctorId_key"
+                }
+              ]
+            },
             "Household": {
               "columns": {
                 "address": {
@@ -11632,6 +12084,199 @@
                 "name": "StaffInvite_pkey"
               },
               "uniques": []
+            },
+            "VisitFeedback": {
+              "columns": {
+                "accountId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "appointmentId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "clinicId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "createdAt": {
+                  "codecId": "pg/timestamp-string@1",
+                  "default": {
+                    "expression": "now()",
+                    "kind": "function"
+                  },
+                  "nativeType": "timestamp",
+                  "nullable": false,
+                  "typeParams": {
+                    "precision": 3
+                  }
+                },
+                "doctorId": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "id": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": false
+                },
+                "note": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "rating": {
+                  "codecId": "pg/enum@1",
+                  "nativeType": "VisitRating",
+                  "nullable": true,
+                  "typeParams": {
+                    "typeName": "VisitRating"
+                  },
+                  "valueSet": {
+                    "entityKind": "valueSet",
+                    "entityName": "VisitRating",
+                    "namespaceId": "public",
+                    "plane": "storage"
+                  }
+                }
+              },
+              "foreignKeys": [
+                {
+                  "name": "VisitFeedback_appointmentId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "appointmentId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "VisitFeedback"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Appointment"
+                  }
+                },
+                {
+                  "name": "VisitFeedback_accountId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "accountId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "VisitFeedback"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Account"
+                  }
+                },
+                {
+                  "name": "VisitFeedback_clinicId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "clinicId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "VisitFeedback"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Clinic"
+                  }
+                },
+                {
+                  "name": "VisitFeedback_doctorId_fkey",
+                  "onDelete": "cascade",
+                  "onUpdate": "cascade",
+                  "source": {
+                    "columns": [
+                      "doctorId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "VisitFeedback"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "Doctor"
+                  }
+                }
+              ],
+              "indexes": [
+                {
+                  "columns": [
+                    "accountId"
+                  ],
+                  "name": "VisitFeedback_accountId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "appointmentId"
+                  ],
+                  "name": "VisitFeedback_appointmentId_idx_682a8b58",
+                  "prefix": "VisitFeedback_appointmentId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "clinicId",
+                    "createdAt"
+                  ],
+                  "name": "VisitFeedback_clinicId_createdAt_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "clinicId"
+                  ],
+                  "name": "VisitFeedback_clinicId_idx_8f933800",
+                  "prefix": "VisitFeedback_clinicId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "doctorId"
+                  ],
+                  "name": "VisitFeedback_doctorId_idx",
+                  "unique": false
+                }
+              ],
+              "primaryKey": {
+                "columns": [
+                  "id"
+                ],
+                "name": "VisitFeedback_pkey"
+              },
+              "uniques": [
+                {
+                  "columns": [
+                    "appointmentId",
+                    "accountId"
+                  ],
+                  "name": "VisitFeedback_appointmentId_accountId_key"
+                }
+              ]
             }
           },
           "valueSet": {
@@ -11814,6 +12459,13 @@
                 "URGENT",
                 "FOLLOW_UP"
               ]
+            },
+            "VisitRating": {
+              "kind": "valueSet",
+              "values": [
+                "GOOD",
+                "NOT_GREAT"
+              ]
             }
           }
         },
@@ -11821,7 +12473,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "daa1a904f198b0b801df854978ecc00d7c24d2ad1a698d1260338958256b26b9"
+    "storageHash": "3052c604611e2abdc9f5a14149e2d70e572b39d64a045a6be05e49bd54138cfe"
   },
   "capabilities": {
     "postgres": {

@@ -43,6 +43,8 @@ namespace public {
     appointmentRequests AppointmentRequest[]
     /// Patients who chose this doctor as their primary care physician.
     primaryFor     Patient[]       @relation(name: "Patient_primaryDoctorId_fkey")
+    faves          Fave[]
+    visitFeedback  VisitFeedback[]
     scheduleSettings ScheduleSettings?
     clinicHours      ClinicHours[]
     clinicBreaks     ClinicBreak[]
@@ -235,6 +237,7 @@ namespace public {
     medicalRecord              MedicalRecord?              @relation(name: "MedicalRecord_appointmentId_fkey")
     /// What happened to it after booking, and who did it.
     events                     AppointmentEvent[]
+    feedback                   VisitFeedback[]
     followUpForRecord          MedicalRecord?              @relation(name: "MedicalRecord_followUpAppointmentId_fkey")
 
     @@index([doctorId, scheduledAt], map: "Appointment_doctorId_scheduledAt_idx")
@@ -643,6 +646,7 @@ namespace public {
     careLinks     CareLink[]
     appointmentRequests AppointmentRequest[]
     patients      Patient[]
+    visitFeedback VisitFeedback[]
     openingHours  ClinicOpeningHours[]
 
     @@index([slug], map: "Clinic_slug_key", unique: true)
@@ -711,6 +715,8 @@ namespace public {
     emailVerifications EmailVerification[]
     identities   AccountIdentity[]
     chartAccesses ChartAccess[]
+    faves        Fave[]
+    visitFeedback VisitFeedback[]
     doctorsVerified Doctor[]         @relation(name: "Doctor_verifiedById_fkey")
     /// Runs Medfave itself: verifies doctors. Granted only by
     /// `npm run admin:grant`, never from the web.
@@ -874,6 +880,47 @@ namespace public {
     @@index([accountId], map: "FamilyMember_accountId_idx")
 
     @@map("FamilyMember")
+  }
+
+  /// A doctor a patient keeps close: their "fave". Private to the login that
+  /// faved; the doctor is never told who. One per login and doctor.
+  model Fave {
+    id        String @id(map: "Fave_pkey")
+    accountId String
+    doctorId  String
+    createdAt TimestampString(3) @default(now())
+    account   Account @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "Fave_accountId_fkey")
+    doctor    Doctor  @relation(fields: [doctorId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "Fave_doctorId_fkey")
+
+    @@unique([accountId, doctorId], map: "Fave_accountId_doctorId_key")
+    @@index([doctorId], map: "Fave_doctorId_idx")
+
+    @@map("Fave")
+  }
+
+  /// What a patient said after a visit, for the clinic only: good or not, and
+  /// a line why. A row with no rating means the after-visit card was closed
+  /// without answering, so it isn't asked again. One per visit and login.
+  model VisitFeedback {
+    id            String @id(map: "VisitFeedback_pkey")
+    appointmentId String
+    accountId     String
+    clinicId      String
+    doctorId      String
+    rating        pg.enum(VisitRating)?
+    note          String?
+    createdAt     TimestampString(3) @default(now())
+    appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "VisitFeedback_appointmentId_fkey")
+    account       Account     @relation(fields: [accountId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "VisitFeedback_accountId_fkey")
+    clinic        Clinic      @relation(fields: [clinicId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "VisitFeedback_clinicId_fkey")
+    doctor        Doctor      @relation(fields: [doctorId], references: [id], onDelete: Cascade, onUpdate: Cascade, map: "VisitFeedback_doctorId_fkey")
+
+    @@unique([appointmentId, accountId], map: "VisitFeedback_appointmentId_accountId_key")
+    @@index([accountId], map: "VisitFeedback_accountId_idx")
+    @@index([clinicId, createdAt], map: "VisitFeedback_clinicId_createdAt_idx")
+    @@index([doctorId], map: "VisitFeedback_doctorId_idx")
+
+    @@map("VisitFeedback")
   }
 
   /// A visit's history after it was booked: each status change and move, when,
@@ -1195,6 +1242,11 @@ namespace public {
   native_enum Sex {
     MALE = "MALE"
     FEMALE = "FEMALE"
+  }
+
+  native_enum VisitRating {
+    GOOD = "GOOD"
+    NOT_GREAT = "NOT_GREAT"
   }
 
   native_enum VisitPriority {
