@@ -1,5 +1,6 @@
 import { apiDoctor, apiError, readJson } from "@/lib/api";
 import { changeAppointmentStatus } from "@/lib/booking";
+import { formatDateTime } from "@/lib/datetime";
 import { APPOINTMENT_STATUS_LABELS } from "@/lib/domain";
 
 /**
@@ -33,7 +34,13 @@ export async function POST(request: Request, ctx: RouteContext<"/api/v1/doctor/a
         }.`,
       );
     case "clash":
-      return apiError(409, "That time has been booked by someone else since. Book a new time instead.");
+      // Say whose time it is now, so the doctor knows what to do instead.
+      return apiError(
+        409,
+        result.restoring
+          ? `Can't put this visit back: ${formatDateTime(result.clashAt)} is ${result.clashWith}'s now. Leave it checked in, or move it to a new time.`
+          : `${formatDateTime(result.clashAt)} has been booked for ${result.clashWith} since. Book a new time instead.`,
+      );
     case "not-today":
       return apiError(409, "Check in and start a visit on its day.");
   }
