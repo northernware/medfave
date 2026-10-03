@@ -4,6 +4,7 @@ import { durationFor, earliestBookableDay, latestBookableDay } from "./availabil
 import { dayKey, instantFromDb, instantToDb, startOfClinicDay } from "./datetime";
 import { SERVICE_MINUTES } from "./domain";
 import type { ServiceType } from "./enums";
+import { heldSlots } from "./held-slots";
 import { loadSchedule } from "./queries";
 import { addDays, minuteOfDay, occupiesSlot, slotsForDay, type BusyInterval } from "./scheduling";
 
@@ -63,6 +64,11 @@ export async function openingsFor(
     const at = instantFromDb(a.scheduledAt);
     const start = minuteOfDay(at);
     (busy[dayKey(at)] ??= []).push({ start, end: start + a.durationMinutes });
+  }
+  // An early check-in still holds its old time, until the consultation starts.
+  for (const h of await heldSlots(doctorId, startOfClinicDay(first), startOfClinicDay(addDays(last, 1)))) {
+    const start = minuteOfDay(h.scheduledAt);
+    (busy[dayKey(h.scheduledAt)] ??= []).push({ start, end: start + h.durationMinutes });
   }
   // A time somebody has asked for is spoken for until the clinic answers.
   for (const r of asked) {
