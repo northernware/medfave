@@ -12,7 +12,7 @@ import {
   instantToDb,
 } from "@/lib/datetime";
 import { newId } from "@/lib/ids";
-import { canMoveTo, SERVICE_MINUTES } from "@/lib/domain";
+import { canMoveTo, fullName, SERVICE_MINUTES } from "@/lib/domain";
 import { formatSpan, minuteOfDay, occupiesSlot, overlaps } from "@/lib/scheduling";
 import { checkAvailability, durationFor } from "@/lib/availability";
 import { loadSchedule } from "@/lib/queries";
@@ -451,7 +451,7 @@ export type StatusChange =
   | { ok: false; reason: "invalid" | "not-found" }
   | { ok: false; reason: "role" }
   | { ok: false; reason: "transition"; current: AppointmentStatus }
-  | { ok: false; reason: "clash"; clashId: string }
+  | { ok: false; reason: "clash"; clashId: string; clashWith: string; clashAt: Date; restoring: boolean }
   /** Checking in or starting a visit that isn't today. */
   | { ok: false; reason: "not-today" };
 
@@ -568,7 +568,16 @@ export async function changeAppointmentStatus(
       await tx.orm.public.AppointmentEvent.create(event);
       return null;
     });
-    if (clash) return { ok: false, reason: "clash", clashId: clash.id };
+    if (clash) {
+      return {
+        ok: false,
+        reason: "clash",
+        clashId: clash.id,
+        clashWith: fullName(clash.patient),
+        clashAt: instantFromDb(clash.scheduledAt),
+        restoring: Boolean(restoreTo),
+      };
+    }
   }
 
   revalidateAppointmentPages(appointmentId);
