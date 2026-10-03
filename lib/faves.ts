@@ -112,12 +112,15 @@ export async function saveFeedback(me: CurrentPatient, appointmentId: string, fe
   const rating: Rating | null = score ? (score >= 4 ? "GOOD" : "NOT_GREAT") : feedback.rating;
   const fields = { rating, score, tags: tags.length ? tags.join(",") : null, note };
   const visit = await orm.Appointment
-    .select("id", "status", "clinicId", "doctorId")
+    .select("id", "status", "clinicId", "doctorId", "scheduledAt")
     .where((a) => a.id.eq(appointmentId))
     .where((a) => a.patientId.eq(me.patientId))
     .first();
   if (!visit) return { ok: false as const, status: 404, message: "No visit of yours with that id." };
   if (visit.status !== "COMPLETED") return { ok: false as const, status: 409, message: "Only a finished visit can be rated." };
+  if (instantFromDb(visit.scheduledAt).getTime() < Date.now() - ASK_FOR_DAYS * 86_400_000) {
+    return { ok: false as const, status: 409, message: "Visits can be rated for two weeks after." };
+  }
 
   const existing = await orm.VisitFeedback
     .select("id")

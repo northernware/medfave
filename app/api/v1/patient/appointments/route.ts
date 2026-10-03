@@ -4,6 +4,9 @@ import { APPOINTMENT_STATUS_LABELS, SERVICE_LABELS } from "@/lib/domain";
 import { cancelBy, cancelCutoffHours, CHANGEABLE } from "@/lib/patient-visits";
 import { orm } from "@/src/prisma/db";
 
+/** How long after a visit it can still be rated or the rating changed. As lib/faves.ts. */
+const RATE_FOR_DAYS = 14;
+
 /** A visit not yet over: booked, or at the clinic now. */
 const UNDERWAY = ["PENDING", "CONFIRMED", "CHECKED_IN", "IN_CONSULTATION"] as const;
 
@@ -81,5 +84,31 @@ export async function GET(request: Request) {
     };
   };
 
-  return Response.json({ upcoming: upcoming.map(upcomingShape), past: past.map(shape), cancelHours: hours });
+  // Finished visits carry what this login said about them, and whether it can
+  // still say or change it (the two weeks the "How was it?" sheet is offered).
+  const done = past.filter((a) => a.status === "COMPLETED");
+  const [feedback, faves] = await Promise.all([
+    done.length
+      ? orm.VisitFeedback
+          .select("appointmentId", "score", "tags", "note")
+          .where((f) => f.accountId.eq(me.accountId))
+          .where((f) => f.appointmentId.in(done.map((a) => a.id)))
+          .all()
+      : Promise.resolve([]),
+    orm.Fave.select("doctorId").where((f) => f.accountId.eq(me.accountId)).all(),
+  ]);
+  const faved = new Set(faves.map((f) => f.doctorId));
+  const rateUntil = Date.now() - RATE_FOR_DAYS * 86_400_000;
+  const pastShape = (a: (typeof ahead)[number]) => {
+    if (a.status !== "COMPLETED") return shape(a);
+    const said = feedback.find((f) => f.appointmentId === a.id);
+    return {
+      ...shape(a),
+      feedback: said?.score ? { score: said.score, tags: said.tags ? said.tags.split(",") : [], note: said.note } : null,
+      canRate: instantFromDb(a.scheduledAt).getTime() >= rateUntil,
+      doctorFaved: faved.has(a.doctor.id),
+    };
+  };
+
+  return Response.json({ upcoming: upcoming.map(upcomingShape), past: past.map(pastShape), cancelHours: hours });
 }
