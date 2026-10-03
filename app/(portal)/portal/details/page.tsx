@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PersonSwitch } from "@/components/person-switch";
 import Link from "next/link";
 import { updatePatientContact } from "@/app/actions/account";
 import { requirePatientAccount } from "@/lib/auth";
@@ -44,7 +45,7 @@ export default async function PortalDetailsPage({ searchParams }: PageProps<"/po
   const care = await carersOf(me);
 
   return (
-    <div className="space-y-3">
+    <div className="max-w-4xl space-y-3">
       <PageHeader
         title="Your details"
         subtitle="Keep your contact details right and the clinic can reach you."
@@ -54,6 +55,7 @@ export default async function PortalDetailsPage({ searchParams }: PageProps<"/po
           </Link>
         }
       />
+      <PersonSwitch />
 
       {saved === "contact" ? (
         <div className="rounded-lg border border-ok/40 bg-ok-tint px-4 py-3 text-sm">
